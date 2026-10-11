@@ -1,144 +1,200 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { useQueryClient } from '@tanstack/react-query'; // Import QueryClient
+import { useQueryClient } from '@tanstack/react-query';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import api from '../../services/api';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext';
+import { 
+    ArrowLeft, 
+    ZoomIn, 
+    ZoomOut, 
+    Maximize2, 
+    RotateCcw, 
+    Sparkles, 
+    CheckCircle, 
+    Clock, 
+    Calendar, 
+    Hash, 
+    DollarSign, 
+    Store, 
+    Mail, 
+    Crosshair, 
+    X, 
+    Save, 
+    Table, 
+    ExternalLink,
+    ChevronLeft,
+    ChevronRight,
+    HelpCircle
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url,
 ).toString();
 
-const VisualMapper = () => {
+const FIELD_CONFIGS = [
+    { key: 'vendorName', label: 'Vendor Name', icon: Store, placeholder: 'e.g., Stripe, AWS, Acme Corp', color: 'violet' },
+    { key: 'invoiceNumber', label: 'Invoice #', icon: Hash, placeholder: 'e.g., INV-2026-001', color: 'cyan' },
+    { key: 'invoiceDate', label: 'Invoice Date', icon: Calendar, placeholder: 'DD-MM-YYYY or MM/DD/YYYY', color: 'emerald' },
+    { key: 'dueDate', label: 'Due Date', icon: Clock, placeholder: 'DD-MM-YYYY or MM/DD/YYYY', color: 'amber' },
+    { key: 'totalAmount', label: 'Total Amount ($)', icon: DollarSign, placeholder: 'e.g., 1250.00', color: 'blue', isMono: true },
+];
+
+export default function VisualMapper() {
     const { invoiceId } = useParams();
     const navigate = useNavigate();
-    const queryClient = useQueryClient(); // Initialize QueryClient
+    const queryClient = useQueryClient();
+    const { darkMode } = useTheme();
+
     const [invoice, setInvoice] = useState(null);
     const [loading, setLoading] = useState(true);
     const [numPages, setNumPages] = useState(null);
-    const [scale, setScale] = useState(1.0);
+    const [pageNumber, setPageNumber] = useState(1);
+    const [scale, setScale] = useState(1.1);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [selectedField, setSelectedField] = useState('totalAmount');
+    const [hoveredField, setHoveredField] = useState(null);
+    const [highlightedBoxes, setHighlightedBoxes] = useState({});
 
-    const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setDarkMode(localStorage.getItem('darkMode') === 'true');
-        };
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('theme-change', handleStorageChange);
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('theme-change', handleStorageChange);
-        };
-    }, []);
-
+    // Mappings State
     const [mappings, setMappings] = useState({
-        vendorName: { value: '', rule: null },
-        invoiceDate: { value: '', rule: null },
-        totalAmount: { value: '', rule: null },
-        invoiceNumber: { value: '', rule: null },
-        dueDate: { value: '', rule: null }
+        vendorName: '',
+        invoiceDate: '',
+        totalAmount: '',
+        invoiceNumber: '',
+        dueDate: ''
     });
 
-    const [selectedField, setSelectedField] = useState(null);
     const pdfWrapperRef = useRef(null);
 
-    const [errorMsg, setErrorMsg] = useState(null);
-
+    // Fetch Invoice & PDF Blob
     useEffect(() => {
-        const fetchInvoice = async () => {
+        let isMounted = true;
+        let createdBlobUrl = null;
+
+        const fetchInvoiceData = async () => {
             try {
-                const res = await api.get(`/invoices`);
-                const foundInvoice = res.data.data.find(inv => inv._id === invoiceId);
+                // Try specific get endpoint, fallback to list
+                let foundInvoice = null;
+                try {
+                    const res = await api.get(`/invoices/${invoiceId}`);
+                    foundInvoice = res.data?.data;
+                } catch {
+                    const listRes = await api.get('/invoices');
+                    foundInvoice = listRes.data?.data?.find(inv => inv._id === invoiceId);
+                }
 
-                if (foundInvoice) {
-                    setInvoice(foundInvoice);
-
-                    setMappings(prev => ({
-                        ...prev,
-                        vendorName: { ...prev.vendorName, value: foundInvoice.vendorName || '' },
-                        invoiceDate: { ...prev.invoiceDate, value: foundInvoice.extractedData?.invoiceDate || '' },
-                        invoiceNumber: { ...prev.invoiceNumber, value: foundInvoice.extractedData?.invoiceNumber || '' },
-                        totalAmount: { ...prev.totalAmount, value: foundInvoice.extractedData?.totalAmount || '' },
-                        dueDate: { ...prev.dueDate, value: foundInvoice.extractedData?.dueDate || '' }
-                    }));
-
-                    try {
-                        const pdfRes = await api.get(`/invoices/${invoiceId}/pdf`, {
-                            responseType: 'blob'
-                        });
-                        const blobUrl = URL.createObjectURL(pdfRes.data);
-                        setPdfUrl(blobUrl);
-                    } catch (pdfErr) {
-                        console.error("PDF Fetch Error:", pdfErr);
-                        setErrorMsg(pdfErr.message || 'Failed to fetch PDF file');
-                        toast.error('Could not download PDF file');
-                    }
-
-                } else {
+                if (!foundInvoice) {
                     toast.error('Invoice not found');
                     navigate('/dashboard');
+                    return;
                 }
-            } catch (error) {
-                console.error(error);
-                toast.error('Error fetching invoice');
+
+                if (isMounted) {
+                    setInvoice(foundInvoice);
+                    setMappings({
+                        vendorName: foundInvoice.vendorName || '',
+                        invoiceDate: foundInvoice.extractedData?.invoiceDate || '',
+                        invoiceNumber: foundInvoice.extractedData?.invoiceNumber || '',
+                        totalAmount: foundInvoice.extractedData?.totalAmount || '',
+                        dueDate: foundInvoice.extractedData?.dueDate || ''
+                    });
+
+                    // Download PDF Blob
+                    try {
+                        const pdfRes = await api.get(`/invoices/${invoiceId}/pdf`, { responseType: 'blob' });
+                        createdBlobUrl = URL.createObjectURL(pdfRes.data);
+                        if (isMounted) setPdfUrl(createdBlobUrl);
+                    } catch (pdfErr) {
+                        console.error('PDF Fetch Error:', pdfErr);
+                        toast.error('Could not download PDF attachment');
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                toast.error('Failed to load invoice');
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
 
-        if (invoiceId) fetchInvoice();
+        if (invoiceId) fetchInvoiceData();
 
         return () => {
-            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-        }
+            isMounted = false;
+            if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
+        };
     }, [invoiceId, navigate]);
 
     const onDocumentLoadSuccess = ({ numPages }) => {
         setNumPages(numPages);
     };
 
-    const handleFieldSelect = (field) => {
-        setSelectedField(field);
-        toast(`Select value for ${field.replace(/([A-Z])/g, ' $1')}`, { icon: '👆' });
-    };
-
-    const handlePdfClick = (e) => {
-    };
-
-    const handleTextSelection = () => {
+    // Text Selection Event on PDF Canvas
+    const handleTextSelection = (e) => {
         if (!selectedField) return;
 
         const selection = window.getSelection();
         const text = selection.toString().trim();
 
         if (text) {
+            // Calculate selection bounding box relative to wrapper for visual pin
+            let relativeBox = null;
+            if (selection.rangeCount > 0 && pdfWrapperRef.current) {
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                const wrapperRect = pdfWrapperRef.current.getBoundingClientRect();
+                relativeBox = {
+                    top: rect.top - wrapperRect.top + pdfWrapperRef.current.scrollTop,
+                    left: rect.left - wrapperRect.left + pdfWrapperRef.current.scrollLeft,
+                    width: rect.width,
+                    height: rect.height,
+                    text: text
+                };
+            }
+
             setMappings(prev => ({
                 ...prev,
-                [selectedField]: { ...prev[selectedField], value: text }
+                [selectedField]: text
             }));
-            toast.success(`Captured "${text}" for ${selectedField.replace(/([A-Z])/g, ' $1')}`);
+
+            if (relativeBox) {
+                setHighlightedBoxes(prev => ({
+                    ...prev,
+                    [selectedField]: relativeBox
+                }));
+            }
+
+            const fieldLabel = FIELD_CONFIGS.find(f => f.key === selectedField)?.label || selectedField;
+            toast.success(`Mapped "${text}" to ${fieldLabel}`, { icon: '🎯' });
 
             selection.removeAllRanges();
-            setSelectedField(null);
+
+            // Auto-advance to next empty field for seamless workflow
+            const currentIndex = FIELD_CONFIGS.findIndex(f => f.key === selectedField);
+            const nextEmptyField = FIELD_CONFIGS.slice(currentIndex + 1).find(f => !mappings[f.key]);
+            if (nextEmptyField) {
+                setSelectedField(nextEmptyField.key);
+            }
         }
     };
 
-    const handleSave = async () => {
+    const handleSaveAndSync = async () => {
         setIsSaving(true);
         try {
             const payload = {
-                vendorName: mappings.vendorName.value,
+                vendorName: mappings.vendorName,
                 extractedData: {
-                    invoiceDate: mappings.invoiceDate.value,
-                    invoiceNumber: mappings.invoiceNumber.value,
-                    totalAmount: mappings.totalAmount.value,
-                    dueDate: mappings.dueDate.value
+                    invoiceDate: mappings.invoiceDate,
+                    invoiceNumber: mappings.invoiceNumber,
+                    totalAmount: mappings.totalAmount,
+                    dueDate: mappings.dueDate
                 }
             };
 
@@ -147,136 +203,364 @@ const VisualMapper = () => {
             if (response.data.warning) {
                 toast((t) => (
                     <div className="flex flex-col">
-                        <span className="font-bold text-yellow-600">Saved, but Sync Failed!</span>
-                        <span className="text-sm">{response.data.message.split('Failed: ')[1]}</span>
+                        <span className="font-bold text-amber-500">Saved, but Sheet Sync Failed!</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-300">
+                            {response.data.message?.split('Failed: ')[1] || 'Check your Google Sheet ID in settings.'}
+                        </span>
                     </div>
                 ), { icon: '⚠️', duration: 5000 });
             } else {
-                toast.success('Saved & Synced to Sheets!');
+                toast.success('Rules Learned & Synced to Google Sheet!', { icon: '🚀' });
             }
 
-            // Invalidate cache so Dashboard updates
             queryClient.invalidateQueries(['invoices']);
-
             navigate('/dashboard');
         } catch (error) {
             console.error(error);
-            toast.error('Failed to save invoice');
+            toast.error(error.response?.data?.error || 'Failed to save rules');
         } finally {
             setIsSaving(false);
         }
     };
 
-    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-[#0B0F19] space-y-4">
+                <div className="w-10 h-10 border-3 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+                <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Loading Visual Coordinate Mapper...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className={`flex h-screen overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
-            <div
-                className={`w-2/3 h-full relative flex flex-col items-center p-4 overflow-y-auto ${darkMode ? 'bg-gray-700' : 'bg-gray-600'}`}
-                ref={pdfWrapperRef}
-                onMouseUp={handleTextSelection}
-                style={{ cursor: selectedField ? 'crosshair' : 'text' }}
-            >
-                <div className="mb-4 bg-white rounded shadow p-2 flex gap-4 sticky top-0 z-10 w-fit text-gray-900">
-                    <button onClick={() => setScale(s => Math.max(0.5, s - 0.1))} className="px-2 font-bold hover:bg-gray-100 rounded">-</button>
-                    <span className="font-mono min-w-[3rem] text-center">{Math.round(scale * 100)}%</span>
-                    <button onClick={() => setScale(s => Math.min(2.0, s + 0.1))} className="px-2 font-bold hover:bg-gray-100 rounded">+</button>
-                </div>
+        <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-[#0B0F19]">
+            <Toaster position="top-center" />
 
-                {pdfUrl && (
-                    <Document
-                        file={pdfUrl}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        onLoadError={(error) => toast.error(`PDF Error: ${error.message}`)}
-                        className="shadow-2xl"
-                        loading={<div className="text-white">Loading PDF...</div>}
-                        error={<div className="text-red-300">Failed to load PDF.</div>}
+            {/* Top Workspace Bar */}
+            <header className="h-14 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-white/[0.08] px-4 flex items-center justify-between z-30 shrink-0">
+                {/* Back & Breadcrumb */}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition"
+                        title="Back to Dashboard"
                     >
-                        {Array.from(new Array(numPages), (el, index) => (
-                            <div key={`page_${index + 1}`} className="mb-4 relative" onClick={handlePdfClick}>
-                                <Page
-                                    pageNumber={index + 1}
-                                    scale={scale}
-                                    renderTextLayer={true}
-                                    renderAnnotationLayer={false}
-                                />
-                            </div>
-                        ))}
-                    </Document>
-                )}
-            </div>
-
-            <div className={`w-1/3 h-full p-6 shadow-xl z-20 overflow-y-auto transition-colors duration-300 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Review Invoice</h2>
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                        {invoice?.status}
+                        <ArrowLeft className="w-4 h-4" />
+                    </button>
+                    <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.08]" />
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">Review & Learn:</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                            {mappings.vendorName || invoice?.senderEmail || 'Invoice'}
+                        </span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                        Spatial OCR
                     </span>
                 </div>
 
-                <p className={`text-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Vendor: <span className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{invoice?.senderEmail || 'Unknown'}</span>
-                </p>
-
-                <div className="space-y-4">
-                    {Object.keys(mappings).map((key) => (
-                        <div
-                            key={key}
-                            onClick={() => handleFieldSelect(key)}
-                            className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedField === key
-                                ? 'border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50 dark:bg-indigo-900/30 dark:ring-indigo-700'
-                                : `border-gray-200 hover:border-indigo-300 ${darkMode ? 'border-gray-700 hover:border-indigo-500' : ''}`
-                                }`}
-                        >
-                            <div className="flex justify-between items-center mb-1">
-                                <span className={`font-semibold capitalize ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                {/* PDF Viewport Controls */}
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-white/[0.04] border border-gray-200/60 dark:border-white/[0.06]">
+                    <button
+                        onClick={() => setScale(s => Math.max(0.6, s - 0.1))}
+                        className="p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-white/[0.08] transition"
+                        title="Zoom Out"
+                    >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-xs font-mono px-2 text-gray-700 dark:text-gray-300 min-w-[3.5rem] text-center select-none">
+                        {Math.round(scale * 100)}%
+                    </span>
+                    <button
+                        onClick={() => setScale(s => Math.min(2.2, s + 0.1))}
+                        className="p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-white/[0.08] transition"
+                        title="Zoom In"
+                    >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.1] mx-0.5" />
+                    <button
+                        onClick={() => setScale(1.0)}
+                        className="p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-white/[0.08] transition text-xs font-mono"
+                        title="Reset 100%"
+                    >
+                        1:1
+                    </button>
+                    <button
+                        onClick={() => setScale(1.35)}
+                        className="p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-white/[0.08] transition"
+                        title="Fit to Viewport"
+                    >
+                        <Maximize2 className="w-3.5 h-3.5" />
+                    </button>
+                    {numPages && numPages > 1 && (
+                        <>
+                            <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.1] mx-0.5" />
+                            <div className="flex items-center gap-1 text-xs">
+                                <button
+                                    onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                                    disabled={pageNumber <= 1}
+                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="font-mono text-gray-500">
+                                    {pageNumber}/{numPages}
                                 </span>
-                                {mappings[key].value && (
-                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                                        Mapped
-                                    </span>
-                                )}
+                                <button
+                                    onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
+                                    disabled={pageNumber >= numPages}
+                                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                >
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
                             </div>
-                            <div className={`text-sm italic truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {mappings[key].value || 'Click to select from PDF...'}
-                            </div>
-                        </div>
-                    ))}
+                        </>
+                    )}
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 space-y-3">
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className={`w-full flex justify-center items-center py-3 px-4 rounded-lg shadow-lg font-bold text-white transition-all
-                            ${isSaving
-                                ? 'bg-indigo-400 cursor-wait'
-                                : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-xl cursor-pointer'}`}
-                    >
-                        {isSaving ? (
-                            <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </>
-                        ) : 'Save Rules & Process'}
-                    </button>
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className={`w-full border font-semibold py-3 px-4 rounded-lg transition-colors cursor-pointer
-                            ${darkMode
-                                ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                    >
-                        Cancel
-                    </button>
+                {/* Right Header Status */}
+                <div className="flex items-center gap-2">
+                    <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Dual-Core Coordinate Engine
+                    </span>
+                </div>
+            </header>
+
+            {/* Split-Screen Main Workstation */}
+            <div className="flex-1 flex overflow-hidden">
+                {/* LEFT PANE: Interactive PDF Canvas Stage (65% width) */}
+                <div
+                    ref={pdfWrapperRef}
+                    onMouseUp={handleTextSelection}
+                    className="flex-1 relative overflow-auto flex flex-col items-center p-6 bg-slate-900/95 dark:bg-[#070A11] transition-colors"
+                    style={{ cursor: selectedField ? 'crosshair' : 'default' }}
+                >
+                    {/* Instructional HUD Banner */}
+                    <div className="sticky top-0 z-20 mb-4 px-4 py-2 rounded-xl bg-white/90 dark:bg-[#111827]/90 backdrop-blur-md border border-gray-200 dark:border-white/[0.1] shadow-lg flex items-center gap-2.5 text-xs">
+                        <Crosshair className="w-4 h-4 text-violet-500 shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300">
+                            Active Target:{' '}
+                            <strong className="text-violet-600 dark:text-violet-400 uppercase">
+                                {FIELD_CONFIGS.find(f => f.key === selectedField)?.label}
+                            </strong>
+                            {' — '}Highlight text on the PDF to learn its coordinate bounding box.
+                        </span>
+                    </div>
+
+                    {/* PDF Document Container */}
+                    {pdfUrl ? (
+                        <div className="relative shadow-2xl rounded-lg overflow-hidden border border-white/10">
+                            <Document
+                                file={pdfUrl}
+                                onLoadSuccess={onDocumentLoadSuccess}
+                                onLoadError={(err) => toast.error(`PDF Render Error: ${err.message}`)}
+                                loading={
+                                    <div className="p-20 text-center text-xs font-mono text-gray-400 flex flex-col items-center gap-2">
+                                        <div className="w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+                                        Rendering Vector PDF Canvas...
+                                    </div>
+                                }
+                                error={
+                                    <div className="p-16 text-center text-xs text-rose-400">
+                                        Failed to load invoice PDF document.
+                                    </div>
+                                }
+                            >
+                                <Page
+                                    pageNumber={pageNumber}
+                                    scale={scale}
+                                    renderTextLayer={true}
+                                    renderAnnotationLayer={false}
+                                    className="react-pdf-page-container"
+                                />
+                            </Document>
+                        </div>
+                    ) : (
+                        <div className="p-20 text-center text-xs font-mono text-gray-400">
+                            No PDF attached to this invoice.
+                        </div>
+                    )}
+                </div>
+
+                {/* RIGHT PANE: Precision Field Inspector & Live Sheet Mirror (35% width, min 380px) */}
+                <div className="w-[420px] shrink-0 h-full bg-white dark:bg-[#111827] border-l border-gray-200 dark:border-white/[0.08] flex flex-col overflow-hidden shadow-xl z-20">
+                    {/* Panel Header */}
+                    <div className="p-5 border-b border-gray-200 dark:border-white/[0.08] shrink-0">
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                Field Mapping Inspector
+                                <Sparkles className="w-4 h-4 text-violet-500" />
+                            </h2>
+                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                {invoice?.status === 'processed' ? 'Verified' : 'Human Review'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Sender Email:{' '}
+                            <span className="font-mono font-medium text-gray-700 dark:text-gray-300">
+                                {invoice?.senderEmail || 'N/A'}
+                            </span>
+                        </p>
+                    </div>
+
+                    {/* Scrollable Fields List */}
+                    <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                        <div className="space-y-3">
+                            {FIELD_CONFIGS.map(config => {
+                                const isSelected = selectedField === config.key;
+                                const value = mappings[config.key];
+                                const hasValue = Boolean(value && value.trim());
+
+                                return (
+                                    <div
+                                        key={config.key}
+                                        onClick={() => setSelectedField(config.key)}
+                                        onMouseEnter={() => setHoveredField(config.key)}
+                                        onMouseLeave={() => setHoveredField(null)}
+                                        className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                                            isSelected
+                                                ? 'border-violet-500 ring-2 ring-violet-500/20 bg-violet-50/50 dark:bg-violet-950/20'
+                                                : hasValue
+                                                ? 'border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#1E293B]/40 hover:border-gray-300 dark:hover:border-white/[0.15]'
+                                                : 'border-dashed border-gray-300 dark:border-white/[0.1] bg-gray-50/50 dark:bg-white/[0.01]'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <config.icon className={`w-4 h-4 ${isSelected ? 'text-violet-500' : 'text-gray-400'}`} />
+                                                <span className="text-xs font-semibold text-gray-900 dark:text-gray-200">
+                                                    {config.label}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                {hasValue ? (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                        <CheckCircle className="w-3 h-3" />
+                                                        Mapped
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] text-gray-400 italic">
+                                                        Click & Highlight
+                                                    </span>
+                                                )}
+                                                {isSelected && (
+                                                    <span className="w-2 h-2 rounded-full bg-violet-500 animate-ping" />
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Direct Input Value */}
+                                        <div className="relative mt-2">
+                                            <input
+                                                type="text"
+                                                value={value || ''}
+                                                onChange={(e) => setMappings({ ...mappings, [config.key]: e.target.value })}
+                                                placeholder={config.placeholder}
+                                                className={`w-full px-3 py-1.5 text-xs rounded-lg border outline-none transition ${
+                                                    config.isMono ? 'font-mono' : ''
+                                                } bg-white dark:bg-[#0B0F19] text-gray-900 dark:text-gray-100 ${
+                                                    isSelected
+                                                        ? 'border-violet-400 focus:ring-1 focus:ring-violet-400'
+                                                        : 'border-gray-200 dark:border-white/[0.08]'
+                                                }`}
+                                            />
+                                            {hasValue && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMappings({ ...mappings, [config.key]: '' });
+                                                    }}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                                    title="Clear field"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Live "Google Sheet Row Mirror" Preview Card */}
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/5 border border-emerald-500/20 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Table className="w-3.5 h-3.5" />
+                                    Google Sheet Live Mirror
+                                </span>
+                                <span className="text-[10px] font-mono text-gray-400">Sheet1!A:E</span>
+                            </div>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5">
+                                The exact row that will be committed to your connected spreadsheet:
+                            </p>
+
+                            {/* Spreadsheet Table Preview */}
+                            <div className="overflow-x-auto rounded-lg border border-emerald-500/30 bg-white dark:bg-[#0B0F19]">
+                                <table className="w-full text-left text-[11px]">
+                                    <thead className="bg-emerald-600 text-white font-medium text-[10px]">
+                                        <tr>
+                                            <th className="px-2 py-1.5">Vendor</th>
+                                            <th className="px-2 py-1.5">Invoice #</th>
+                                            <th className="px-2 py-1.5">Date</th>
+                                            <th className="px-2 py-1.5">Amount</th>
+                                            <th className="px-2 py-1.5">Due</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-x divide-gray-100 dark:divide-white/[0.04] font-mono text-gray-800 dark:text-gray-200">
+                                        <tr className="divide-x divide-gray-100 dark:divide-white/[0.04]">
+                                            <td className="px-2 py-1.5 font-sans font-medium truncate max-w-[80px]">
+                                                {mappings.vendorName || '—'}
+                                            </td>
+                                            <td className="px-2 py-1.5 truncate max-w-[70px]">
+                                                {mappings.invoiceNumber || '—'}
+                                            </td>
+                                            <td className="px-2 py-1.5">
+                                                {mappings.invoiceDate || '—'}
+                                            </td>
+                                            <td className="px-2 py-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                                                ${mappings.totalAmount || '0.00'}
+                                            </td>
+                                            <td className="px-2 py-1.5">
+                                                {mappings.dueDate || '—'}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Action Footer */}
+                    <div className="p-5 border-t border-gray-200 dark:border-white/[0.08] bg-gray-50/50 dark:bg-[#111827] space-y-2 shrink-0">
+                        <button
+                            onClick={handleSaveAndSync}
+                            disabled={isSaving}
+                            className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/25 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                    <span>Learning Coordinates & Syncing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4" />
+                                    <span>Learn Coordinates & Sync to Sheets</span>
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className="w-full py-2 px-4 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 font-medium text-xs transition"
+                        >
+                            Cancel & Return to Dashboard
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
-};
-
-export default VisualMapper;
+}

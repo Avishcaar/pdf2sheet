@@ -27,3 +27,5 @@ build/
 # Temporary files
 tmp/
 temp/
+uploads/
+*.pdf

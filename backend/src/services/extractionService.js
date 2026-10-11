@@ -71,10 +71,11 @@ const cleanExtractedValue = (key, rawValue) => {
     }
 
     if (key === 'invoiceNumber') {
-        val = val.replace(/^#\s*/, '')
+        val = val.replace(/^[:\s#]+/, '')
             .replace(/Invoice\s*#\s*/i, '')
             .replace(/Inv\s*#\s*/i, '')
             .replace(/Invoice\s*No\.?\s*/i, '')
+            .replace(/^[:\s#]+/, '')
             .trim();
     }
 
@@ -82,6 +83,7 @@ const cleanExtractedValue = (key, rawValue) => {
         val = val.replace(/Invoice\s*Date[:\s]*/gi, '')
             .replace(/Due\s*Date[:\s]*/gi, '')
             .replace(/Date[:\s]*/gi, '')
+            .replace(/^[:\s]+/, '')
             .trim();
         const std = normalizeDate(val);
         if (std && std.match(/^\d{2}-\d{2}-\d{4}$/)) {
