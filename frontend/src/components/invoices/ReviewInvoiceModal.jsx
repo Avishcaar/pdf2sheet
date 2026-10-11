@@ -80,7 +80,7 @@ export default function ReviewInvoiceModal({ invoice, isOpen, onClose, onUpdate 
                             type="text"
                             value={formData.vendorName}
                             onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })}
-                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none transition text-gray-900 dark:text-white"
+                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 outline-none transition text-gray-900 dark:text-white"
                             placeholder="Enter proper vendor name"
                             required
                         />
@@ -95,7 +95,7 @@ export default function ReviewInvoiceModal({ invoice, isOpen, onClose, onUpdate 
                                 type="text"
                                 value={formData.invoiceNumber}
                                 onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none transition text-gray-900 dark:text-white"
+                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 outline-none transition text-gray-900 dark:text-white"
                             />
                         </div>
                         <div>
@@ -106,7 +106,7 @@ export default function ReviewInvoiceModal({ invoice, isOpen, onClose, onUpdate 
                                 type="text"
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none transition text-gray-900 dark:text-white"
+                                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 outline-none transition text-gray-900 dark:text-white"
                                 placeholder="MM/DD/YYYY"
                             />
                         </div>
@@ -120,7 +120,7 @@ export default function ReviewInvoiceModal({ invoice, isOpen, onClose, onUpdate 
                             type="text"
                             value={formData.total}
                             onChange={(e) => setFormData({ ...formData, total: e.target.value })}
-                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none transition text-gray-900 dark:text-white font-mono"
+                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 outline-none transition text-gray-900 dark:text-white font-mono"
                         />
                     </div>
 
@@ -135,7 +135,7 @@ export default function ReviewInvoiceModal({ invoice, isOpen, onClose, onUpdate 
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-6 py-2 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-6 py-2 bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? 'Processing...' : 'Approve & Sync'}
                         </button>
