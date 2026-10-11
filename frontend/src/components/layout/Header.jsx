@@ -1,31 +1,36 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { Sun, Moon, ChevronDown, LogOut, User } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Header() {
+    const { darkMode, toggleDarkMode } = useTheme();
     const navigate = useNavigate();
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
+    const location = useLocation();
+
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [user, setUser] = useState(null);
 
     useEffect(() => {
         const userData = localStorage.getItem('user');
         if (userData) {
-            setUser(JSON.parse(userData));
+            try {
+                setUser(JSON.parse(userData));
+            } catch (e) {
+                console.error('Failed to parse user from localStorage', e);
+            }
         }
     }, []);
 
-    useEffect(() => {
-        localStorage.setItem('darkMode', darkMode);
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        window.dispatchEvent(new Event('storage'));
-    }, [darkMode]);
+    const titleMap = {
+        '/dashboard': 'Overview',
+        '/vendors': 'Vendors',
+        '/settings': 'Settings',
+        '/simulate': 'Simulator',
+    };
+
+    const pageTitle = titleMap[location.pathname] || '';
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -35,62 +40,54 @@ export default function Header() {
     };
 
     return (
-        <header className={`h-16 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b flex items-center justify-between px-6 transition-colors duration-300`}>
+        <header className="h-16 border-b border-gray-200 dark:border-white/[0.06] flex items-center justify-between px-6 bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl">
             <div>
-                <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {window.location.pathname === '/dashboard' && 'Dashboard'}
-                    {window.location.pathname === '/vendors' && 'Vendors'}
-                    {window.location.pathname === '/settings' && 'Settings'}
-                </h2>
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{pageTitle}</h1>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
                 <button
-                    onClick={() => setDarkMode(!darkMode)}
-                    className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-100 text-gray-600'} hover:scale-110 transition-transform duration-200`}
-                    aria-label="Toggle dark mode"
+                    onClick={toggleDarkMode}
+                    className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                    aria-label="Toggle theme"
                 >
                     {darkMode ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
+                        <Sun className="w-[18px] h-[18px]" />
                     ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
+                        <Moon className="w-[18px] h-[18px]" />
                     )}
                 </button>
 
                 <div className="relative">
                     <button
                         onClick={() => setShowUserMenu(!showUserMenu)}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-xl ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition`}
+                        className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
                     >
-                        <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-xs font-semibold">
                             {user?.firstName?.charAt(0) || 'U'}
                         </div>
-                        <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             {user?.firstName || 'User'}
                         </span>
-                        <svg className={`w-4 h-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
                     </button>
 
                     {showUserMenu && (
-                        <div className={`absolute right-0 mt-2 w-56 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-xl shadow-xl border z-50`}>
-                            <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{user?.firstName} {user?.lastName}</p>
-                                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user?.email}</p>
+                        <div className="absolute right-0 top-full mt-1 w-56 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#1E293B] shadow-lg shadow-black/[0.08] dark:shadow-black/30 z-50 py-1 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                    {user?.email || 'No email'}
+                                </p>
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className={`w-full text-left px-4 py-3 ${darkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-red-50'} transition flex items-center gap-2`}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                Logout
+                                <LogOut className="w-4 h-4" />
+                                <span>Sign Out</span>
                             </button>
                         </div>
                     )}

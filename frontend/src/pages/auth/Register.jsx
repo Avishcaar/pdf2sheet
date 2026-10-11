@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import toast, { Toaster } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Register() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
+    const { darkMode, toggleDarkMode } = useTheme();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -16,14 +15,6 @@ export default function Register() {
         password: ''
     });
 
-    useEffect(() => {
-        localStorage.setItem('darkMode', darkMode);
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [darkMode]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -51,11 +42,11 @@ export default function Register() {
     };
 
     return (
-        <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 via-purple-950 to-gray-900' : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'} flex items-center justify-center p-4 transition-colors duration-300`}>
+        <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#0B0F19]' : 'bg-gradient-to-br from-slate-50 via-violet-50/40 to-slate-100'} flex items-center justify-center p-4 transition-colors duration-300`}>
             <Toaster position="top-center" />
 
             <button
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={toggleDarkMode}
                 className={`fixed top-6 right-6 p-3 rounded-full ${darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-white text-gray-600'} shadow-lg hover:scale-110 transition-transform duration-200 z-50`}
                 aria-label="Toggle dark mode"
             >
@@ -73,7 +64,7 @@ export default function Register() {
             <div className={`w-full max-w-5xl ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-2xl overflow-hidden grid md:grid-cols-2 transition-colors duration-300`}>
                 <div className="p-12 flex flex-col justify-center">
                     <div className="mb-8">
-                        <div className="text-pink-500 font-bold text-sm mb-2">PDF2SHEET</div>
+                        <div className="text-violet-500 font-bold text-sm mb-2">PDF2SHEET</div>
                         <p className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} text-sm mb-1`}>Create your account</p>
                         <h1 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Sign Up</h1>
                     </div>
@@ -90,7 +81,7 @@ export default function Register() {
                                     value={formData.firstName}
                                     onChange={handleChange}
                                     required
-                                    className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition`}
+                                    className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition`}
                                     placeholder="first name"
                                 />
                             </div>
@@ -104,7 +95,7 @@ export default function Register() {
                                     value={formData.lastName}
                                     onChange={handleChange}
                                     required
-                                    className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition`}
+                                    className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition`}
                                     placeholder="last name"
                                 />
                             </div>
@@ -120,7 +111,7 @@ export default function Register() {
                                 value={formData.email}
                                 onChange={handleChange}
                                 required
-                                className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition`}
+                                className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition`}
                                 placeholder="name@domain.com"
                             />
                         </div>
@@ -135,7 +126,7 @@ export default function Register() {
                                 value={formData.password}
                                 onChange={handleChange}
                                 required
-                                className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition`}
+                                className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition`}
                                 placeholder="••••••••"
                             />
                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Must be at least 6 characters</p>
@@ -144,7 +135,7 @@ export default function Register() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 px-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-3.5 px-4 bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? 'Creating account...' : 'SIGN UP'}
                             {!loading && (
@@ -158,18 +149,18 @@ export default function Register() {
                     <div className="mt-8 text-center">
                         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             Already have an account?{' '}
-                            <Link to="/login" className="text-pink-500 hover:text-pink-600 font-semibold transition">
+                            <Link to="/login" className="text-violet-500 hover:text-violet-600 font-semibold transition">
                                 Sign in
                             </Link>
                         </p>
                     </div>
                 </div>
 
-                <div className={`hidden md:flex ${darkMode ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' : 'bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100'} items-center justify-center p-12 relative overflow-hidden transition-colors duration-300`}>
-                    <div className={`absolute inset-0 ${darkMode ? 'bg-gradient-to-br from-purple-900/30 via-pink-900/30 to-blue-900/30' : 'bg-gradient-to-br from-blue-200/30 via-purple-200/30 to-pink-200/30'}`}></div>
+                <div className={`hidden md:flex ${darkMode ? 'bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#1E293B]' : 'bg-gradient-to-br from-violet-100/50 via-slate-100 to-violet-50'} items-center justify-center p-12 relative overflow-hidden transition-colors duration-300`}>
+                    <div className={`absolute inset-0 ${darkMode ? 'bg-gradient-to-br from-violet-900/20 via-transparent to-cyan-900/10' : 'bg-gradient-to-br from-violet-200/20 via-transparent to-blue-200/20'}`}></div>
                     <div className="relative z-10 text-center">
                         <div className={`w-80 h-80 mx-auto mb-6 ${darkMode ? 'bg-gray-800/20' : 'bg-white/20'} backdrop-blur-sm rounded-3xl flex items-center justify-center`}>
-                            <svg className={`w-64 h-64 ${darkMode ? 'text-pink-400' : 'text-pink-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className={`w-64 h-64 ${darkMode ? 'text-violet-400' : 'text-violet-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>

@@ -1,42 +1,105 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════
+   PDF2Sheet Auto — Design System Tokens
+   Fintech-grade dark-first design. Obsidian backgrounds, 
+   precise typography, and electric accents.
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+    --color-surface-0: #ffffff;
+    --color-surface-1: #f8fafc;
+    --color-surface-2: #f1f5f9;
+    --color-surface-3: #e2e8f0;
+
+    --color-dark-0: #0B0F19;
+    --color-dark-1: #111827;
+    --color-dark-2: #1E293B;
+    --color-dark-3: #334155;
+}
+
+/* ── Base ──────────────────────────────────────────────────── */
+
+:root {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    color: #1e293b;
+    background-color: #f8fafc;
+}
+
+.dark {
+    color: #e2e8f0;
+    background-color: #0B0F19;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+/* ── Selection ─────────────────────────────────────────────── */
+
+::selection {
+    background: rgba(139, 92, 246, 0.3);
+    color: inherit;
+}
+
+.dark ::selection {
+    background: rgba(139, 92, 246, 0.4);
+}
+
+/* ── React-PDF overrides ──────────────────────────────────── */
 
 .react-pdf__Page__textContent {
     user-select: text;
     cursor: text;
 }
-::selection {
-    background: rgba(255, 255, 0, 0.5);
-    color: black;
-}
+
 .react-pdf__Page__textContent span::selection {
-    background: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.4);
 }
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ── Scrollbar (subtle, fintech-grade) ────────────────────── */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* ── Focus ring utility ───────────────────────────────────── */
+
+.focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900;
 }

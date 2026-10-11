@@ -1,17 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function ProfileSection({ user }) {
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setDarkMode(localStorage.getItem('darkMode') === 'true');
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    const { darkMode } = useTheme();
 
     return (
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 transition-colors duration-300`}>

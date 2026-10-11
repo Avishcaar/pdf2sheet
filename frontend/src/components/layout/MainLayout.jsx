@@ -1,23 +1,13 @@
 import { Outlet } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 export default function MainLayout() {
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setDarkMode(localStorage.getItem('darkMode') === 'true');
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    const { darkMode } = useTheme();
 
     return (
-        <div className={`flex h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}>
+        <div className="flex h-screen bg-gray-50 dark:bg-[#0B0F19] transition-colors duration-200">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header />

@@ -27,11 +27,11 @@ export default function GoogleAuthCallback() {
     }, [searchParams, navigate]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-950 flex items-center justify-center">
             <Toaster position="top-center" />
             <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div>
-                <p className="text-gray-600">Completing sign in...</p>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500 mb-4"></div>
+                <p className="text-gray-400 font-medium">Completing sign in...</p>
             </div>
         </div>
     );

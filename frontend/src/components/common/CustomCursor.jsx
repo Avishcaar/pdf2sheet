@@ -69,7 +69,7 @@ export default function CustomCursor() {
       className={cn(
         "pointer-events-none fixed top-0 left-0 z-[10000] rounded-full transition-all duration-300 ease-out",
         isHovering 
-          ? "w-12 h-12 bg-blue-500/10 border border-blue-500/50 backdrop-blur-[2px]" 
+          ? "w-12 h-12 bg-violet-500/10 border border-violet-500/40 backdrop-blur-[2px]" 
           : "w-6 h-6 border border-gray-400/50"
       )}
       style={{
