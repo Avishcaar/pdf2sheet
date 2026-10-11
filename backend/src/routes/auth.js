@@ -21,14 +21,13 @@ router.get('/google', (req, res) => {
 
     const scopes = [
         'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/spreadsheets'
+        'https://www.googleapis.com/auth/userinfo.email'
     ];
 
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: scopes,
-        prompt: 'consent'
+        prompt: 'select_account'
     });
 
     res.redirect(url);
@@ -57,12 +56,8 @@ router.get('/google/callback', async (req, res) => {
                 email: data.email,
                 firstName: data.given_name || 'User',
                 lastName: data.family_name || '',
-                password: Math.random().toString(36).slice(-12),
-                googleTokens: tokens
+                password: Math.random().toString(36).slice(-12)
             });
-        } else {
-            user.googleTokens = tokens;
-            await user.save();
         }
 
         const token = jwt.sign(

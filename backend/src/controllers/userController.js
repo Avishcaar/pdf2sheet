@@ -11,7 +11,7 @@ export const getUserProfile = async (req, res, next) => {
             });
         }
 
-        const hasGoogleConnection = !!user.googleAccessToken;
+        const hasGoogleConnection = !!user.googleAccessToken || !!(user.settings && user.settings.hasGoogleConnection);
 
         res.status(200).json({
             success: true,
