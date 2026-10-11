@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 
-const SimulateEmail = ({ onUploadSuccess, darkMode }) => {
+const SimulateEmail = ({ onUploadSuccess }) => {
+    const { darkMode } = useTheme();
     const [file, setFile] = useState(null);
     const [senderEmail, setSenderEmail] = useState('');
     const [status, setStatus] = useState('idle');

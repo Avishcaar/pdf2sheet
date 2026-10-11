@@ -1,24 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useAddVendor } from '../../hooks/useVendors';
 import FieldMappingRow from './FieldMappingRow';
 import toast from 'react-hot-toast';
 
 export default function AddVendorModal({ isOpen, onClose }) {
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
+    const { darkMode } = useTheme();
     const [vendorName, setVendorName] = useState('');
     const [senderEmail, setSenderEmail] = useState('');
     const [fieldMappings, setFieldMappings] = useState([]);
     const addVendor = useAddVendor();
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setDarkMode(localStorage.getItem('darkMode') === 'true');
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
 
     const addField = () => {
         setFieldMappings([...fieldMappings, { name: '', extractionRule: '', keywords: '' }]);
@@ -100,7 +91,7 @@ export default function AddVendorModal({ isOpen, onClose }) {
                             value={vendorName}
                             onChange={(e) => setVendorName(e.target.value)}
                             placeholder="e.g., ACME Corporation"
-                            className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 transition`}
+                            className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 transition`}
                             required
                         />
                     </div>
@@ -114,7 +105,7 @@ export default function AddVendorModal({ isOpen, onClose }) {
                             value={senderEmail}
                             onChange={(e) => setSenderEmail(e.target.value)}
                             placeholder="e.g., billing@acmecorp.com"
-                            className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 transition`}
+                            className={`w-full px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 transition`}
                         />
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
                             Email address from which this vendor sends invoices
@@ -129,7 +120,7 @@ export default function AddVendorModal({ isOpen, onClose }) {
                             <button
                                 type="button"
                                 onClick={addField}
-                                className={`text-sm ${darkMode ? 'text-pink-400 hover:text-pink-300' : 'text-pink-500 hover:text-pink-600'} font-medium transition flex items-center gap-1`}
+                                className={`text-sm ${darkMode ? 'text-violet-400 hover:text-violet-300' : 'text-violet-500 hover:text-violet-600'} font-medium transition flex items-center gap-1`}
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -162,7 +153,7 @@ export default function AddVendorModal({ isOpen, onClose }) {
                         <button
                             type="submit"
                             disabled={addVendor.isPending}
-                            className="flex-1 py-3 px-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 py-3 px-4 bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {addVendor.isPending ? 'Adding...' : 'Add Vendor'}
                         </button>

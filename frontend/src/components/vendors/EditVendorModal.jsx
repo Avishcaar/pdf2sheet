@@ -1,21 +1,16 @@
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useUpdateVendor, useDeleteVendor } from '../../hooks/useVendors';
 import toast from 'react-hot-toast';
 
 export default function EditVendorModal({ isOpen, onClose, vendor }) {
-    const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+    const { darkMode } = useTheme();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const updateVendor = useUpdateVendor();
     const deleteVendor = useDeleteVendor();
-
-    useEffect(() => {
-        const handleStorageChange = () => setDarkMode(localStorage.getItem('darkMode') === 'true');
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
 
     if (!isOpen || !vendor) return null;
 

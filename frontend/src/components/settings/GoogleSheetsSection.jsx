@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useUpdateSettings } from '../../hooks/useUser';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { 
+    Table, 
+    CheckCircle, 
+    AlertCircle, 
+    ExternalLink, 
+    Key, 
+    Sparkles, 
+    RefreshCw, 
+    LogOut,
+    Check
+} from 'lucide-react';
 
 export default function GoogleSheetsSection({ user }) {
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
+    const { darkMode } = useTheme();
     const [spreadsheetId, setSpreadsheetId] = useState('');
     const updateSettings = useUpdateSettings();
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setDarkMode(localStorage.getItem('darkMode') === 'true');
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
 
     useEffect(() => {
         if (user?.spreadsheetId) {
@@ -53,113 +55,138 @@ export default function GoogleSheetsSection({ user }) {
 
         try {
             await updateSettings.mutateAsync({ spreadsheetId });
-            toast.success('Spreadsheet ID saved successfully');
+            toast.success('Spreadsheet ID saved successfully', { icon: '💾' });
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to save spreadsheet ID');
         }
     };
 
-    const handleTestConnection = () => {
-        if (user?.hasGoogleConnection && spreadsheetId) {
-            toast.success('Connection test feature coming soon');
-        } else {
-            toast.error('Please connect Google Sheets and enter a spreadsheet ID first');
-        }
-    };
-
     return (
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 transition-colors duration-300`}>
-            <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-6`}>
-                Google Sheets Connection
-            </h2>
-
-            <div className="space-y-6">
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm space-y-6">
+            <div className="flex items-start justify-between">
                 <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
-                                Connection Status
-                            </label>
-                            {user?.hasGoogleConnection ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <span className={`text-lg font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                        Connected
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                                    <span className={`text-lg font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        Not Connected
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {user?.hasGoogleConnection ? (
-                            <button
-                                onClick={handleDisconnect}
-                                className={`px-4 py-2 ${darkMode ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-600'} rounded-xl transition font-medium`}
-                            >
-                                Disconnect
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleConnect}
-                                className="px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-105 flex items-center gap-2"
-                            >
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                </svg>
-                                Connect Google Sheets
-                            </button>
-                        )}
-                    </div>
-
-                    {user?.googleEmail && (
-                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                            Connected as: <span className="font-medium">{user.googleEmail}</span>
-                        </p>
-                    )}
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Table className="w-5 h-5 text-emerald-500" />
+                        Google Sheets Cloud Integration
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Two-way live synchronization of extracted financial invoice rows to your Google Drive.
+                    </p>
                 </div>
 
-                <div className={`pt-6 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                        Spreadsheet ID
-                    </label>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mb-3`}>
-                        Get this from your Google Sheets URL: https://docs.google.com/spreadsheets/d/<strong>SPREADSHEET_ID</strong>/edit
-                    </p>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={spreadsheetId}
-                            onChange={(e) => setSpreadsheetId(e.target.value)}
-                            placeholder="e.g., 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-                            className={`flex-1 px-4 py-3 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 transition font-mono text-sm`}
-                            disabled={!user?.hasGoogleConnection}
-                        />
-                        <button
-                            onClick={handleSaveSpreadsheet}
-                            disabled={!user?.hasGoogleConnection || updateSettings.isPending}
-                            className="px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        >
-                            {updateSettings.isPending ? 'Saving...' : 'Save'}
-                        </button>
-                    </div>
+                {user?.hasGoogleConnection ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Active OAuth2
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/[0.08]">
+                        Not Linked
+                    </span>
+                )}
+            </div>
 
-                    {user?.hasGoogleConnection && (
+            {/* OAuth Connection Status Banner */}
+            <div className="p-4 rounded-xl bg-gray-50 dark:bg-[#0B0F19] border border-gray-200 dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                        OAuth2 Authorization
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {user?.hasGoogleConnection
+                            ? `Connected as ${user.googleEmail || 'Google Account'}. Token refresh active.`
+                            : 'Connect your Google account to grant write access to your spreadsheets.'}
+                    </p>
+                </div>
+
+                <div>
+                    {user?.hasGoogleConnection ? (
                         <button
-                            onClick={handleTestConnection}
-                            className={`mt-3 px-4 py-2 ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'} rounded-xl transition font-medium text-sm`}
+                            onClick={handleDisconnect}
+                            className="px-3.5 py-1.5 rounded-xl border border-red-500/20 hover:bg-red-500/10 text-red-500 text-xs font-medium transition"
                         >
-                            Test Connection
+                            Disconnect Account
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleConnect}
+                            className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-medium text-xs shadow-md shadow-violet-500/20 transition flex items-center gap-2 cursor-pointer"
+                        >
+                            Connect Google Sheets
+                            <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                     )}
+                </div>
+            </div>
+
+            {/* Target Spreadsheet Configuration */}
+            <div className="space-y-3">
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Target Spreadsheet ID
+                </label>
+                <p className="text-[11px] text-gray-400">
+                    Extracted from your spreadsheet URL: <code>https://docs.google.com/spreadsheets/d/<strong>YOUR_SPREADSHEET_ID</strong>/edit</code>
+                </p>
+
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={spreadsheetId}
+                        onChange={(e) => setSpreadsheetId(e.target.value)}
+                        placeholder="e.g., 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                        className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-white dark:bg-[#0B0F19] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white font-mono placeholder:text-gray-400 outline-none focus:border-violet-500 transition"
+                    />
+                    <button
+                        onClick={handleSaveSpreadsheet}
+                        disabled={updateSettings.isPending}
+                        className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs shadow-md shadow-violet-500/20 transition cursor-pointer disabled:opacity-50"
+                    >
+                        {updateSettings.isPending ? 'Saving...' : 'Save ID'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Interactive Virtual Spreadsheet Preview Mirror */}
+            <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/5 border border-emerald-500/20 space-y-3">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        In-App Virtual Google Sheet Mirror
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-400">Target Tab: Sheet1</span>
+                </div>
+
+                <div className="overflow-x-auto rounded-lg border border-emerald-500/30 bg-white dark:bg-[#0B0F19] shadow-inner">
+                    <table className="w-full text-left text-xs">
+                        <thead className="bg-emerald-600 text-white font-medium text-[11px]">
+                            <tr>
+                                <th className="px-3 py-2">Col A: Vendor</th>
+                                <th className="px-3 py-2">Col B: Invoice #</th>
+                                <th className="px-3 py-2">Col C: Date</th>
+                                <th className="px-3 py-2">Col D: Total ($)</th>
+                                <th className="px-3 py-2">Col E: Due Date</th>
+                                <th className="px-3 py-2">Col F: Ingest Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-white/[0.04] text-[11px] font-mono text-gray-700 dark:text-gray-300">
+                            <tr className="hover:bg-emerald-500/5 transition">
+                                <td className="px-3 py-2 font-sans font-medium text-gray-900 dark:text-gray-100">Stripe Payments</td>
+                                <td className="px-3 py-2">INV-STRIPE-8842</td>
+                                <td className="px-3 py-2">12-01-2026</td>
+                                <td className="px-3 py-2 font-semibold text-emerald-600 dark:text-emerald-400">$1,420.00</td>
+                                <td className="px-3 py-2">26-01-2026</td>
+                                <td className="px-3 py-2 text-emerald-500 flex items-center gap-1"><Check className="w-3 h-3" /> Auto-Synced</td>
+                            </tr>
+                            <tr className="hover:bg-emerald-500/5 transition">
+                                <td className="px-3 py-2 font-sans font-medium text-gray-900 dark:text-gray-100">AWS Cloud Services</td>
+                                <td className="px-3 py-2">INV-AWS-2026-90</td>
+                                <td className="px-3 py-2">15-01-2026</td>
+                                <td className="px-3 py-2 font-semibold text-emerald-600 dark:text-emerald-400">$2,845.50</td>
+                                <td className="px-3 py-2">30-01-2026</td>
+                                <td className="px-3 py-2 text-emerald-500 flex items-center gap-1"><Check className="w-3 h-3" /> Auto-Synced</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

@@ -3,20 +3,11 @@ import { useUserProfile } from '../../hooks/useUser';
 import ProfileSection from '../../components/settings/ProfileSection';
 import GoogleSheetsSection from '../../components/settings/GoogleSheetsSection';
 import toast, { Toaster } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Settings() {
     const { data: user, isLoading, error } = useUserProfile();
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setDarkMode(localStorage.getItem('darkMode') === 'true');
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    const { darkMode } = useTheme();
 
     useEffect(() => {
         if (error) {
@@ -28,7 +19,7 @@ export default function Settings() {
         return (
             <div className="max-w-4xl">
                 <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div>
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500 mb-4"></div>
                     <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Loading settings...</p>
                 </div>
             </div>

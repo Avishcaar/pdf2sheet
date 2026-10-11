@@ -1,17 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function FieldMappingRow({ field, onUpdate, onRemove }) {
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('darkMode') === 'true';
-    });
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setDarkMode(localStorage.getItem('darkMode') === 'true');
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    const { darkMode } = useTheme();
 
     const fieldOptions = [
         { value: 'invoiceNumber', label: 'Invoice Number' },
@@ -39,7 +29,7 @@ export default function FieldMappingRow({ field, onUpdate, onRemove }) {
             <select
                 value={field.name || ''}
                 onChange={(e) => onUpdate({ ...field, name: e.target.value })}
-                className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 transition`}
+                className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 transition`}
             >
                 <option value="">Select field...</option>
                 {fieldOptions.map(opt => (
@@ -56,7 +46,7 @@ export default function FieldMappingRow({ field, onUpdate, onRemove }) {
                     value={field.extractionRule || ''}
                     onChange={(e) => onUpdate({ ...field, extractionRule: e.target.value })}
                     placeholder="e.g., Invoice\s*#?\s*([A-Z0-9-]+)"
-                    className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 transition font-mono text-sm`}
+                    className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 transition font-mono text-sm`}
                 />
             </div>
 
@@ -69,7 +59,7 @@ export default function FieldMappingRow({ field, onUpdate, onRemove }) {
                     value={field.keywords || ''}
                     onChange={(e) => onUpdate({ ...field, keywords: e.target.value })}
                     placeholder="e.g., invoice, inv#, invoice no"
-                    className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 transition`}
+                    className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 transition`}
                 />
                 <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
                     Keywords are used as fallback if regex fails
