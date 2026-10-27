@@ -6,48 +6,52 @@ export const authenticateToken = async (req, res, next) => {
         const authHeader = req.headers['authorization'];
         const token = (authHeader && authHeader.split(' ')[1]) || req.query?.token;
 
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                error: 'Access token required'
-            });
+        // Resume / Portfolio Guest Mode:
+        // If no token is provided, guest token is used, or x-guest-mode header is set,
+        // seamlessly bind to the primary demo user (test@test.com) so interviewers have 100% full access.
+        if (!token || token === 'guest-demo-token' || req.headers['x-guest-mode'] === 'true') {
+            const demoUser = await User.findOne({ email: 'test@test.com' }) || await User.findOne();
+            if (demoUser) {
+                req.user = {
+                    userId: demoUser._id,
+                    email: demoUser.email
+                };
+                return next();
+            }
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decoded.userId);
 
-        const user = await User.findById(decoded.userId);
-
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                error: 'User not found'
-            });
+            if (user) {
+                req.user = {
+                    userId: user._id,
+                    email: user.email
+                };
+                return next();
+            }
+        } catch (jwtError) {
+            // If token is expired or invalid, fallback to demo user so recruiters are never blocked
+            const demoUser = await User.findOne({ email: 'test@test.com' }) || await User.findOne();
+            if (demoUser) {
+                req.user = {
+                    userId: demoUser._id,
+                    email: demoUser.email
+                };
+                return next();
+            }
+            throw jwtError;
         }
 
-        req.user = {
-            userId: user._id,
-            email: user.email
-        };
-
-        next();
-    } catch (error) {
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(403).json({
-                success: false,
-                error: 'Invalid token'
-            });
-        }
-
-        if (error.name === 'TokenExpiredError') {
-            return res.status(403).json({
-                success: false,
-                error: 'Token expired'
-            });
-        }
-
-        return res.status(500).json({
+        return res.status(401).json({
             success: false,
-            error: 'Authentication failed'
+            error: 'User not found'
+        });
+    } catch (error) {
+        return res.status(403).json({
+            success: false,
+            error: error.message || 'Authentication failed'
         });
     }
 };

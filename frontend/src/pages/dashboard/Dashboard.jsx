@@ -8,6 +8,7 @@ import ConfirmationModal from '../../components/common/ConfirmationModal';
 import InvoiceDrawer from '../../components/invoices/InvoiceDrawer';
 import SpendAnalytics from '../../components/dashboard/SpendAnalytics';
 import WorkstationScrollHero from '../../components/dashboard/WorkstationScrollHero';
+import RecruiterGuideBanner from '../../components/dashboard/RecruiterGuideBanner';
 import CfoBriefModal from '../../components/dashboard/CfoBriefModal';
 import SmartOmnibar from '../../components/dashboard/SmartOmnibar';
 import { exportToCsv, exportToJson } from '../../utils/exportUtils';
@@ -81,6 +82,7 @@ export default function Dashboard() {
     // Direct Upload state
     const [isUploadingRandom, setIsUploadingRandom] = useState(false);
     const [isSyncingEmail, setIsSyncingEmail] = useState(false);
+    const [isIngestingSample, setIsIngestingSample] = useState(false);
 
     // KPI Metrics (Normalized to baseCurrency)
     const stats = useMemo(() => {
@@ -351,6 +353,34 @@ export default function Dashboard() {
         }
     };
 
+    const handleIngestSample = async (samplePath = '/samples/aws-invoice.pdf', sampleName = 'aws-invoice.pdf', vendor = 'AWS Cloud') => {
+        setIsIngestingSample(true);
+        const toastId = toast.loading(`Loading sample "${vendor}" and analyzing with Groq LPU AI...`);
+        try {
+            const res = await fetch(samplePath);
+            const blob = await res.blob();
+            const file = new File([blob], sampleName, { type: 'application/pdf' });
+            const formData = new FormData();
+            formData.append('invoice', file);
+            formData.append('vendorName', vendor);
+
+            const uploadRes = await api.post('/email/test-upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            toast.success(
+                `🎉 Ingested: ${uploadRes.data.data?.vendorName || vendor} (${formatCurrency(uploadRes.data.data?.extractedData?.totalAmount || '0.00', uploadRes.data.data?.extractedData?.currency || 'USD')})`,
+                { id: toastId, duration: 5000 }
+            );
+            refetch();
+        } catch (err) {
+            console.error('Sample ingestion error:', err);
+            toast.error(err.response?.data?.error || 'Failed to analyze sample invoice', { id: toastId });
+        } finally {
+            setIsIngestingSample(false);
+        }
+    };
+
     const handleSyncEmail = async (forceParam = false) => {
         const force = typeof forceParam === 'boolean' ? forceParam : false;
         setIsSyncingEmail(true);
@@ -395,11 +425,20 @@ export default function Dashboard() {
         <div className="w-full space-y-4 relative pb-16">
             <Toaster position="top-center" />
 
+            {/* Recruiter & Interviewer Welcome / Quick Action Guide */}
+            <RecruiterGuideBanner 
+                onIngestSample={handleIngestSample}
+                isIngesting={isIngestingSample}
+                onOpenCfoBrief={handleGenerateCfoBrief}
+            />
+
             {/* Interactive Multi-Layer Scroll-Driven Workstation */}
             <WorkstationScrollHero
                 onUploadClick={() => document.getElementById('direct-upload-input')?.click()}
                 onSyncEmailClick={() => handleSyncEmail(false)}
                 isSyncingEmail={isSyncingEmail}
+                onIngestSampleClick={handleIngestSample}
+                isIngestingSample={isIngestingSample}
                 invoicesCount={invoices?.length || 0}
                 syncRate={stats.syncRate}
             />
@@ -433,6 +472,17 @@ export default function Dashboard() {
                             </button>
                         ))}
                     </div>
+
+                    {/* Quick Demo Ingest Button for Reviewers */}
+                    <button
+                        onClick={() => handleIngestSample('/samples/aws-invoice.pdf', 'aws-invoice.pdf', 'AWS Cloud')}
+                        disabled={isIngestingSample}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                        title="1-Click Demo Ingestion (AWS Cloud)"
+                    >
+                        <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                        <span>{isIngestingSample ? 'Ingesting...' : '⚡ Ingest Sample'}</span>
+                    </button>
 
                     {/* Direct Upload Any Invoice */}
                     <label className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium ${

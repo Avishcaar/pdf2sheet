@@ -1,10 +1,18 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 export default function RequireAuth() {
-    const token = localStorage.getItem('token');
+    let token = localStorage.getItem('token');
 
     if (!token) {
-        return <Navigate to="/login" replace />;
+        // Automatically initialize guest reviewer session for recruiters & interviewers
+        localStorage.setItem('token', 'guest-demo-token');
+        localStorage.setItem('user', JSON.stringify({
+            _id: '6ac54b3cfe90e970a92ea608',
+            email: 'guest@pdf2sheet.com',
+            firstName: 'Guest',
+            lastName: 'Reviewer',
+            role: 'demo'
+        }));
     }
 
     return <Outlet />;

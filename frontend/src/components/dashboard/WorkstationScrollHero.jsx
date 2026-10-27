@@ -26,6 +26,8 @@ export default function WorkstationScrollHero({
   onUploadClick, 
   onSyncEmailClick, 
   isSyncingEmail, 
+  onIngestSampleClick,
+  isIngestingSample,
   invoicesCount = 0, 
   syncRate = 100 
 }) {
@@ -582,6 +584,16 @@ export default function WorkstationScrollHero({
             >
               <Mail className="w-3.5 h-3.5 text-indigo-400" />
               <span>{isSyncingEmail ? 'Scanning...' : 'Sync Email'}</span>
+            </button>
+
+            <button
+              onClick={() => onIngestSampleClick && onIngestSampleClick('/samples/aws-invoice.pdf', 'aws-invoice.pdf', 'AWS Cloud')}
+              disabled={isIngestingSample}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-mono text-amber-300 font-bold transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+              title="1-Click Demo Ingestion (AWS Cloud)"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+              <span>{isIngestingSample ? 'Analyzing...' : 'Sample Ingest'}</span>
             </button>
 
             <button
