@@ -97,18 +97,19 @@ export default function WorkstationScrollHero({
     const cx = originX - rect.left;
     const cy = originY - rect.top;
 
-    for (let i = 0; i < 40; i++) {
+    const palette = ['#34d399', '#22d3ee', '#818cf8', '#fbbf24', '#ffffff'];
+    for (let i = 0; i < 55; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 2.5 + Math.random() * 5.0;
+      const speed = 2.0 + Math.random() * 6.5;
       sparksRef.current.push({
         x: cx,
         y: cy,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.5,
-        r: 1.2 + Math.random() * 2.2,
+        vy: Math.sin(angle) * speed - 2.0,
+        r: 1.2 + Math.random() * 2.8,
         alpha: 1,
-        decay: 0.02 + Math.random() * 0.035,
-        color
+        decay: 0.015 + Math.random() * 0.03,
+        color: palette[Math.floor(Math.random() * palette.length)]
       });
     }
   };
@@ -290,196 +291,208 @@ export default function WorkstationScrollHero({
       targetP = clamp(-relTop / span);
 
       // Fluid Momentum Lerp
-      smoothP = lerp(smoothP, targetP, 0.10);
+      smoothP = lerp(smoothP, targetP, 0.12);
       if (Math.abs(smoothP - targetP) < 0.0001) smoothP = targetP;
 
-      // Mouse Parallax Physics
+      // Mouse Parallax Physics with smooth damping
       mouse.current.x = lerp(mouse.current.x, mouse.current.targetX, 0.08);
       mouse.current.y = lerp(mouse.current.y, mouse.current.targetY, 0.08);
 
       const p = smoothP;
 
-      if (Math.abs(p - lastSmoothP) > 0.0001 || Math.abs(mouse.current.x - mouse.current.targetX) > 0.001) {
-        lastSmoothP = p;
+      // Unpin ease at the very bottom into the table (seamless transition)
+      const unpinEase = easeOutCubic(range(p, 0.92, 1.0));
+      const exitY = -unpinEase * 36;
+      const globalCardOpacity = 1 - range(p, 0.95, 1.0);
 
-        // Telemetry Counters
-        if (progressPercentRef.current) {
-          progressPercentRef.current.textContent = `${Math.round(p * 100)}%`;
-        }
-        if (latencyRef.current) {
-          const l = Math.max(110, Math.round(280 - p * 170));
-          latencyRef.current.textContent = `${l}ms`;
-        }
-        if (lpuRateRef.current) {
-          const rate = p > 0.22 ? Math.round(740 + p * 80) : 0;
-          lpuRateRef.current.textContent = `${rate} T/s`;
-        }
+      // 0. Stage 3D Gyroscopic Perspective Tilt
+      if (stageRef.current) {
+        const tiltX = -mouse.current.y * 4.5;
+        const tiltY = mouse.current.x * 5.5;
+        stageRef.current.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+      }
 
-        const exit = easeOutCubic(range(p, 0.78, 1.0));
-        const exitY = -exit * 70;
+      // Telemetry Counters
+      const roundedP = Math.round(p * 100);
+      if (progressPercentRef.current && progressPercentRef.current._lastVal !== roundedP) {
+        progressPercentRef.current._lastVal = roundedP;
+        progressPercentRef.current.textContent = `${roundedP}%`;
+      }
+      const l = p < 0.18 ? 280 : Math.max(110, Math.round(280 - (p - 0.18) * 230));
+      if (latencyRef.current && latencyRef.current._lastVal !== l) {
+        latencyRef.current._lastVal = l;
+        latencyRef.current.textContent = `${l}ms`;
+      }
+      const rate = p > 0.22 ? Math.min(750, Math.round(420 + (p - 0.22) * 580)) : (p > 0.08 ? 240 : 0);
+      if (lpuRateRef.current && lpuRateRef.current._lastVal !== rate) {
+        lpuRateRef.current._lastVal = rate;
+        lpuRateRef.current.textContent = `${rate} T/s`;
+      }
 
-        // 1. Master Workstation Background (Desk, Operator, Monitor & Room)
-        if (roomBgRef.current) {
-          const bgParallaxY = lerp(0, -25, p) + exitY * 0.5;
-          const bgScale = lerp(1.04, 1.0, easeOutCubic(range(p, 0, 0.4)));
-          const mouseBgX = mouse.current.x * 6;
-          const mouseBgY = mouse.current.y * 6;
-          roomBgRef.current.style.transform = `translate3d(${mouseBgX}px, ${bgParallaxY + mouseBgY}px, 0) scale(${bgScale})`;
-        }
+      // 1. Master Workstation Background (Desk, Operator, Monitor & Room)
+      if (roomBgRef.current) {
+        const bgParallaxY = lerp(0, -18, p) + exitY * 0.4;
+        const bgScale = lerp(1.03, 1.0, easeOutCubic(range(p, 0, 0.35)));
+        const mouseBgX = mouse.current.x * 5;
+        const mouseBgY = mouse.current.y * 5;
+        roomBgRef.current.style.transform = `translate3d(${mouseBgX}px, ${bgParallaxY + mouseBgY}px, 0) scale(${bgScale})`;
+      }
 
-        // 2. Active Computer Monitor Screen & Hologram Light Beam Cone
-        const screenPower = easeOutCubic(range(p, 0.18, 0.45));
-        if (monitorGlowRef.current) {
-          monitorGlowRef.current.style.opacity = String(screenPower * 0.85);
-        }
-        if (monitorScreenRef.current) {
-          monitorScreenRef.current.style.opacity = String(screenPower);
-        }
-        if (holoBeamRef.current) {
-          const beamActive = range(p, 0.22, 0.75);
-          holoBeamRef.current.style.opacity = String(beamActive * 0.55);
-        }
+      // 2. Active Computer Monitor Screen & Hologram Light Beam Cone
+      const screenPower = easeOutCubic(range(p, 0.10, 0.35));
+      if (monitorGlowRef.current) {
+        monitorGlowRef.current.style.opacity = String(screenPower * 0.85);
+      }
+      if (monitorScreenRef.current) {
+        monitorScreenRef.current.style.opacity = String(screenPower);
+      }
+      if (holoBeamRef.current) {
+        const beamIn = easeOutCubic(range(p, 0.14, 0.36));
+        const beamShimmer = 0.50 + Math.sin(time * 0.004) * 0.08;
+        holoBeamRef.current.style.opacity = String(beamIn * beamShimmer * globalCardOpacity);
+      }
 
-        // 3. Top-Left Illustration: Hand presenting Raw Invoice (card_doc_2)
-        // Floats in from the top-left on scroll start (p in 0.04 to 0.45)
-        if (cardHandRef.current) {
-          const handInflow = easeOutCubic(range(p, 0.04, 0.32));
-          const handX = lerp(-60, 0, handInflow) + mouse.current.x * 16;
-          const handY = lerp(-30, 0, handInflow) + Math.sin(time * 0.002) * 5 + exitY * 0.7;
-          const handRot = lerp(-12, -4, handInflow) + mouse.current.x * 6;
-          const handScale = lerp(0.88, 1.0, handInflow);
-          const handOpacity = range(p, 0.03, 0.15) * (1 - range(p, 0.82, 0.96));
+      // 3. Top-Left Illustration: Hand Presenting Raw Invoice (card_doc_2)
+      // Visible right from start (01 · INTAKE), gently settles in
+      if (cardHandRef.current) {
+        const handInflow = easeOutCubic(range(p, 0.0, 0.22));
+        const handX = lerp(-20, 0, handInflow) + mouse.current.x * 14;
+        const handY = lerp(-10, 0, handInflow) + Math.sin(time * 0.0018) * 6 + exitY * 0.7;
+        const handRot = lerp(-8, -3, handInflow) + mouse.current.x * 4 + Math.sin(time * 0.0013) * 1.5;
+        const handScale = lerp(0.96, 1.0, handInflow);
+        const handOpacity = globalCardOpacity;
 
-          cardHandRef.current.style.transform = `perspective(1000px) translate3d(${handX}px, ${handY}px, 0) rotate(${handRot}deg) scale(${handScale})`;
-          cardHandRef.current.style.opacity = String(handOpacity);
-        }
+        cardHandRef.current.style.transform = `perspective(1000px) translate3d(${handX}px, ${handY}px, 0) rotate(${handRot}deg) scale(${handScale})`;
+        cardHandRef.current.style.opacity = String(handOpacity);
+      }
 
-        // 4. Lower-Left Card: Invoice with Dollar Coin & Optical Laser Scan (card_doc_1)
-        // Floats into lower-left directly in path of monitor beam (p in 0.16 to 0.70)
-        if (cardScanRef.current) {
-          const scanInflow = easeOutCubic(range(p, 0.16, 0.40));
-          const scanX = lerp(-50, 0, scanInflow) + mouse.current.x * 18;
-          const scanY = lerp(35, 0, scanInflow) + Math.sin(time * 0.0022 + 1.0) * 5 + exitY * 0.8;
-          const scanRot = lerp(8, 2, scanInflow) - mouse.current.y * 6;
-          const scanScale = lerp(0.90, 1.0, scanInflow);
-          const scanOpacity = range(p, 0.12, 0.22) * (1 - range(p, 0.84, 0.96));
+      // 4. Lower-Left Card: Optical Laser Scan & Valuation (card_doc_1)
+      // Floats into lower-left directly in path of monitor beam (p in 0.08 to 0.32)
+      if (cardScanRef.current) {
+        const scanInflow = easeOutCubic(range(p, 0.08, 0.32));
+        const scanX = lerp(-50, 0, scanInflow) + mouse.current.x * 16;
+        const scanY = lerp(35, 0, scanInflow) + Math.sin(time * 0.0022 + 1.2) * 5 + exitY * 0.8;
+        const scanRot = lerp(8, 2, scanInflow) - mouse.current.y * 6 + Math.cos(time * 0.0015) * 1.2;
+        const scanScale = lerp(0.92, 1.0, scanInflow);
+        const scanOpacity = range(p, 0.05, 0.18) * globalCardOpacity;
 
-          cardScanRef.current.style.transform = `perspective(1000px) translate3d(${scanX}px, ${scanY}px, 0) rotateX(${scanRot}deg) scale(${scanScale})`;
-          cardScanRef.current.style.opacity = String(scanOpacity);
-        }
+        cardScanRef.current.style.transform = `perspective(1000px) translate3d(${scanX}px, ${scanY}px, 0) rotateX(${scanRot}deg) scale(${scanScale})`;
+        cardScanRef.current.style.opacity = String(scanOpacity);
+      }
 
-        // Laser Scan Bar on cardScanRef
-        if (laserRef.current && laserBeamRef.current) {
-          const laserSweep = easeOutCubic(range(p, 0.24, 0.64));
-          const laserOpacity = range(p, 0.22, 0.28) * (1 - range(p, 0.64, 0.72));
+      // Laser Scan Bar on cardScanRef
+      if (laserRef.current && laserBeamRef.current) {
+        const laserSweep = easeOutCubic(range(p, 0.20, 0.58));
+        const laserOpacity = range(p, 0.18, 0.24) * (1 - range(p, 0.62, 0.70));
 
-          laserRef.current.style.top = `${laserSweep * 100}%`;
-          laserRef.current.style.opacity = String(laserOpacity);
+        laserRef.current.style.top = `${laserSweep * 100}%`;
+        laserRef.current.style.opacity = String(laserOpacity);
 
-          laserBeamRef.current.style.height = `${laserSweep * 100}%`;
-          laserBeamRef.current.style.opacity = String(laserOpacity * 0.65);
-        }
+        laserBeamRef.current.style.height = `${laserSweep * 100}%`;
+        laserBeamRef.current.style.opacity = String(laserOpacity * 0.55);
+      }
 
-        // Bounding Boxes on cardScanRef
-        if (boxVendorRef.current) {
-          const vA = easeOutCubic(range(p, 0.26, 0.42));
-          boxVendorRef.current.style.borderColor = vA > 0.1 ? '#34d399' : 'rgba(255, 255, 255, 0.1)';
-          boxVendorRef.current.style.backgroundColor = vA > 0.1 ? 'rgba(52, 211, 153, 0.12)' : 'transparent';
-        }
-        if (boxTotalRef.current) {
-          const tA = easeOutCubic(range(p, 0.46, 0.62));
-          boxTotalRef.current.style.borderColor = tA > 0.1 ? '#c084fc' : 'rgba(255, 255, 255, 0.1)';
-          boxTotalRef.current.style.backgroundColor = tA > 0.1 ? 'rgba(192, 132, 252, 0.14)' : 'transparent';
-        }
+      // Bounding Boxes on cardScanRef
+      if (boxVendorRef.current) {
+        boxVendorRef.current.style.borderColor = p >= 0.26 ? '#34d399' : 'rgba(255, 255, 255, 0.12)';
+        boxVendorRef.current.style.backgroundColor = p >= 0.26 ? 'rgba(52, 211, 153, 0.14)' : 'transparent';
+        boxVendorRef.current.style.boxShadow = (p >= 0.26 && p < 0.44) ? '0 0 16px rgba(52, 211, 153, 0.45)' : 'none';
+      }
+      if (boxTotalRef.current) {
+        boxTotalRef.current.style.borderColor = p >= 0.42 ? '#c084fc' : 'rgba(255, 255, 255, 0.12)';
+        boxTotalRef.current.style.backgroundColor = p >= 0.42 ? 'rgba(192, 132, 252, 0.16)' : 'transparent';
+        boxTotalRef.current.style.boxShadow = (p >= 0.42 && p < 0.62) ? '0 0 16px rgba(192, 132, 252, 0.45)' : 'none';
+      }
 
-        // SVG Data Conduits (cardScanRef -> Monitor Screen)
-        const progVendor = range(p, 0.28, 0.50);
-        updateConduit(pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, monitorScreenRef.current, progVendor, '#34d399');
+      // SVG Data Conduits (cardScanRef -> Monitor Screen)
+      const progVendor = range(p, 0.26, 0.48);
+      updateConduit(pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, monitorScreenRef.current, progVendor, '#34d399');
 
-        const progTotal = range(p, 0.48, 0.68);
-        updateConduit(pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, monitorScreenRef.current, progTotal, '#c084fc');
+      const progTotal = range(p, 0.42, 0.64);
+      updateConduit(pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, monitorScreenRef.current, progTotal, '#c084fc');
 
-        // 5. Top-Right Illustration: Verified Invoice with Green Checkmark (card_doc_3)
-        // Floats into top-right on reconciliation (p in 0.44 to 0.90)
-        if (cardVerifiedRef.current) {
-          const verInflow = easeOutCubic(range(p, 0.44, 0.68));
-          const verBounce = Math.sin(verInflow * Math.PI) * 6;
-          const verX = lerp(60, 0, verInflow) + mouse.current.x * 16;
-          const verY = lerp(-25, 0, verInflow) + verBounce + Math.sin(time * 0.0025 + 1.8) * 5 + exitY * 0.7;
-          const verRot = lerp(12, 4, verInflow) - mouse.current.x * 6;
-          const verScale = lerp(0.88, 1.0, verInflow);
-          const verOpacity = range(p, 0.40, 0.50) * (1 - range(p, 0.85, 0.98));
+      // 5. Lower-Right Terminal: Holographic HUD Telemetry Window
+      if (hudTerminalRef.current) {
+        const hudIn = easeOutCubic(range(p, 0.06, 0.26));
+        const hudX = lerp(45, 0, hudIn) - mouse.current.x * 10;
+        const hudY = lerp(20, 0, hudIn) + Math.sin(time * 0.0016 + 3.8) * 3 + exitY * 0.75;
+        const hudOpacity = range(p, 0.04, 0.14) * globalCardOpacity;
 
-          cardVerifiedRef.current.style.transform = `perspective(1000px) translate3d(${verX}px, ${verY}px, 0) rotate(${verRot}deg) scale(${verScale})`;
-          cardVerifiedRef.current.style.opacity = String(verOpacity);
+        hudTerminalRef.current.style.transform = `translate3d(${hudX}px, ${hudY}px, 0)`;
+        hudTerminalRef.current.style.opacity = String(hudOpacity);
 
-          if (verInflow > 0.92 && !sparksTriggered && cardVerifiedRef.current) {
-            sparksTriggered = true;
-            const r = cardVerifiedRef.current.getBoundingClientRect();
-            triggerImpactSparks(r.left + r.width * 0.7, r.top + r.height * 0.7, '#34d399');
-          } else if (verInflow < 0.2) {
-            sparksTriggered = false;
-          }
-        }
-
-        // 6. Lower-Right Terminal: Holographic HUD Telemetry Window
-        // Sits docked on the lower right (p in 0.16 to 0.96)
-        if (hudTerminalRef.current) {
-          const hudIn = easeOutCubic(range(p, 0.16, 0.40));
-          const hudX = lerp(50, 0, hudIn) - mouse.current.x * 10;
-          const hudY = lerp(25, 0, hudIn) + exitY * 0.75;
-          const hudOpacity = range(p, 0.14, 0.26) * (1 - range(p, 0.84, 0.96));
-
-          hudTerminalRef.current.style.transform = `translate3d(${hudX}px, ${hudY}px, 0)`;
-          hudTerminalRef.current.style.opacity = String(hudOpacity);
-
-          // Reveal JSON Lines progressively
-          const jsonLines = hudTerminalRef.current.querySelectorAll('.hud-json-line');
-          jsonLines.forEach((line, idx) => {
-            const threshold = 0.24 + idx * 0.08;
-            if (p >= threshold) {
-              line.style.opacity = '1';
-              line.style.transform = 'translate3d(0, 0, 0)';
-            } else {
-              line.style.opacity = '0.2';
-              line.style.transform = 'translate3d(10px, 0, 0)';
-            }
-          });
-        }
-
-        // Terminal Badge
-        if (terminalBadgeRef.current) {
-          if (p < 0.20) {
-            terminalBadgeRef.current.textContent = 'STANDBY · AWAITING INFLOW';
-            terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700';
-          } else if (p < 0.65) {
-            terminalBadgeRef.current.textContent = 'GROQ LPU · OPTICAL RECONCILIATION';
-            terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/35 animate-pulse';
+        // Reveal JSON Lines progressively with crisp glow
+        const jsonLines = hudTerminalRef.current.querySelectorAll('.hud-json-line');
+        jsonLines.forEach((line, idx) => {
+          const threshold = 0.26 + idx * 0.09;
+          if (p >= threshold) {
+            line.style.opacity = '1';
+            line.style.transform = 'translate3d(0, 0, 0)';
+            line.style.filter = 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.25))';
           } else {
-            terminalBadgeRef.current.textContent = 'RECONCILED · LEDGER COMMITTED';
-            terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/35';
+            line.style.opacity = '0.2';
+            line.style.transform = 'translate3d(8px, 0, 0)';
+            line.style.filter = 'none';
           }
-        }
+        });
+      }
 
-        // 7. Ejection Group (Committed Ledger Row ready to drop into table)
-        if (ejectGroupRef.current) {
-          const ejProgress = easeOutCubic(range(p, 0.70, 0.94));
-          const ejOpacity = range(p, 0.68, 0.76) * (1 - range(p, 0.96, 1.0));
-          const ejY = lerp(-25, 45, ejProgress);
-          ejectGroupRef.current.style.opacity = String(ejOpacity);
-          ejectGroupRef.current.style.transform = `translate3d(0, ${ejY}px, 0) scale(${lerp(0.96, 1.0, ejProgress)})`;
+      // Terminal Badge
+      if (terminalBadgeRef.current) {
+        if (p < 0.24) {
+          terminalBadgeRef.current.textContent = 'STANDBY · AWAITING INFLOW';
+          terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700';
+        } else if (p < 0.66) {
+          terminalBadgeRef.current.textContent = 'GROQ LPU · 750 T/s OPTICAL SCAN';
+          terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/35 animate-pulse';
+        } else {
+          terminalBadgeRef.current.textContent = 'RECONCILED · LEDGER COMMITTED';
+          terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/35 shadow-[0_0_12px_rgba(52,211,153,0.3)]';
         }
+      }
 
-        // 8. Downstream Handover Beam to Table (p > 0.82)
-        if (downstreamBeamRef.current) {
-          const beamOp = range(p, 0.82, 0.92) * (1 - range(p, 0.97, 1.0));
-          downstreamBeamRef.current.style.opacity = String(beamOp);
-        }
+      // 6. Top-Right Illustration: Verified Invoice with Green Checkmark (card_doc_3)
+      if (cardVerifiedRef.current) {
+        const verInflow = easeOutCubic(range(p, 0.56, 0.76));
+        const verBounce = Math.sin(verInflow * Math.PI) * 7;
+        const verX = lerp(55, 0, verInflow) + mouse.current.x * 14;
+        const verY = lerp(-25, 0, verInflow) + verBounce + Math.sin(time * 0.0020 + 2.5) * 5 + exitY * 0.7;
+        const verRot = lerp(12, 3, verInflow) - mouse.current.x * 5 + Math.sin(time * 0.0015) * 1.5;
+        const verScale = lerp(0.88, 1.0, verInflow);
+        const verOpacity = range(p, 0.52, 0.64) * globalCardOpacity;
 
-        // 9. Scroll indicator fade out
-        if (scrollIndicatorRef.current) {
-          scrollIndicatorRef.current.style.opacity = String(1 - range(p, 0.72, 0.88));
+        cardVerifiedRef.current.style.transform = `perspective(1000px) translate3d(${verX}px, ${verY}px, 0) rotate(${verRot}deg) scale(${verScale})`;
+        cardVerifiedRef.current.style.opacity = String(verOpacity);
+
+        // Celebration spark burst on verification snap
+        if (p >= 0.68 && !sparksTriggered && cardVerifiedRef.current) {
+          sparksTriggered = true;
+          const r = cardVerifiedRef.current.getBoundingClientRect();
+          triggerImpactSparks(r.left + r.width * 0.6, r.top + r.height * 0.5, '#34d399');
+          triggerImpactSparks(r.left + r.width * 0.6, r.top + r.height * 0.5, '#38bdf8');
+        } else if (p < 0.52) {
+          sparksTriggered = false;
         }
+      }
+
+      // 7. Ejection Group (Committed Ledger Row ready to drop into table)
+      if (ejectGroupRef.current) {
+        const ejIn = easeOutCubic(range(p, 0.72, 0.88));
+        const ejOpacity = range(p, 0.70, 0.78) * (1 - range(p, 0.95, 1.0));
+        const ejY = lerp(-15, 0, ejIn);
+        ejectGroupRef.current.style.opacity = String(ejOpacity);
+        ejectGroupRef.current.style.transform = `translate3d(0, ${ejY}px, 0) scale(${lerp(0.94, 1.0, ejIn)})`;
+      }
+
+      // 8. Downstream Handover Beam to Table (p > 0.84)
+      if (downstreamBeamRef.current) {
+        const beamOp = range(p, 0.84, 0.94) * (1 - range(p, 0.98, 1.0));
+        downstreamBeamRef.current.style.opacity = String(beamOp);
+      }
+
+      // 9. Scroll indicator button highlight
+      if (scrollIndicatorRef.current) {
+        scrollIndicatorRef.current.style.opacity = String(1 - range(p, 0.88, 0.98));
       }
 
       animId = requestAnimationFrame(frameLoop);
@@ -593,7 +606,7 @@ export default function WorkstationScrollHero({
         <div className="relative flex-1 flex items-center justify-center px-4 sm:px-8 lg:px-12 py-4 z-10 overflow-hidden">
           
           {/* STAGE CONTAINER (Strictly registered 944:704 aspect ratio box) */}
-          <div ref={stageRef} className="relative aspect-[944/704] h-full max-h-full max-w-full flex items-center justify-center">
+          <div ref={stageRef} className="relative aspect-[944/704] h-full max-h-full max-w-full flex items-center justify-center will-change-transform">
             
             {/* SVG OVERLAY: Volumetric Hologram Light Cone & Fiber Data Streams */}
             <svg
@@ -604,8 +617,8 @@ export default function WorkstationScrollHero({
             >
               <defs>
                 <linearGradient id="holoConeGrad" x1="100%" y1="50%" x2="0%" y2="50%">
-                  <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.4" />
-                  <stop offset="60%" stopColor="#818cf8" stopOpacity="0.15" />
+                  <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.45" />
+                  <stop offset="60%" stopColor="#818cf8" stopOpacity="0.2" />
                   <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
                 </linearGradient>
 
@@ -621,7 +634,7 @@ export default function WorkstationScrollHero({
               {/* Volumetric Hologram Light Cone projecting from monitor to floating scan invoice */}
               <polygon
                 ref={holoBeamRef}
-                points="450,330 140,430 140,640 450,390"
+                points="436,320 180,440 180,640 436,380"
                 fill="url(#holoConeGrad)"
                 style={{ opacity: 0 }}
               />
@@ -712,11 +725,11 @@ export default function WorkstationScrollHero({
             {/* LAYER 3 (ILLUSTRATION 2): Top-Left Hand Presenting Incoming Invoice (card_doc_2) */}
             <div
               ref={cardHandRef}
-              className="absolute left-[2%] sm:left-[3%] top-[3%] sm:top-[4%] w-32 sm:w-36 lg:w-42 z-26 pointer-events-none will-change-transform"
-              style={{ opacity: 0 }}
+              className="absolute left-[2%] sm:left-[3%] top-[3%] sm:top-[4%] w-32 sm:w-36 lg:w-42 z-26 pointer-events-auto cursor-pointer will-change-transform group"
+              style={{ opacity: 1 }}
             >
-              <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-full blur-xl opacity-60" />
+              <div className="relative transition-transform duration-300 group-hover:scale-105">
+                <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/25 to-indigo-500/25 rounded-full blur-xl opacity-60 group-hover:opacity-90 transition-opacity" />
                 <picture className="relative block w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]">
                   <source srcSet="/landing/card_doc_2.webp" type="image/webp" />
                   <img
@@ -726,8 +739,9 @@ export default function WorkstationScrollHero({
                     loading="eager"
                   />
                 </picture>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-[#0C101D]/90 border border-blue-400/40 text-[9px] font-mono text-blue-300 font-bold whitespace-nowrap shadow-lg">
-                  01 · INTAKE
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-[#0C101D]/90 border border-blue-400/40 text-[9px] font-mono text-blue-300 font-bold whitespace-nowrap shadow-lg flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
+                  <span>01 · INTAKE</span>
                 </div>
               </div>
             </div>
@@ -735,10 +749,10 @@ export default function WorkstationScrollHero({
             {/* LAYER 4 (ILLUSTRATION 1): Lower-Left Optical Scanning & Valuation (card_doc_1) */}
             <div
               ref={cardScanRef}
-              className="absolute left-[2%] sm:left-[3%] bottom-[5%] sm:bottom-[7%] w-44 sm:w-50 lg:w-56 z-28 pointer-events-none will-change-transform"
+              className="absolute left-[2%] sm:left-[3%] bottom-[5%] sm:bottom-[7%] w-44 sm:w-50 lg:w-56 z-28 pointer-events-auto cursor-pointer will-change-transform group"
               style={{ opacity: 0 }}
             >
-              <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-white/20 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)] overflow-hidden">
+              <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-white/20 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)] overflow-hidden transition-all duration-300 group-hover:border-cyan-400/50">
                 {/* Illustration 1 Graphic with Laser Scan */}
                 <div className="relative w-full h-20 sm:h-24 mb-1.5 flex items-center justify-center overflow-hidden rounded-xl bg-black/40">
                   <picture className="h-full drop-shadow-md">
@@ -771,14 +785,14 @@ export default function WorkstationScrollHero({
                 <div className="space-y-1 font-mono text-[9px] sm:text-[10px]">
                   <div
                     ref={boxVendorRef}
-                    className="p-1 rounded border border-dashed border-white/10 transition-colors flex justify-between items-center"
+                    className="p-1 rounded border border-dashed border-white/10 transition-all duration-200 flex justify-between items-center"
                   >
                     <span className="text-slate-400 text-[8px] sm:text-[9px]">VENDOR</span>
                     <span className="font-bold text-white text-[9px] sm:text-[10px] truncate">Acme Cloud Infra</span>
                   </div>
                   <div
                     ref={boxTotalRef}
-                    className="p-1 rounded border border-dashed border-white/10 transition-colors flex justify-between items-center"
+                    className="p-1 rounded border border-dashed border-white/10 transition-all duration-200 flex justify-between items-center"
                   >
                     <span className="text-slate-400 text-[8px] sm:text-[9px]">TOTAL</span>
                     <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">$4,850.00 USD</span>
@@ -786,7 +800,10 @@ export default function WorkstationScrollHero({
                 </div>
 
                 <div className="mt-1.5 pt-1 border-t border-white/10 flex justify-between items-center text-[8px] sm:text-[9px] font-mono text-cyan-300">
-                  <span>02 · GROQ LPU SCAN</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    02 · GROQ LPU SCAN
+                  </span>
                   <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-200">240ms</span>
                 </div>
               </div>
@@ -795,12 +812,12 @@ export default function WorkstationScrollHero({
             {/* LAYER 5 (ILLUSTRATION 3): Top-Right Reconciled Invoice with Green Checkmark (card_doc_3) */}
             <div
               ref={cardVerifiedRef}
-              className="absolute right-[2%] sm:right-[3%] top-[3%] sm:top-[4%] w-32 sm:w-38 lg:w-44 z-27 pointer-events-none will-change-transform"
+              className="absolute right-[2%] sm:right-[3%] top-[3%] sm:top-[4%] w-32 sm:w-38 lg:w-44 z-27 pointer-events-auto cursor-pointer will-change-transform group"
               style={{ opacity: 0 }}
             >
               <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/25 to-teal-500/20 rounded-full blur-xl opacity-75 animate-pulse" />
-                <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-emerald-500/40 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
+                <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/30 to-teal-500/25 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse" />
+                <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-emerald-500/40 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)] transition-transform duration-300 group-hover:scale-105">
                   <picture className="block w-full h-20 sm:h-24 mb-1.5 flex items-center justify-center drop-shadow-[0_15px_25px_rgba(52,211,153,0.35)]">
                     <source srcSet="/landing/card_doc_3.webp" type="image/webp" />
                     <img
@@ -811,8 +828,11 @@ export default function WorkstationScrollHero({
                     />
                   </picture>
                   <div className="flex items-center justify-between font-mono text-[9px] sm:text-[10px]">
-                    <span className="text-emerald-400 font-bold">03 · RECONCILED</span>
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/40 text-[8px] sm:text-[9px]">
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      03 · RECONCILED
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/40 text-[8px] sm:text-[9px] shadow-[0_0_8px_rgba(52,211,153,0.3)]">
                       100% MATCH
                     </span>
                   </div>
@@ -823,7 +843,7 @@ export default function WorkstationScrollHero({
             {/* LAYER 6: Lower-Right Holographic Extraction HUD Terminal */}
             <div
               ref={hudTerminalRef}
-              className="absolute right-[2%] sm:right-[3%] bottom-[5%] sm:bottom-[7%] w-56 sm:w-64 lg:w-72 z-29 pointer-events-none will-change-transform"
+              className="absolute right-[2%] sm:right-[3%] bottom-[5%] sm:bottom-[7%] w-56 sm:w-64 lg:w-72 z-29 pointer-events-auto will-change-transform"
               style={{ opacity: 0 }}
             >
               <div className="rounded-2xl border border-white/[0.12] bg-[#0A0D18]/95 backdrop-blur-xl shadow-2xl p-3.5 sm:p-4 font-mono text-xs">
