@@ -427,7 +427,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="w-full space-y-4 relative pb-16">
+        <div className="w-full max-w-7xl mx-auto space-y-6 relative pb-20">
             <Toaster position="top-center" />
 
             {/* Recruiter & Interviewer Welcome / Quick Action Guide */}

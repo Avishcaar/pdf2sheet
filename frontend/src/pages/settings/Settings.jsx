@@ -35,7 +35,7 @@ export default function Settings() {
 
     if (isLoading) {
         return (
-            <div className="max-w-4xl">
+            <div className="max-w-4xl mx-auto">
                 <div className="text-center py-12">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500 mb-4"></div>
                     <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Loading settings...</p>
@@ -45,7 +45,7 @@ export default function Settings() {
     }
 
     return (
-        <div className="max-w-4xl">
+        <div className="max-w-4xl mx-auto space-y-8 pb-16">
             <Toaster position="top-center" />
 
             <div className="mb-8">
