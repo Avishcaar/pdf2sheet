@@ -14,7 +14,8 @@ import {
   Database, 
   ShieldCheck,
   Zap,
-  ArrowRight
+  ArrowRight,
+  FileText
 } from 'lucide-react';
 import { clamp, easeOutCubic, lerp, range } from '../../utils/math';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -28,44 +29,20 @@ export default function WorkstationScrollHero({
 }) {
   const rootRef = useRef(null);
   const canvasRef = useRef(null);
-  const svgConduitRef = useRef(null);
   
-  // DOM element refs for direct style manipulation (60-120fps)
-  const intakeBadgeRef = useRef(null);
-  const docWrapperRef = useRef(null);
-  const docGleamRef = useRef(null);
-  const auditStampRef = useRef(null);
-
-  // Laser Optics & Waveform
+  // Parallax Layer Refs
+  const roomBgRef = useRef(null);
+  const monitorGlowRef = useRef(null);
+  const monitorScreenRef = useRef(null);
+  const manChairRef = useRef(null);
+  const invoice1Ref = useRef(null);
+  const invoice2Ref = useRef(null);
   const laserRef = useRef(null);
   const laserBeamRef = useRef(null);
-  const laserGridRef = useRef(null);
-  const laserWaveRef = useRef(null);
-  const laserCoordRef = useRef(null);
+  const auditStampRef = useRef(null);
 
-  // Document Bounding Boxes
-  const boxVendorRef = useRef(null);
-  const boxMetaRef = useRef(null);
-  const boxItemsRef = useRef(null);
-  const boxTotalRef = useRef(null);
-
-  // Target lines in the JSON terminal
-  const jsonVendorRef = useRef(null);
-  const jsonMetaRef = useRef(null);
-  const jsonItemsRef = useRef(null);
-  const jsonTotalRef = useRef(null);
-
-  // SVG Data Conduit Paths & Traveling Photons
-  const pathVendorRef = useRef(null);
-  const pathMetaRef = useRef(null);
-  const pathItemsRef = useRef(null);
-  const pathTotalRef = useRef(null);
-  const photonVendorRef = useRef(null);
-  const photonMetaRef = useRef(null);
-  const photonItemsRef = useRef(null);
-  const photonTotalRef = useRef(null);
-
-  // Telemetry HUD Elements
+  // Holographic HUD & Terminal
+  const hudTerminalRef = useRef(null);
   const terminalBadgeRef = useRef(null);
   const lpuRateRef = useRef(null);
   const ejectGroupRef = useRef(null);
@@ -77,11 +54,11 @@ export default function WorkstationScrollHero({
   const [isMinimized, setIsMinimized] = useState(false);
   const reduced = useReducedMotion();
 
-  // Mouse Parallax Ref for physical glass tilt
+  // Mouse Parallax Ref for physical 3D depth
   const mouse = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
   const sparksRef = useRef([]);
 
-  // 1. Mouse Move Listener for 3D Specular Parallax
+  // 1. Mouse Move Listener for Multi-plane Parallax
   const handleMouseMove = (e) => {
     if (!rootRef.current) return;
     const rect = rootRef.current.getBoundingClientRect();
@@ -94,7 +71,7 @@ export default function WorkstationScrollHero({
     mouse.current.targetY = 0;
   };
 
-  // 2. Interactive Canvas Background (Constellation, Sparks & Photonic Bursts)
+  // 2. Interactive Canvas Background (Floating Motes & Energy Sparks)
   useEffect(() => {
     if (isMinimized) return;
     const canvas = canvasRef.current;
@@ -120,17 +97,16 @@ export default function WorkstationScrollHero({
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    // Initialize 80 floating motes
-    let seed = 89;
+    let seed = 137;
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const motes = Array.from({ length: 80 }, () => ({
+    const motes = Array.from({ length: 75 }, () => ({
       x: rand(),
       y: rand(),
       vx: (rand() - 0.5) * 0.0003,
       vy: -0.0002 - rand() * 0.0004,
       r: 1.0 + rand() * 1.8,
       alpha: 0.2 + rand() * 0.6,
-      hue: rand() > 0.6 ? 217 : rand() > 0.3 ? 160 : 270 // Cyan, Emerald, Purple
+      hue: rand() > 0.6 ? 217 : rand() > 0.3 ? 160 : 270
     }));
 
     let lastTime = performance.now();
@@ -141,17 +117,17 @@ export default function WorkstationScrollHero({
 
       ctx.clearRect(0, 0, width, height);
 
-      // Draw faint constellation lines between nearby motes
-      const maxDist = 90;
+      // Draw faint constellation lines
+      const maxDist = 85;
       for (let i = 0; i < motes.length; i++) {
         for (let j = i + 1; j < motes.length; j++) {
           const dx = (motes[i].x - motes[j].x) * width;
           const dy = (motes[i].y - motes[j].y) * height;
           const dist = Math.hypot(dx, dy);
           if (dist < maxDist) {
-            const alpha = (1 - dist / maxDist) * 0.14;
+            const alpha = (1 - dist / maxDist) * 0.12;
             ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
-            ctx.lineWidth = 0.8;
+            ctx.lineWidth = 0.75;
             ctx.beginPath();
             ctx.moveTo(motes[i].x * width, motes[i].y * height);
             ctx.lineTo(motes[j].x * width, motes[j].y * height);
@@ -181,7 +157,7 @@ export default function WorkstationScrollHero({
         ctx.fill();
       }
 
-      // Render Dynamic Spark Bursts (from photon terminal impacts)
+      // Render Dynamic Spark Bursts
       const sparks = sparksRef.current;
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
@@ -211,7 +187,7 @@ export default function WorkstationScrollHero({
     };
   }, [isMinimized, reduced]);
 
-  // Helper to trigger spark explosion on canvas
+  // Helper to trigger spark explosion
   const triggerImpactSparks = (x, y, color) => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -227,14 +203,14 @@ export default function WorkstationScrollHero({
         y: spawnY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        r: 1.4 + Math.random() * 2.2,
+        r: 1.4 + Math.random() * 2.0,
         color: color,
         life: 1.0
       });
     }
   };
 
-  // 3. High-Precision Fluid Momentum Scroll Choreography
+  // 3. Multi-Layer Parallax Scroll Choreography Frame Loop
   useEffect(() => {
     if (isMinimized) return;
     const root = rootRef.current;
@@ -244,71 +220,7 @@ export default function WorkstationScrollHero({
     let smoothP = 0;
     let targetP = 0;
     let lastSmoothP = -1;
-    let prevKValues = [0, 0, 0, 0];
-
-    // Helper to calculate and draw SVG curve between two elements
-    const updateConduit = (index, pathEl, photonEl, fromEl, toEl, progress, color) => {
-      if (!pathEl || !fromEl || !toEl || !svgConduitRef.current) return;
-      const svg = svgConduitRef.current;
-      const sRect = svg.getBoundingClientRect();
-      if (sRect.width === 0) return;
-
-      const fRect = fromEl.getBoundingClientRect();
-      const tRect = toEl.getBoundingClientRect();
-
-      // Right-center of source box -> Left-center of target JSON line
-      const x1 = fRect.right - sRect.left;
-      const y1 = fRect.top + fRect.height / 2 - sRect.top;
-      const x2 = tRect.left - sRect.left;
-      const y2 = tRect.top + tRect.height / 2 - sRect.top;
-
-      const dx = Math.max(45, (x2 - x1) * 0.5);
-      const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-      pathEl.setAttribute('d', d);
-
-      const len = pathEl.getTotalLength ? pathEl.getTotalLength() : 320;
-      pathEl.style.strokeDasharray = `${len}`;
-
-      // Inking progress (0 to 1)
-      const k = easeOutCubic(progress);
-      pathEl.style.strokeDashoffset = `${len * (1 - k)}`;
-      pathEl.style.opacity = String(range(progress, 0.05, 0.25) * (1 - range(progress, 0.90, 1.0)));
-
-      // Moving energy photon
-      if (photonEl && pathEl.getPointAtLength && k > 0.01 && k < 0.99) {
-        const pt = pathEl.getPointAtLength(len * k);
-        photonEl.setAttribute('cx', String(pt.x));
-        photonEl.setAttribute('cy', String(pt.y));
-        photonEl.setAttribute('opacity', '1');
-      } else if (photonEl) {
-        photonEl.setAttribute('opacity', '0');
-      }
-
-      // Spark burst trigger on impact threshold
-      if (k >= 0.92 && prevKValues[index] < 0.92) {
-        triggerImpactSparks(tRect.left, tRect.top + tRect.height / 2, color);
-      }
-      prevKValues[index] = k;
-
-      // Target Line Flash on Impact
-      if (k >= 0.92) {
-        toEl.style.opacity = '1';
-        toEl.style.transform = 'translate3d(0, 0, 0)';
-        toEl.style.color = color;
-        toEl.style.textShadow = `0 0 14px ${color}aa`;
-        toEl.style.backgroundColor = `${color}18`;
-      } else if (k > 0.05) {
-        toEl.style.opacity = String(0.25 + k * 0.7);
-        toEl.style.transform = `translate3d(${lerp(12, 0, k)}px, 0, 0)`;
-        toEl.style.backgroundColor = 'transparent';
-      } else {
-        toEl.style.opacity = '0.2';
-        toEl.style.transform = 'translate3d(12px, 0, 0)';
-        toEl.style.color = '';
-        toEl.style.textShadow = 'none';
-        toEl.style.backgroundColor = 'transparent';
-      }
-    };
+    let sparksTriggered = false;
 
     const frameLoop = (time) => {
       const rootEl = rootRef.current;
@@ -328,7 +240,7 @@ export default function WorkstationScrollHero({
       smoothP = lerp(smoothP, targetP, 0.14);
       if (Math.abs(smoothP - targetP) < 0.0001) smoothP = targetP;
 
-      // Smooth mouse parallax physics
+      // Mouse Parallax Physics
       mouse.current.x = lerp(mouse.current.x, mouse.current.targetX, 0.08);
       mouse.current.y = lerp(mouse.current.y, mouse.current.targetY, 0.08);
 
@@ -337,7 +249,7 @@ export default function WorkstationScrollHero({
       if (Math.abs(p - lastSmoothP) > 0.0001 || Math.abs(mouse.current.x - mouse.current.targetX) > 0.001) {
         lastSmoothP = p;
 
-        // 1. Percentage counter & Telemetry Latency
+        // 1. Telemetry Counters
         if (progressPercentRef.current) {
           progressPercentRef.current.textContent = `${Math.round(p * 100)}%`;
         }
@@ -350,145 +262,129 @@ export default function WorkstationScrollHero({
           lpuRateRef.current.textContent = `${rate} T/s`;
         }
 
-        // 2. Intake Envelope Badge (p: 0.00 -> 0.22)
-        if (intakeBadgeRef.current) {
-          const inProgress = easeOutCubic(range(p, 0.0, 0.16));
-          const outProgress = range(p, 0.16, 0.26);
-          const badgeY = lerp(-18, 0, inProgress) + outProgress * 25;
-          const badgeOpacity = (1 - outProgress);
-          intakeBadgeRef.current.style.transform = `translate3d(0, ${badgeY}px, 0) scale(${lerp(0.96, 1.0, inProgress)})`;
-          intakeBadgeRef.current.style.opacity = String(badgeOpacity);
+        const exit = easeOutCubic(range(p, 0.78, 1.0));
+        const exitY = -exit * 70;
+
+        // 2. Layer 1: Desktop Room Background (svg2)
+        // Moves slowly with subtle depth
+        if (roomBgRef.current) {
+          const bgParallaxY = lerp(0, -25, p) + exitY * 0.5;
+          const bgScale = lerp(1.04, 1.0, easeOutCubic(range(p, 0, 0.4)));
+          const mouseBgX = mouse.current.x * 6;
+          const mouseBgY = mouse.current.y * 6;
+          roomBgRef.current.style.transform = `translate3d(${mouseBgX}px, ${bgParallaxY + mouseBgY}px, 0) scale(${bgScale})`;
         }
 
-        // 3. Document 3D Inflow & Specular Mouse Parallax
-        if (docWrapperRef.current) {
-          const unfold = easeOutCubic(range(p, 0.06, 0.32));
-          const rotX = lerp(14, 0, unfold);
-          const rotY = lerp(-12, 0, unfold);
-          const scale = lerp(0.92, 1.0, unfold);
-          const transY = lerp(20, 0, unfold);
-
-          const exit = easeOutCubic(range(p, 0.78, 1.0));
-          const exitY = -exit * 50;
-          const exitScale = lerp(1.0, 0.92, exit);
-          const opacity = lerp(1.0, 0.2, exit);
-
-          const mouseTiltX = -mouse.current.y * 10;
-          const mouseTiltY = mouse.current.x * 12;
-
-          docWrapperRef.current.style.transform = `perspective(1200px) translate3d(0, ${transY + exitY}px, 0) rotateX(${rotX + mouseTiltX}deg) rotateY(${rotY + mouseTiltY}deg) scale(${scale * exitScale})`;
-          docWrapperRef.current.style.opacity = String(opacity);
+        // 3. Layer 2: Operator on Rolling Chair (svg1)
+        // Rolls smoothly into the desk from left (-12% -> 0%) and settles at the mouse
+        if (manChairRef.current) {
+          const rollIn = easeOutCubic(range(p, 0.06, 0.42));
+          const manX = lerp(-10, 0, rollIn);
+          const manY = lerp(20, 0, rollIn) + exitY * 0.9;
+          const manScale = lerp(1.03, 1.0, rollIn);
+          const mouseManX = mouse.current.x * 16;
+          const mouseManY = mouse.current.y * 12;
+          manChairRef.current.style.transform = `translate3d(${manX + mouseManX}px, ${manY + mouseManY}px, 0) scale(${manScale})`;
         }
 
-        // Dynamic Glass Gleam
-        if (docGleamRef.current) {
-          const gleamX = 50 + mouse.current.x * 90;
-          const gleamY = 50 + mouse.current.y * 90;
-          docGleamRef.current.style.background = `radial-gradient(circle at ${gleamX}% ${gleamY}%, rgba(255,255,255,0.12) 0%, transparent 60%)`;
+        // 4. Layer 3: Active Computer Monitor Screen & Hologram Light Beam
+        if (monitorGlowRef.current) {
+          const screenPower = easeOutCubic(range(p, 0.18, 0.45));
+          monitorGlowRef.current.style.opacity = String(screenPower * 0.85);
+        }
+        if (monitorScreenRef.current) {
+          const screenPower = easeOutCubic(range(p, 0.18, 0.45));
+          monitorScreenRef.current.style.opacity = String(screenPower);
         }
 
-        // 4. Laser Scan Bar, Sweeping Grid, Oscilloscope Wave & Coordinates
+        // 5. Layer 4: Floating Invoice 1 (Raw Inflow Document)
+        // Enters from top-left, floats into center, gets scanned, and resolves
+        if (invoice1Ref.current) {
+          const inv1Inflow = easeOutCubic(range(p, 0.08, 0.38));
+          const inv1X = lerp(-60, 0, inv1Inflow) + mouse.current.x * 22;
+          const inv1Y = lerp(-40, 0, inv1Inflow) + Math.sin(time * 0.002) * 5 + exitY * 0.8;
+          const inv1Scale = lerp(0.85, 1.0, inv1Inflow);
+          const inv1Rot = lerp(-18, -6, inv1Inflow) + mouse.current.x * 8;
+          const inv1Opacity = range(p, 0.05, 0.20) * (1 - range(p, 0.82, 0.96));
+
+          invoice1Ref.current.style.transform = `translate3d(${inv1X}px, ${inv1Y}px, 0) rotate(${inv1Rot}deg) scale(${inv1Scale})`;
+          invoice1Ref.current.style.opacity = String(inv1Opacity);
+        }
+
+        // Laser Scan Bar on Floating Invoice 1
         if (laserRef.current && laserBeamRef.current) {
-          const laserSweep = easeOutCubic(range(p, 0.20, 0.74));
-          const laserOpacity = range(p, 0.18, 0.24) * (1 - range(p, 0.75, 0.82));
+          const laserSweep = easeOutCubic(range(p, 0.28, 0.68));
+          const laserOpacity = range(p, 0.26, 0.32) * (1 - range(p, 0.68, 0.76));
 
           laserRef.current.style.top = `${laserSweep * 100}%`;
           laserRef.current.style.opacity = String(laserOpacity);
 
           laserBeamRef.current.style.height = `${laserSweep * 100}%`;
-          laserBeamRef.current.style.opacity = String(laserOpacity * 0.55);
-
-          if (laserGridRef.current) {
-            laserGridRef.current.style.height = `${laserSweep * 100}%`;
-            laserGridRef.current.style.opacity = String(laserOpacity * 0.35);
-          }
-
-          if (laserCoordRef.current) {
-            const yCoord = Math.round(laserSweep * 560);
-            laserCoordRef.current.textContent = `Y:${yCoord}px · 600DPI`;
-          }
-
-          // Oscilloscope Sine Wave along Laser
-          if (laserWaveRef.current) {
-            let waveD = 'M 0 7';
-            const width = 440;
-            const freq = 0.06;
-            const speed = time * 0.008;
-            const scrollDelta = Math.abs(p - lastSmoothP);
-            const amp = 4.0 + Math.min(7, scrollDelta * 180);
-            for (let x = 0; x <= width; x += 18) {
-              const y = 7 + Math.sin(x * freq + speed) * amp;
-              waveD += ` L ${x} ${y.toFixed(1)}`;
-            }
-            laserWaveRef.current.setAttribute('d', waveD);
-          }
+          laserBeamRef.current.style.opacity = String(laserOpacity * 0.6);
         }
 
-        // 5. Bounding Box Illuminations & Reticle Snapping
-        const updateBox = (el, start, end, activeBorder, activeBg) => {
-          if (!el) return;
-          const a = easeOutCubic(range(p, start, end));
-          const tag = el.querySelector('.box-tag');
-          const reticles = el.querySelectorAll('.reticle-corner');
+        // 6. Layer 5: Floating Invoice 2 (Verified Document with Green Checkmark)
+        // Floats in from top-right at p > 0.45
+        if (invoice2Ref.current) {
+          const inv2Inflow = easeOutCubic(range(p, 0.42, 0.70));
+          const inv2X = lerp(60, 0, inv2Inflow) + mouse.current.x * 18;
+          const inv2Y = lerp(-30, 0, inv2Inflow) + Math.sin(time * 0.0025 + 1) * 6 + exitY * 0.85;
+          const inv2Scale = lerp(0.8, 1.0, inv2Inflow);
+          const inv2Rot = lerp(16, 8, inv2Inflow) - mouse.current.x * 6;
+          const inv2Opacity = range(p, 0.40, 0.52) * (1 - range(p, 0.82, 0.96));
 
-          if (a > 0.05) {
-            el.style.borderColor = activeBorder;
-            el.style.backgroundColor = activeBg;
-            el.style.boxShadow = `0 0 ${Math.round(a * 24)}px ${activeBorder}44`;
-          } else {
-            el.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-            el.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
-            el.style.boxShadow = 'none';
-          }
-          if (tag) {
-            tag.style.opacity = String(a);
-            tag.style.transform = `scale(${lerp(0.85, 1.0, a)})`;
-          }
-          reticles.forEach((r) => {
-            r.style.opacity = String(a);
-            r.style.borderColor = activeBorder;
-          });
-        };
+          invoice2Ref.current.style.transform = `translate3d(${inv2X}px, ${inv2Y}px, 0) rotate(${inv2Rot}deg) scale(${inv2Scale})`;
+          invoice2Ref.current.style.opacity = String(inv2Opacity);
+        }
 
-        // Box 1: Vendor Header (p: 0.22 -> 0.32)
-        updateBox(boxVendorRef.current, 0.22, 0.32, '#34d399', 'rgba(52, 211, 153, 0.12)');
-        // Box 2: Meta / Invoice Number (p: 0.36 -> 0.46)
-        updateBox(boxMetaRef.current, 0.36, 0.46, '#22d3ee', 'rgba(34, 211, 238, 0.12)');
-        // Box 3: Line Items (p: 0.48 -> 0.58)
-        updateBox(boxItemsRef.current, 0.48, 0.58, '#818cf8', 'rgba(129, 140, 248, 0.12)');
-        // Box 4: Total & Tax (p: 0.60 -> 0.70)
-        updateBox(boxTotalRef.current, 0.60, 0.70, '#c084fc', 'rgba(192, 132, 252, 0.14)');
-
-        // 6. SVG Data Conduit Streams (Box -> JSON line photon transfers)
-        const progVendor = range(p, 0.24, 0.40);
-        updateConduit(0, pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, jsonVendorRef.current, progVendor, '#fcd34d');
-
-        const progMeta = range(p, 0.38, 0.54);
-        updateConduit(1, pathMetaRef.current, photonMetaRef.current, boxMetaRef.current, jsonMetaRef.current, progMeta, '#38bdf8');
-
-        const progItems = range(p, 0.50, 0.66);
-        updateConduit(2, pathItemsRef.current, photonItemsRef.current, boxItemsRef.current, jsonItemsRef.current, progItems, '#a78bfa');
-
-        const progTotal = range(p, 0.62, 0.78);
-        updateConduit(3, pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, jsonTotalRef.current, progTotal, '#34d399');
-
-        // 7. Holographic Audit Stamp (Stamps at p > 0.64)
+        // 7. Audit Verification Stamp on Scanned Invoice
         if (auditStampRef.current) {
-          const stampProgress = easeOutCubic(range(p, 0.64, 0.76));
-          const stampOpacity = range(p, 0.63, 0.70);
-          const stampScale = lerp(1.6, 1.0, stampProgress);
-          const stampRot = lerp(-25, -12, stampProgress);
+          const stampProgress = easeOutCubic(range(p, 0.58, 0.72));
+          const stampOpacity = range(p, 0.56, 0.64);
+          const stampScale = lerp(1.7, 1.0, stampProgress);
           auditStampRef.current.style.opacity = String(stampOpacity);
-          auditStampRef.current.style.transform = `scale(${stampScale}) rotate(${stampRot}deg)`;
+          auditStampRef.current.style.transform = `scale(${stampScale}) rotate(-14deg)`;
+
+          if (stampProgress > 0.95 && !sparksTriggered && invoice1Ref.current) {
+            sparksTriggered = true;
+            const r = invoice1Ref.current.getBoundingClientRect();
+            triggerImpactSparks(r.left + r.width / 2, r.top + r.height / 2, '#34d399');
+          } else if (stampProgress < 0.2) {
+            sparksTriggered = false;
+          }
         }
 
-        // 8. Terminal Header & LPU Status Badge
+        // 8. Holographic HUD Telemetry Window (Right Side)
+        if (hudTerminalRef.current) {
+          const hudIn = easeOutCubic(range(p, 0.16, 0.42));
+          const hudX = lerp(40, 0, hudIn) - mouse.current.x * 8;
+          const hudY = lerp(20, 0, hudIn) + exitY * 0.7;
+          const hudOpacity = range(p, 0.14, 0.28) * (1 - range(p, 0.82, 0.96));
+
+          hudTerminalRef.current.style.transform = `translate3d(${hudX}px, ${hudY}px, 0)`;
+          hudTerminalRef.current.style.opacity = String(hudOpacity);
+
+          // Reveal JSON Lines progressively
+          const jsonLines = hudTerminalRef.current.querySelectorAll('.hud-json-line');
+          jsonLines.forEach((line, idx) => {
+            const threshold = 0.24 + idx * 0.08;
+            if (p >= threshold) {
+              line.style.opacity = '1';
+              line.style.transform = 'translate3d(0, 0, 0)';
+            } else {
+              line.style.opacity = '0.2';
+              line.style.transform = 'translate3d(8px, 0, 0)';
+            }
+          });
+        }
+
+        // Terminal Badge
         if (terminalBadgeRef.current) {
           if (p < 0.20) {
-            terminalBadgeRef.current.textContent = 'STANDBY · AWAITING BUFFER';
+            terminalBadgeRef.current.textContent = 'STANDBY · AWAITING INFLOW';
             terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700';
-          } else if (p < 0.68) {
-            terminalBadgeRef.current.textContent = 'GROQ LPU · 750 T/s PARSING';
+          } else if (p < 0.65) {
+            terminalBadgeRef.current.textContent = 'GROQ LPU · OPTICAL RECONCILIATION';
             terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/35 animate-pulse';
           } else {
             terminalBadgeRef.current.textContent = 'RECONCILED · LEDGER COMMITTED';
@@ -498,8 +394,8 @@ export default function WorkstationScrollHero({
 
         // 9. Ejection Group (Committed Ledger Row ready to drop into table)
         if (ejectGroupRef.current) {
-          const ejProgress = easeOutCubic(range(p, 0.72, 0.94));
-          const ejOpacity = range(p, 0.70, 0.78) * (1 - range(p, 0.96, 1.0));
+          const ejProgress = easeOutCubic(range(p, 0.70, 0.94));
+          const ejOpacity = range(p, 0.68, 0.76) * (1 - range(p, 0.96, 1.0));
           const ejY = lerp(-25, 45, ejProgress);
           ejectGroupRef.current.style.opacity = String(ejOpacity);
           ejectGroupRef.current.style.transform = `translate3d(0, ${ejY}px, 0) scale(${lerp(0.96, 1.0, ejProgress)})`;
@@ -542,7 +438,7 @@ export default function WorkstationScrollHero({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white">Autonomous OCR Pipeline Minimized</p>
+            <p className="text-sm font-bold text-white">Parallax Workstation Minimized</p>
             <p className="text-xs font-mono text-slate-400">RFC 2177 Push Active · Dual Groq LPU Engine Online</p>
           </div>
         </div>
@@ -551,7 +447,7 @@ export default function WorkstationScrollHero({
           onClick={() => setIsMinimized(false)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
         >
-          <span>Expand Pipeline</span>
+          <span>Expand Workstation</span>
           <ChevronDown className="w-4 h-4" />
         </button>
       </div>
@@ -596,7 +492,7 @@ export default function WorkstationScrollHero({
             <div>
               <div className="flex items-center gap-2.5">
                 <span className="text-sm sm:text-base font-extrabold text-white tracking-tight">
-                  Autonomous OCR Pipeline
+                  Autonomous Workstation · Multi-Layer Parallax
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-mono font-semibold text-emerald-400">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -604,7 +500,7 @@ export default function WorkstationScrollHero({
                 </span>
               </div>
               <p className="text-xs font-mono text-slate-400 hidden sm:block mt-0.5">
-                Optical Document Intelligence · Dual Groq LPU Engine · Live Google Sheets Ledger
+                Multi-Depth Ingestion · Groq LPU OCR · Live Google Sheets Ledger
               </p>
             </div>
           </div>
@@ -654,378 +550,254 @@ export default function WorkstationScrollHero({
           </div>
         </div>
 
-        {/* Center Stage: Split Screen with SVG Neural Data Conduits */}
-        <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center px-6 sm:px-8 lg:px-12 py-4 sm:py-6 gap-8 sm:gap-10 lg:gap-12 z-10">
+        {/* Center Stage: The Multi-Layer Parallax Workstation */}
+        <div className="relative flex-1 flex items-center justify-center px-4 sm:px-8 lg:px-12 py-4 z-10 overflow-hidden">
           
-          {/* Incoming Email Intake Hologram Badge (Appears at start, drops invoice into scanner) */}
-          <div
-            ref={intakeBadgeRef}
-            className="absolute top-2 sm:top-3 z-40 px-4 py-2 rounded-full bg-indigo-950/85 border border-indigo-500/40 backdrop-blur-md shadow-xl flex items-center gap-2.5 pointer-events-none will-change-transform"
-            style={{ opacity: 0 }}
-          >
-            <Mail className="w-4 h-4 text-indigo-400 animate-bounce" />
-            <span className="font-mono text-xs sm:text-sm text-white">
-              INCOMING RFC 2177 ATTACHMENT: <span className="text-cyan-300 font-bold">invoice_acme_9041.pdf</span>
-            </span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          </div>
-
-          {/* SVG DATA CONDUITS (Beams firing data from Document to JSON Terminal) */}
-          <svg
-            ref={svgConduitRef}
-            className="absolute inset-0 size-full pointer-events-none z-25 hidden lg:block"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-
-            {/* Path 1: Vendor */}
-            <path ref={pathVendorRef} fill="none" stroke="#34d399" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
-            <circle ref={photonVendorRef} r="5" fill="#6ee7b7" opacity="0" filter="url(#glow)" />
-
-            {/* Path 2: Meta */}
-            <path ref={pathMetaRef} fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
-            <circle ref={photonMetaRef} r="5" fill="#a5f3fc" opacity="0" filter="url(#glow)" />
-
-            {/* Path 3: Line Items */}
-            <path ref={pathItemsRef} fill="none" stroke="#818cf8" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
-            <circle ref={photonItemsRef} r="5" fill="#c7d2fe" opacity="0" filter="url(#glow)" />
-
-            {/* Path 4: Total */}
-            <path ref={pathTotalRef} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
-            <circle ref={photonTotalRef} r="5" fill="#f5d0fe" opacity="0" filter="url(#glow)" />
-          </svg>
-
-          {/* LEFT: 3D High-Tech Invoice Document with Specular Gleam */}
-          <div className="w-full lg:w-[48%] max-w-[480px] lg:max-w-[500px] flex items-center justify-center">
+          {/* STAGE CONTAINER (Strictly registered 944:704 aspect ratio box) */}
+          <div className="relative w-full max-w-5xl h-full flex items-center justify-center">
+            
+            {/* LAYER 1: Desktop Room Background (Desk, Monitor, Coffee Mug, Trash Can) */}
             <div
-              ref={docWrapperRef}
-              className="relative w-full bg-white/[0.04] backdrop-blur-xl border border-white/[0.14] rounded-3xl p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.85)] will-change-transform overflow-hidden flex flex-col justify-between"
+              ref={roomBgRef}
+              className="absolute inset-0 size-full flex items-center justify-center pointer-events-none will-change-transform z-10"
+            >
+              <picture className="w-full h-full flex items-center justify-center">
+                <source srcSet="/landing/desktop_bg.webp" type="image/webp" />
+                <img
+                  src="/landing/desktop_bg.png"
+                  alt="Desktop Workspace"
+                  className="max-h-full max-w-full object-contain object-center drop-shadow-2xl"
+                  loading="eager"
+                />
+              </picture>
+            </div>
+
+            {/* LAYER 2: Live Cybernetic Monitor Display (Anchored right onto the illustrated monitor!) */}
+            <div
+              ref={monitorScreenRef}
+              className="absolute pointer-events-none z-15 will-change-transform flex items-center justify-center"
               style={{
-                transform: 'perspective(1200px) rotateX(14deg) rotateY(-12deg) scale(0.92)',
-                boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.25)'
+                left: '46.2%',
+                top: '40.5%',
+                width: '18%',
+                height: '19%',
+                opacity: 0
               }}
             >
-              {/* Dynamic Specular Glass Gleam Overlay */}
+              {/* Holographic glowing scan beam from the monitor */}
               <div
-                ref={docGleamRef}
-                className="absolute inset-0 pointer-events-none z-12 will-change-transform"
-                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 60%)' }}
+                ref={monitorGlowRef}
+                className="absolute -inset-16 bg-gradient-to-tr from-cyan-500/25 via-indigo-500/20 to-transparent blur-2xl rounded-full pointer-events-none"
+                style={{ opacity: 0 }}
               />
 
-              {/* Laser Scanning Grid Wash & Oscilloscope Bar */}
-              <div
-                ref={laserGridRef}
-                className="absolute inset-x-0 top-0 bg-[linear-gradient(to_right,rgba(34,211,238,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(34,211,238,0.1)_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none will-change-transform z-15"
-                style={{ height: '0%', opacity: 0 }}
-              />
-
-              <div
-                ref={laserBeamRef}
-                className="absolute inset-x-0 top-0 bg-gradient-to-b from-cyan-500/25 via-indigo-500/15 to-transparent pointer-events-none will-change-transform z-20"
-                style={{ height: '0%', opacity: 0 }}
-              />
-
-              <div
-                ref={laserRef}
-                className="absolute inset-x-0 h-[3px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_25px_#22d3ee,0_0_50px_#38bdf8] pointer-events-none will-change-transform z-30 flex items-center justify-between px-3"
-                style={{ top: '0%', opacity: 0 }}
-              >
-                <div className="w-3 h-3 rounded-full bg-cyan-300 shadow-[0_0_14px_#22d3ee] animate-ping" />
-                
-                {/* Oscilloscope Micro-Waveform */}
-                <div className="flex items-center gap-2">
-                  <svg className="w-28 h-3.5 overflow-visible pointer-events-none hidden sm:block">
-                    <path
-                      ref={laserWaveRef}
-                      d="M 0 7 L 440 7"
-                      fill="none"
-                      stroke="#22d3ee"
-                      strokeWidth="1.8"
-                      opacity="0.85"
-                    />
-                  </svg>
-                  <span ref={laserCoordRef} className="font-mono text-[9px] text-cyan-200 tracking-wider bg-black/60 px-1.5 py-0.5 rounded shadow">
-                    Y:0px · 600DPI
+              {/* Terminal Code Screen inside Monitor */}
+              <div className="w-full h-full bg-[#070B14]/95 border border-cyan-400/60 rounded-sm p-1.5 font-mono text-[8px] sm:text-[9px] text-cyan-300 flex flex-col justify-between overflow-hidden shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+                <div className="flex items-center justify-between border-b border-cyan-500/30 pb-0.5">
+                  <span className="flex items-center gap-1 font-bold text-white text-[7px] sm:text-[8px]">
+                    <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                    GROQ_LPU_OCR
                   </span>
+                  <span className="text-[7px] text-cyan-400">240ms</span>
                 </div>
-
-                <div className="w-3 h-3 rounded-full bg-emerald-300 shadow-[0_0_14px_#34d399] animate-ping" />
-              </div>
-
-              {/* Holographic Verification Stamp (Stamps when complete) */}
-              <div
-                ref={auditStampRef}
-                className="absolute bottom-4 right-4 pointer-events-none z-22 will-change-transform"
-                style={{ opacity: 0, transform: 'scale(1.6) rotate(-25deg)' }}
-              >
-                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center p-1.5 bg-emerald-500/15 backdrop-blur-xs shadow-[0_0_20px_rgba(52,211,153,0.4)]">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400 mb-0.5" />
-                  <span className="font-mono text-[8px] sm:text-[9px] font-black text-emerald-300 tracking-tighter uppercase leading-none">
-                    RFC 2177
-                  </span>
-                  <span className="font-mono text-[7px] sm:text-[8px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5">
-                    AUDITED
-                  </span>
+                <div className="space-y-0.5 leading-tight text-[7px] sm:text-[8px] text-slate-300">
+                  <p className="truncate text-emerald-300">&gt; INGESTING BUFFER...</p>
+                  <p className="truncate text-cyan-200">&gt; PARSING INV-2026-9041</p>
+                  <p className="truncate text-amber-200">&gt; MATCH: ACME CLOUD</p>
+                  <p className="truncate text-purple-200">&gt; LEDGER: $4,850.00 USD</p>
                 </div>
-              </div>
-
-              {/* DOCUMENT CONTENT */}
-              <div className="space-y-4 relative z-10">
-                {/* 1. Document Header / Vendor */}
-                <div
-                  ref={boxVendorRef}
-                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
-                >
-                  {/* AI Vision Reticle Target Marks */}
-                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
-
-                  <div 
-                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-emerald-500 text-black font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
-                    style={{ opacity: 0 }}
-                  >
-                    VENDOR · 99.8%
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Acme Cloud Infrastructure Inc.</h3>
-                      <p className="text-xs sm:text-sm text-slate-300 font-mono mt-0.5">billing@acmecloud.io · San Francisco, CA</p>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-mono text-xs sm:text-sm font-bold shadow-inner">
-                      AC
-                    </div>
-                  </div>
+                <div className="pt-0.5 border-t border-cyan-500/20 text-[6px] sm:text-[7px] flex justify-between text-slate-400">
+                  <span>RFC 2177</span>
+                  <span className="text-emerald-400 font-bold">ACTIVE</span>
                 </div>
-
-                {/* 2. Metadata: Invoice # & Dates */}
-                <div
-                  ref={boxMetaRef}
-                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
-                >
-                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
-
-                  <div 
-                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-cyan-500 text-black font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
-                    style={{ opacity: 0 }}
-                  >
-                    META · 99.4%
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 font-mono text-xs sm:text-sm">
-                    <div>
-                      <span className="text-slate-400 block text-[10px] sm:text-[11px]">INVOICE NO</span>
-                      <span className="text-white font-bold">INV-2026-9041</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px] sm:text-[11px]">ISSUE DATE</span>
-                      <span className="text-white font-bold">2026-10-27</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px] sm:text-[11px]">TERMS</span>
-                      <span className="text-emerald-400 font-bold">NET 30</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Line Items Table */}
-                <div
-                  ref={boxItemsRef}
-                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform space-y-2"
-                >
-                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
-
-                  <div 
-                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-indigo-500 text-white font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
-                    style={{ opacity: 0 }}
-                  >
-                    3 ITEMS · 99.1%
-                  </div>
-
-                  <div className="flex justify-between text-[10px] sm:text-[11px] font-mono text-slate-400 border-b border-white/10 pb-1.5">
-                    <span>DESCRIPTION</span>
-                    <span>AMOUNT</span>
-                  </div>
-                  <div className="flex justify-between text-xs sm:text-sm font-mono text-slate-200">
-                    <span className="truncate pr-2">Enterprise GPU Cluster (L40S)</span>
-                    <span className="text-white font-bold">$3,400.00</span>
-                  </div>
-                  <div className="flex justify-between text-xs sm:text-sm font-mono text-slate-200">
-                    <span className="truncate pr-2">Global Edge CDN Bandwidth</span>
-                    <span className="text-white font-bold">$950.00</span>
-                  </div>
-                  <div className="flex justify-between text-xs sm:text-sm font-mono text-slate-200">
-                    <span className="truncate pr-2">Encrypted Storage Bucket</span>
-                    <span className="text-white font-bold">$500.00</span>
-                  </div>
-                </div>
-
-                {/* 4. Total Amount & Currency */}
-                <div
-                  ref={boxTotalRef}
-                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
-                >
-                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
-
-                  <div 
-                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-purple-500 text-white font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
-                    style={{ opacity: 0 }}
-                  >
-                    TOTAL · 100%
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] sm:text-xs font-mono text-purple-200 block font-medium">TOTAL PAYABLE (USD)</span>
-                      <span className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-mono text-white tracking-tight mt-0.5 block">$4,850.00</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-mono font-bold">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <span>Ledger Verified</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Watermark & Verification Footer */}
-              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-[10px] sm:text-xs font-mono text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  Groq LPU Llama-3-Vision Verified
-                </span>
-                <span className="font-semibold text-slate-300">AUTHENTIC RFC 2177</span>
               </div>
             </div>
-          </div>
 
-          {/* RIGHT: Live Telemetry Terminal & Target Inspector */}
-          <div className="w-full lg:w-[48%] max-w-[520px] lg:max-w-[560px] flex flex-col justify-center space-y-4">
-            {/* Terminal Window Header */}
-            <div className="rounded-2xl border border-white/[0.1] bg-[#0A0D18]/92 backdrop-blur-md shadow-2xl p-5 sm:p-6 font-mono text-xs sm:text-sm overflow-hidden">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
-                <div className="flex items-center gap-2.5">
+            {/* LAYER 3: Operator on Rolling Office Chair (Rolls into desk with momentum) */}
+            <div
+              ref={manChairRef}
+              className="absolute inset-0 size-full flex items-center justify-center pointer-events-none will-change-transform z-20"
+              style={{ transform: 'translate3d(-10px, 20px, 0)' }}
+            >
+              <picture className="w-full h-full flex items-center justify-center">
+                <source srcSet="/landing/man_chair.webp" type="image/webp" />
+                <img
+                  src="/landing/man_chair.png"
+                  alt="Operator at Desktop"
+                  className="max-h-full max-w-full object-contain object-center drop-shadow-2xl"
+                  loading="eager"
+                />
+              </picture>
+            </div>
+
+            {/* LAYER 4: Floating Invoice 1 (Raw Inflow Document with Active Laser Scan) */}
+            <div
+              ref={invoice1Ref}
+              className="absolute left-[12%] sm:left-[16%] top-[24%] sm:top-[26%] w-48 sm:w-56 lg:w-64 z-25 pointer-events-none will-change-transform"
+              style={{ opacity: 0 }}
+            >
+              <div className="relative rounded-2xl bg-[#0C101D]/90 backdrop-blur-xl border border-white/20 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden">
+                {/* Laser Scanning Line & Beam */}
+                <div
+                  ref={laserBeamRef}
+                  className="absolute inset-x-0 top-0 bg-gradient-to-b from-cyan-500/30 via-indigo-500/15 to-transparent pointer-events-none"
+                  style={{ height: '0%', opacity: 0 }}
+                />
+                <div
+                  ref={laserRef}
+                  className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_15px_#22d3ee] pointer-events-none"
+                  style={{ top: '0%', opacity: 0 }}
+                />
+
+                {/* Audit Stamp */}
+                <div
+                  ref={auditStampRef}
+                  className="absolute bottom-2 right-2 z-30 pointer-events-none will-change-transform"
+                  style={{ opacity: 0 }}
+                >
+                  <div className="w-14 h-14 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/20 backdrop-blur-xs flex flex-col items-center justify-center p-1 shadow-[0_0_15px_rgba(52,211,153,0.5)]">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span className="font-mono text-[7px] font-black text-emerald-300">AUDITED</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <span className="font-mono text-xs font-bold text-white">INVOICE</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                    PDF INTAKE
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 font-mono text-[11px]">
+                  <div className="flex justify-between text-slate-300">
+                    <span className="text-slate-400 text-[10px]">VENDOR</span>
+                    <span className="font-semibold text-white">Acme Cloud</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="text-slate-400 text-[10px]">INVOICE #</span>
+                    <span>INV-9041</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="text-slate-400 text-[10px]">TOTAL</span>
+                    <span className="font-bold text-emerald-400">$4,850.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* LAYER 5: Floating Invoice 2 (Verified Document with Green Checkmark) */}
+            <div
+              ref={invoice2Ref}
+              className="absolute right-[8%] sm:right-[12%] top-[18%] sm:top-[20%] w-40 sm:w-48 z-25 pointer-events-none will-change-transform"
+              style={{ opacity: 0 }}
+            >
+              <div className="relative rounded-2xl bg-[#0C101D]/90 backdrop-blur-xl border border-emerald-500/40 p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-white">Verified Ledger Row</p>
+                    <p className="text-[9px] font-mono text-emerald-400">100% Normalized</p>
+                  </div>
+                </div>
+                <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] font-mono text-[10px] text-slate-300 space-y-1">
+                  <p className="flex justify-between">
+                    <span className="text-slate-400">Status</span>
+                    <span className="text-emerald-300 font-bold">Auto-Reconciled</span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-slate-400">Target</span>
+                    <span className="text-cyan-300 font-bold">Google Sheets</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* LAYER 6: Holographic Extraction HUD Terminal (Right-Center) */}
+            <div
+              ref={hudTerminalRef}
+              className="absolute right-2 sm:right-6 bottom-[14%] sm:bottom-[16%] w-72 sm:w-80 lg:w-96 z-30 pointer-events-none will-change-transform"
+              style={{ opacity: 0 }}
+            >
+              <div className="rounded-2xl border border-white/[0.12] bg-[#0A0D18]/94 backdrop-blur-xl shadow-2xl p-4 sm:p-5 font-mono text-xs">
+                <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-white/[0.08]">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block shadow-sm" />
-                    <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block shadow-sm" />
-                    <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block shadow-sm" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-200">
+                      extraction_stream.json
+                    </span>
                   </div>
-                  <span className="text-xs sm:text-sm font-bold text-slate-200">
-                    extraction_stream.json
+                  <span ref={terminalBadgeRef} className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                    STANDBY
                   </span>
                 </div>
 
-                {/* Hardware Pulse Equalizer & Status */}
-                <div className="flex items-center gap-2.5">
-                  <div className="flex items-end gap-1 h-3.5">
-                    <span className="w-1 h-2.5 bg-indigo-400 animate-pulse rounded-full" />
-                    <span className="w-1 h-3.5 bg-cyan-400 animate-pulse rounded-full" style={{ animationDelay: '0.15s' }} />
-                    <span className="w-1 h-2 bg-emerald-400 animate-pulse rounded-full" style={{ animationDelay: '0.3s' }} />
+                <div className="space-y-1 text-xs leading-relaxed">
+                  <div className="hud-json-line text-slate-400">&#123;</div>
+                  <div className="hud-json-line pl-4">
+                    <span className="text-cyan-400">"vendor"</span>: <span className="text-amber-300 font-semibold">"Acme Cloud Infrastructure"</span>,
                   </div>
-                  <span ref={terminalBadgeRef} className="font-mono text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700 font-semibold">
-                    STANDBY · AWAITING BUFFER
-                  </span>
-                </div>
-              </div>
-
-              {/* JSON Lines Stream (Directly targets of SVG fiber conduits) */}
-              <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed select-text">
-                <div className="text-slate-400 font-mono font-bold">&#123;</div>
-                <div className="pl-5 font-mono">
-                  <span className="text-cyan-400 font-medium">"status"</span>: <span className="text-emerald-300 font-bold">"RECONCILED"</span>,
-                </div>
-                
-                {/* Target 1: Vendor */}
-                <div ref={jsonVendorRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400 font-medium">"vendor"</span>: <span>"Acme Cloud Infrastructure Inc."</span>,
+                  <div className="hud-json-line pl-4">
+                    <span className="text-cyan-400">"invoiceNo"</span>: <span className="text-indigo-300 font-semibold">"INV-2026-9041"</span>,
+                  </div>
+                  <div className="hud-json-line pl-4">
+                    <span className="text-cyan-400">"total"</span>: <span className="text-emerald-400 font-bold">$4,850.00 USD</span>,
+                  </div>
+                  <div className="hud-json-line pl-4">
+                    <span className="text-cyan-400">"reconciled"</span>: <span className="text-emerald-300 font-bold">true</span>
+                  </div>
+                  <div className="hud-json-line text-slate-400">&#125;</div>
                 </div>
 
-                {/* Target 2: Meta / Invoice Number */}
-                <div ref={jsonMetaRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400 font-medium">"invoiceNumber"</span>: <span>"INV-2026-9041"</span>,
-                </div>
-
-                <div className="pl-5 font-mono">
-                  <span className="text-cyan-400 font-medium">"date"</span>: <span className="text-slate-200">"2026-10-27"</span>,
-                </div>
-                <div className="pl-5 font-mono">
-                  <span className="text-cyan-400 font-medium">"currency"</span>: <span className="text-purple-300 font-semibold">"USD"</span>,
-                </div>
-
-                {/* Target 4: Total Amount */}
-                <div ref={jsonTotalRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400 font-medium">"totalAmount"</span>: <span className="font-extrabold text-white">4850.00</span>,
-                </div>
-
-                {/* Target 3: Line Items */}
-                <div ref={jsonItemsRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400 font-medium">"lineItems"</span>: <span>[3 items parsed & verified]</span>,
-                </div>
-
-                <div className="pl-5 font-mono">
-                  <span className="text-cyan-400 font-medium">"syncLedger"</span>: <span className="text-emerald-300 font-bold">"Google Sheets (Active)"</span>
-                </div>
-                <div className="text-slate-400 font-mono font-bold">&#125;</div>
-              </div>
-
-              {/* Hardware & Pipeline Telemetry Stats Bar */}
-              <div className="mt-4 pt-3 border-t border-white/[0.08] grid grid-cols-3 gap-2.5 text-xs">
-                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[10px] sm:text-[11px] font-mono">LPU INFERENCE</span>
-                  <span ref={latencyRef} className="text-cyan-300 font-extrabold text-sm sm:text-base tabular-nums">240ms</span>
-                </div>
-                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[10px] sm:text-[11px] font-mono">THROUGHPUT</span>
-                  <span ref={lpuRateRef} className="text-emerald-400 font-extrabold text-sm sm:text-base">750 T/s</span>
-                </div>
-                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[10px] sm:text-[11px] font-mono">TOTAL INVOICES</span>
-                  <span className="text-white font-extrabold text-sm sm:text-base">{invoicesCount} Docs</span>
+                <div className="mt-3 pt-2.5 border-t border-white/[0.08] grid grid-cols-3 gap-2 text-[10px]">
+                  <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
+                    <span className="text-slate-400 block text-[9px]">LPU INFERENCE</span>
+                    <span ref={latencyRef} className="text-cyan-300 font-bold tabular-nums">240ms</span>
+                  </div>
+                  <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
+                    <span className="text-slate-400 block text-[9px]">MATCH RATE</span>
+                    <span className="text-emerald-400 font-bold">{syncRate}% Auto</span>
+                  </div>
+                  <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
+                    <span className="text-slate-400 block text-[9px]">TOTAL INVOICES</span>
+                    <span className="text-white font-bold">{invoicesCount} Docs</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Ejected Data Flight Capsule (Ready to drop into table at p > 0.72) */}
+            {/* Ejected Data Flight Capsule (Ready to drop into table at p > 0.70) */}
             <div
               ref={ejectGroupRef}
-              className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-cyan-500/10 to-indigo-500/15 border border-emerald-500/40 backdrop-blur-md shadow-2xl transition-all will-change-transform flex items-center justify-between"
+              className="absolute left-1/2 -translate-x-1/2 bottom-3 z-35 w-full max-w-md p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-cyan-500/15 to-indigo-500/20 border border-emerald-500/40 backdrop-blur-xl shadow-2xl transition-all will-change-transform flex items-center justify-between"
               style={{ opacity: 0 }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-inner">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-inner">
                   <Database className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm font-bold text-white">Record Ready for Google Sheets</p>
-                  <p className="text-xs font-mono text-emerald-300 mt-0.5">INV-2026-9041 · $4,850.00 USD (Reconciled)</p>
+                  <p className="text-xs font-mono text-emerald-300">INV-2026-9041 · $4,850.00 USD (Reconciled)</p>
                 </div>
               </div>
               <button
                 onClick={scrollToTable}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold transition-all cursor-pointer shadow-lg active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold transition-all cursor-pointer shadow-lg active:scale-95"
               >
-                <span>Commit to Row</span>
+                <span>Commit Row</span>
                 <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
               </button>
             </div>
+
           </div>
         </div>
 
@@ -1033,21 +805,21 @@ export default function WorkstationScrollHero({
         <div className="relative z-30 p-4 sm:p-5 border-t border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md flex items-center justify-between text-xs sm:text-sm font-mono text-slate-400">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-white font-semibold">Pipeline Telemetry Online</span>
+            <span className="text-white font-semibold">Parallax Ingestion Online</span>
             <span className="hidden sm:inline text-slate-500">|</span>
-            <span className="hidden sm:inline text-slate-400">Llama-3-Vision & DeepSeek OCR Core</span>
+            <span className="hidden sm:inline text-slate-400">RFC 2177 Workstation Parallax Engine</span>
           </div>
 
           <div
             ref={scrollIndicatorRef}
             className="flex items-center gap-3"
           >
-            <span className="hidden sm:inline text-slate-400 text-xs sm:text-sm">Scroll to sweep OCR:</span>
+            <span className="hidden sm:inline text-slate-400 text-xs sm:text-sm">Scroll to ingest:</span>
             <button
               onClick={scrollToTable}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold shadow-lg transition-all cursor-pointer text-xs sm:text-sm"
             >
-              <span>Scan Progress</span>
+              <span>Ingest Progress</span>
               <span ref={progressPercentRef} className="font-mono text-indigo-200 tabular-nums font-extrabold">
                 0%
               </span>
