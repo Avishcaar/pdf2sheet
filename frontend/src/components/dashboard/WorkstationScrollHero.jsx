@@ -363,14 +363,14 @@ export default function WorkstationScrollHero({
         // 3. Document 3D Inflow & Specular Mouse Parallax
         if (docWrapperRef.current) {
           const unfold = easeOutCubic(range(p, 0.06, 0.32));
-          const rotX = lerp(16, 0, unfold);
-          const rotY = lerp(-14, 0, unfold);
-          const scale = lerp(0.88, 1.0, unfold);
-          const transY = lerp(40, 0, unfold);
+          const rotX = lerp(14, 0, unfold);
+          const rotY = lerp(-12, 0, unfold);
+          const scale = lerp(0.92, 1.0, unfold);
+          const transY = lerp(20, 0, unfold);
 
           const exit = easeOutCubic(range(p, 0.78, 1.0));
-          const exitY = -exit * 70;
-          const exitScale = lerp(1.0, 0.90, exit);
+          const exitY = -exit * 50;
+          const exitScale = lerp(1.0, 0.92, exit);
           const opacity = lerp(1.0, 0.2, exit);
 
           const mouseTiltX = -mouse.current.y * 10;
@@ -563,10 +563,10 @@ export default function WorkstationScrollHero({
       ref={rootRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full mb-2"
-      style={{ height: '240vh' }}
+      className="relative w-full mb-3"
+      style={{ height: '260vh' }}
     >
-      <div className="sticky top-0 w-full h-[540px] sm:h-[580px] lg:h-[620px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#06080F] flex flex-col justify-between select-none">
+      <div className="sticky top-0 w-full min-h-[660px] h-[680px] sm:h-[720px] lg:h-[760px] xl:h-[780px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#06080F] flex flex-col justify-between select-none">
         
         {/* Layer 0: Dynamic Canvas Background with constellation particles and sparks */}
         <canvas
@@ -655,12 +655,12 @@ export default function WorkstationScrollHero({
         </div>
 
         {/* Center Stage: Split Screen with SVG Neural Data Conduits */}
-        <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center p-4 sm:p-6 lg:p-8 gap-6 sm:gap-8 z-10 overflow-hidden">
+        <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 lg:px-8 py-3 sm:py-5 gap-6 sm:gap-8 z-10">
           
           {/* Incoming Email Intake Hologram Badge (Appears at start, drops invoice into scanner) */}
           <div
             ref={intakeBadgeRef}
-            className="absolute top-2 sm:top-3 z-40 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/40 backdrop-blur-md shadow-lg flex items-center gap-2 pointer-events-none will-change-transform"
+            className="absolute top-1 sm:top-2 z-40 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/40 backdrop-blur-md shadow-lg flex items-center gap-2 pointer-events-none will-change-transform"
             style={{ opacity: 0 }}
           >
             <Mail className="w-3.5 h-3.5 text-indigo-400 animate-bounce" />
@@ -704,12 +704,12 @@ export default function WorkstationScrollHero({
           </svg>
 
           {/* LEFT: 3D High-Tech Invoice Document with Specular Gleam */}
-          <div className="w-full lg:w-[48%] max-w-md flex items-center justify-center">
+          <div className="w-full lg:w-[48%] max-w-[410px] flex items-center justify-center">
             <div
               ref={docWrapperRef}
-              className="relative w-full aspect-[1/1.3] bg-white/[0.04] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] will-change-transform overflow-hidden flex flex-col justify-between"
+              className="relative w-full bg-white/[0.04] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] will-change-transform overflow-hidden flex flex-col justify-between"
               style={{
-                transform: 'perspective(1200px) rotateX(16deg) rotateY(-14deg) scale(0.88)',
+                transform: 'perspective(1200px) rotateX(14deg) rotateY(-12deg) scale(0.92)',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
               }}
             >
