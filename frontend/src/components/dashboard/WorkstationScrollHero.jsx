@@ -734,176 +734,287 @@ export default function WorkstationScrollHero({
               </div>
             </div>
 
-            {/* LAYER 3 (ILLUSTRATION 2): Top-Left Hand Presenting Incoming Invoice (card_doc_2) */}
+            {/* LAYER 3 (ILLUSTRATION 2): Top-Left Hand Presenting Incoming Invoice (card_doc_2) - Uiverse Architecture */}
             <div
               ref={cardHandRef}
-              className="absolute left-[2%] sm:left-[3%] top-[3%] sm:top-[4%] w-32 sm:w-36 lg:w-42 z-26 pointer-events-auto cursor-pointer will-change-transform group"
+              className="absolute left-[2%] sm:left-[3%] top-[3%] sm:top-[4%] w-44 sm:w-48 lg:w-52 z-26 pointer-events-auto cursor-pointer will-change-transform group"
               style={{ opacity: 1 }}
             >
-              <div className="relative transition-transform duration-300 group-hover:scale-105">
-                <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/25 to-indigo-500/25 rounded-full blur-xl opacity-60 group-hover:opacity-90 transition-opacity" />
-                <picture className="relative block w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]">
-                  <source srcSet="/landing/card_doc_2.webp" type="image/webp" />
-                  <img
-                    src="/landing/card_doc_2.png"
-                    alt="Intake Invoice Presentation"
-                    className="w-full h-auto object-contain"
-                    loading="eager"
-                  />
-                </picture>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-[#0C101D]/90 border border-blue-400/40 text-[9px] font-mono text-blue-300 font-bold whitespace-nowrap shadow-lg flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
-                  <span>01 · INTAKE</span>
+              <div className="relative rounded-[25px] overflow-hidden border border-blue-400/40 bg-[#0C1224] shadow-[0_20px_45px_rgba(0,0,0,0.85)] flex flex-col transition-all duration-300 group-hover:scale-105 group-hover:border-blue-400/70">
+                {/* Upper Info Section with 3 Concentric Orbital Rings */}
+                <div className="relative p-3 sm:p-3.5 overflow-hidden text-white flex flex-col justify-between min-h-[145px] sm:min-h-[160px] bg-gradient-to-br from-[#1A254B] to-[#101732]">
+                  {/* Concentric Circles Background */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute -top-[70%] -right-[40%] w-[180px] h-[180px] rounded-full bg-blue-500/25 blur-[0.5px]" />
+                    <div className="absolute -top-[55%] -right-[25%] w-[120px] h-[120px] rounded-full bg-indigo-400/30" />
+                    <div className="absolute -top-[30%] -right-[8%] w-[60px] h-[60px] rounded-full bg-cyan-300/70 shadow-[0_0_15px_rgba(103,232,249,0.8)]" />
+                  </div>
+
+                  {/* Header Row */}
+                  <div className="relative z-10 flex items-center justify-between pb-1">
+                    <span className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono font-bold text-blue-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
+                      01 · INTAKE
+                    </span>
+                    <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                      IMAP PUSH
+                    </span>
+                  </div>
+
+                  {/* Graphic Illustration */}
+                  <div className="relative z-10 w-full flex items-center justify-center my-1 drop-shadow-[0_12px_25px_rgba(0,0,0,0.8)]">
+                    <picture className="block w-28 sm:w-32 h-auto">
+                      <source srcSet="/landing/card_doc_2.webp" type="image/webp" />
+                      <img
+                        src="/landing/card_doc_2.png"
+                        alt="Intake Invoice Presentation"
+                        className="w-full h-auto object-contain"
+                        loading="eager"
+                      />
+                    </picture>
+                  </div>
+
+                  <div className="relative z-10 flex items-center justify-between text-[9px] font-mono text-slate-300 pt-1">
+                    <span className="text-white font-bold truncate">Acme Inv #9041</span>
+                    <span className="text-cyan-300 font-bold">$4,850.00</span>
+                  </div>
+                </div>
+
+                {/* Recessed Days-Section Dock Strip */}
+                <div className="flex items-center justify-between w-full bg-[#070C18] p-1 gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-blue-300">
+                    <span>RFC 2177</span>
+                  </div>
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-slate-400">
+                    <span>PDF RAW</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* LAYER 4 (ILLUSTRATION 1): Lower-Left Optical Scanning & Valuation (card_doc_1) */}
+            {/* LAYER 4 (ILLUSTRATION 1): Lower-Left Optical Scanning & Valuation (card_doc_1) - Uiverse Architecture */}
             <div
               ref={cardScanRef}
-              className="absolute left-[2%] sm:left-[3%] bottom-[5%] sm:bottom-[7%] w-44 sm:w-50 lg:w-56 z-28 pointer-events-auto cursor-pointer will-change-transform group"
+              className="absolute left-[2%] sm:left-[3%] bottom-[5%] sm:bottom-[7%] w-52 sm:w-60 lg:w-64 z-28 pointer-events-auto cursor-pointer will-change-transform group"
               style={{ opacity: 0 }}
             >
-              <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-white/20 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)] overflow-hidden transition-all duration-300 group-hover:border-cyan-400/50">
-                {/* Illustration 1 Graphic with Laser Scan */}
-                <div className="relative w-full h-20 sm:h-24 mb-1.5 flex items-center justify-center overflow-hidden rounded-xl bg-black/40">
-                  <picture className="h-full drop-shadow-md">
-                    <source srcSet="/landing/card_doc_1.webp" type="image/webp" />
-                    <img
-                      src="/landing/card_doc_1.png"
-                      alt="Invoice Optical Scanning"
-                      className="h-full w-auto object-contain"
-                      loading="eager"
+              <div className="relative rounded-[25px] overflow-hidden border border-cyan-400/40 bg-[#081525] shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col transition-all duration-300 group-hover:border-cyan-400/70">
+                {/* Upper Info Section with Concentric Circles */}
+                <div className="relative p-3 sm:p-3.5 overflow-hidden text-white flex flex-col justify-between bg-gradient-to-br from-[#0E2E4B] to-[#071B2D]">
+                  {/* Concentric Circles Background */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute -top-[70%] -right-[40%] w-[220px] h-[220px] rounded-full bg-cyan-500/25 blur-[0.5px]" />
+                    <div className="absolute -top-[55%] -right-[25%] w-[150px] h-[150px] rounded-full bg-sky-400/30" />
+                    <div className="absolute -top-[30%] -right-[8%] w-[75px] h-[75px] rounded-full bg-indigo-400/70 shadow-[0_0_20px_rgba(129,140,248,0.8)]" />
+                  </div>
+
+                  {/* Header Row */}
+                  <div className="relative z-10 flex items-center justify-between pb-1.5 border-b border-white/[0.08]">
+                    <span className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono font-bold text-cyan-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                      02 · GROQ LPU SCAN
+                    </span>
+                    <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
+                      240ms
+                    </span>
+                  </div>
+
+                  {/* Graphic Illustration with Laser Scan Bar */}
+                  <div className="relative z-10 w-full h-20 sm:h-22 my-1.5 flex items-center justify-center overflow-hidden rounded-xl bg-black/40">
+                    <picture className="h-full drop-shadow-md">
+                      <source srcSet="/landing/card_doc_1.webp" type="image/webp" />
+                      <img
+                        src="/landing/card_doc_1.png"
+                        alt="Invoice Optical Scanning"
+                        className="h-full w-auto object-contain"
+                        loading="eager"
+                      />
+                    </picture>
+
+                    {/* Laser Scanning Line & Beam */}
+                    <div
+                      ref={laserBeamRef}
+                      className="absolute inset-x-0 top-0 bg-gradient-to-b from-cyan-500/35 via-indigo-500/15 to-transparent pointer-events-none"
+                      style={{ height: '0%', opacity: 0 }}
                     />
-                  </picture>
+                    <div
+                      ref={laserRef}
+                      className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_20px_#22d3ee] pointer-events-none flex items-center justify-between px-2"
+                      style={{ top: '0%', opacity: 0 }}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#22d3ee] animate-ping" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_10px_#34d399] animate-ping" />
+                    </div>
+                  </div>
 
-                  {/* Laser Scanning Line & Beam */}
-                  <div
-                    ref={laserBeamRef}
-                    className="absolute inset-x-0 top-0 bg-gradient-to-b from-cyan-500/35 via-indigo-500/15 to-transparent pointer-events-none"
-                    style={{ height: '0%', opacity: 0 }}
-                  />
-                  <div
-                    ref={laserRef}
-                    className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_20px_#22d3ee] pointer-events-none flex items-center justify-between px-2"
-                    style={{ top: '0%', opacity: 0 }}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#22d3ee] animate-ping" />
-                    <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_10px_#34d399] animate-ping" />
+                  {/* Bounding Boxes on Illustration 1 */}
+                  <div className="relative z-10 space-y-1 font-mono text-[9px] sm:text-[10px]">
+                    <div
+                      ref={boxVendorRef}
+                      className="p-1 rounded-lg border border-dashed border-white/15 bg-white/[0.03] transition-all duration-200 flex justify-between items-center"
+                    >
+                      <span className="text-slate-400 text-[8px] sm:text-[9px]">VENDOR</span>
+                      <span className="font-bold text-white text-[9px] sm:text-[10px] truncate">Acme Cloud Infra</span>
+                    </div>
+                    <div
+                      ref={boxTotalRef}
+                      className="p-1 rounded-lg border border-dashed border-white/15 bg-white/[0.03] transition-all duration-200 flex justify-between items-center"
+                    >
+                      <span className="text-slate-400 text-[8px] sm:text-[9px]">TOTAL</span>
+                      <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">$4,850.00 USD</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Bounding Boxes on Illustration 1 */}
-                <div className="space-y-1 font-mono text-[9px] sm:text-[10px]">
-                  <div
-                    ref={boxVendorRef}
-                    className="p-1 rounded border border-dashed border-white/10 transition-all duration-200 flex justify-between items-center"
-                  >
-                    <span className="text-slate-400 text-[8px] sm:text-[9px]">VENDOR</span>
-                    <span className="font-bold text-white text-[9px] sm:text-[10px] truncate">Acme Cloud Infra</span>
+                {/* Recessed Days-Section Dock Strip */}
+                <div className="flex items-center justify-between w-full bg-[#040E1A] p-1 gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-cyan-300">
+                    <span>750 T/s</span>
                   </div>
-                  <div
-                    ref={boxTotalRef}
-                    className="p-1 rounded border border-dashed border-white/10 transition-all duration-200 flex justify-between items-center"
-                  >
-                    <span className="text-slate-400 text-[8px] sm:text-[9px]">TOTAL</span>
-                    <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">$4,850.00 USD</span>
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-slate-400">
+                    <span>COORDINATES</span>
                   </div>
-                </div>
-
-                <div className="mt-1.5 pt-1 border-t border-white/10 flex justify-between items-center text-[8px] sm:text-[9px] font-mono text-cyan-300">
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                    02 · GROQ LPU SCAN
-                  </span>
-                  <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-200">240ms</span>
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-emerald-300">
+                    <span>CONF: 99%</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* LAYER 5 (ILLUSTRATION 3): Top-Right Reconciled Invoice with Green Checkmark (card_doc_3) */}
+            {/* LAYER 5 (ILLUSTRATION 3): Top-Right Reconciled Invoice with Green Checkmark (card_doc_3) - Uiverse Architecture */}
             <div
               ref={cardVerifiedRef}
-              className="absolute right-[2%] sm:right-[3%] top-[3%] sm:top-[4%] w-32 sm:w-38 lg:w-44 z-27 pointer-events-auto cursor-pointer will-change-transform group"
+              className="absolute right-[2%] sm:right-[3%] top-[3%] sm:top-[4%] w-44 sm:w-50 lg:w-54 z-27 pointer-events-auto cursor-pointer will-change-transform group"
               style={{ opacity: 0 }}
             >
-              <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/30 to-teal-500/25 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse" />
-                <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-emerald-500/40 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)] transition-transform duration-300 group-hover:scale-105">
-                  <picture className="block w-full h-20 sm:h-24 mb-1.5 flex items-center justify-center drop-shadow-[0_15px_25px_rgba(52,211,153,0.35)]">
-                    <source srcSet="/landing/card_doc_3.webp" type="image/webp" />
-                    <img
-                      src="/landing/card_doc_3.png"
-                      alt="Verified Invoice Row"
-                      className="h-full w-auto object-contain"
-                      loading="eager"
-                    />
-                  </picture>
-                  <div className="flex items-center justify-between font-mono text-[9px] sm:text-[10px]">
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+              <div className="relative rounded-[25px] overflow-hidden border border-emerald-400/40 bg-[#081F17] shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col transition-all duration-300 group-hover:scale-105 group-hover:border-emerald-400/70">
+                {/* Upper Info Section with Concentric Circles */}
+                <div className="relative p-3 sm:p-3.5 overflow-hidden text-white flex flex-col justify-between min-h-[145px] sm:min-h-[160px] bg-gradient-to-br from-[#103D30] to-[#09251D]">
+                  {/* Concentric Circles Background */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute -top-[70%] -right-[40%] w-[180px] h-[180px] rounded-full bg-emerald-500/25 blur-[0.5px]" />
+                    <div className="absolute -top-[55%] -right-[25%] w-[120px] h-[120px] rounded-full bg-teal-400/30" />
+                    <div className="absolute -top-[30%] -right-[8%] w-[60px] h-[60px] rounded-full bg-amber-400/80 shadow-[0_0_15px_rgba(251,191,36,0.8)]" />
+                  </div>
+
+                  {/* Header Row */}
+                  <div className="relative z-10 flex items-center justify-between pb-1">
+                    <span className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono font-bold text-emerald-300">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                       03 · RECONCILED
                     </span>
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/40 text-[8px] sm:text-[9px] shadow-[0_0_8px_rgba(52,211,153,0.3)]">
+                    <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold">
                       100% MATCH
                     </span>
+                  </div>
+
+                  {/* Graphic Illustration */}
+                  <div className="relative z-10 w-full flex items-center justify-center my-1 drop-shadow-[0_12px_25px_rgba(52,211,153,0.35)]">
+                    <picture className="block h-20 sm:h-24 w-auto">
+                      <source srcSet="/landing/card_doc_3.webp" type="image/webp" />
+                      <img
+                        src="/landing/card_doc_3.png"
+                        alt="Verified Invoice Row"
+                        className="h-full w-auto object-contain"
+                        loading="eager"
+                      />
+                    </picture>
+                  </div>
+
+                  <div className="relative z-10 flex items-center justify-between text-[9px] font-mono text-slate-300 pt-1">
+                    <span className="text-white font-bold truncate">Google Sheet v4</span>
+                    <span className="text-emerald-300 font-bold">DISPATCHED</span>
+                  </div>
+                </div>
+
+                {/* Recessed Days-Section Dock Strip */}
+                <div className="flex items-center justify-between w-full bg-[#04120D] p-1 gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-emerald-300">
+                    <span>MATH AUDIT: OK</span>
+                  </div>
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-slate-400">
+                    <span>DISPATCHED</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* LAYER 6: Lower-Right Holographic Extraction HUD Terminal */}
+            {/* LAYER 6: Lower-Right Holographic Extraction HUD Terminal - Uiverse Architecture */}
             <div
               ref={hudTerminalRef}
               className="absolute right-[2%] sm:right-[3%] bottom-[5%] sm:bottom-[7%] w-56 sm:w-64 lg:w-72 z-29 pointer-events-auto will-change-transform"
               style={{ opacity: 0 }}
             >
-              <div className="rounded-2xl border border-white/[0.12] bg-[#0A0D18]/95 backdrop-blur-xl shadow-2xl p-3.5 sm:p-4 font-mono text-xs">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/[0.08]">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-rose-500/80 inline-block" />
-                      <span className="w-2 h-2 rounded-full bg-amber-500/80 inline-block" />
-                      <span className="w-2 h-2 rounded-full bg-emerald-500/80 inline-block" />
+              <div className="rounded-[25px] overflow-hidden border border-indigo-400/30 bg-[#0B0F20] shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col font-mono text-xs">
+                {/* Upper Info Section with Concentric Circles */}
+                <div className="relative p-3.5 sm:p-4 overflow-hidden text-white flex flex-col justify-between bg-gradient-to-br from-[#161C3D] to-[#0C1026]">
+                  {/* Concentric Circles Background */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute -top-[70%] -right-[40%] w-[240px] h-[240px] rounded-full bg-purple-500/25 blur-[0.5px]" />
+                    <div className="absolute -top-[55%] -right-[25%] w-[160px] h-[160px] rounded-full bg-pink-400/25" />
+                    <div className="absolute -top-[30%] -right-[8%] w-[80px] h-[80px] rounded-full bg-indigo-400/70 shadow-[0_0_20px_rgba(129,140,248,0.7)]" />
+                  </div>
+
+                  {/* Header Row */}
+                  <div className="relative z-10 flex items-center justify-between pb-2 mb-2 border-b border-white/[0.08]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-500/80 inline-block" />
+                        <span className="w-2 h-2 rounded-full bg-amber-500/80 inline-block" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500/80 inline-block" />
+                      </div>
+                      <span className="text-[10px] font-bold text-white tracking-wider">SHEETS_DISPATCH</span>
                     </div>
-                    <span className="text-[10px] font-bold text-white tracking-wider">SHEETS_DISPATCH</span>
+                    <span ref={terminalBadgeRef} className="font-mono text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                      STANDBY
+                    </span>
                   </div>
-                  <span ref={terminalBadgeRef} className="font-mono text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                    STANDBY
-                  </span>
+
+                  {/* Progressively Revealed JSON Payload */}
+                  <div className="relative z-10 space-y-1 text-[10px] sm:text-[11px] leading-relaxed text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5">
+                    <div className="text-slate-400">&#123;</div>
+                    <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
+                      <span className="text-emerald-400">"vendor"</span>: <span className="text-emerald-200">"Acme Cloud Infra"</span>,
+                    </div>
+                    <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
+                      <span className="text-cyan-400">"invoiceNo"</span>: <span className="text-cyan-200">"INV-2026-9041"</span>,
+                    </div>
+                    <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
+                      <span className="text-purple-400">"amount"</span>: <span className="text-purple-200 font-bold">$4,850.00 USD</span>,
+                    </div>
+                    <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
+                      <span className="text-indigo-400">"syncLedger"</span>: <span className="text-emerald-300 font-bold">"Google Sheets"</span>
+                    </div>
+                    <div className="text-slate-400">&#125;</div>
+                  </div>
+
+                  {/* Telemetry Hardware Stats */}
+                  <div className="relative z-10 mt-2.5 pt-2 border-t border-white/[0.08] grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                      <span className="text-slate-400 block text-[9px]">LPU</span>
+                      <span ref={latencyRef} className="text-cyan-300 font-extrabold text-xs tabular-nums">240ms</span>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                      <span className="text-slate-400 block text-[9px]">RATE</span>
+                      <span ref={lpuRateRef} className="text-emerald-400 font-extrabold text-xs">750 T/s</span>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                      <span className="text-slate-400 block text-[9px]">DOCS</span>
+                      <span className="text-white font-extrabold text-xs">{invoicesCount} Docs</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Progressively Revealed JSON Payload */}
-                <div className="space-y-1 text-[10px] sm:text-[11px] leading-relaxed text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5">
-                  <div className="text-slate-400">&#123;</div>
-                  <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
-                    <span className="text-emerald-400">"vendor"</span>: <span className="text-emerald-200">"Acme Cloud Infra"</span>,
+                {/* Recessed Days-Section Dock Strip */}
+                <div className="flex items-center justify-between w-full bg-[#060814] p-1.5 gap-1.5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-cyan-300">
+                    <span>240ms LPU</span>
                   </div>
-                  <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
-                    <span className="text-cyan-400">"invoiceNo"</span>: <span className="text-cyan-200">"INV-2026-9041"</span>,
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-emerald-300">
+                    <span>750 T/s</span>
                   </div>
-                  <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
-                    <span className="text-purple-400">"amount"</span>: <span className="text-purple-200 font-bold">$4,850.00 USD</span>,
-                  </div>
-                  <div className="hud-json-line pl-3 transition-all duration-200" style={{ opacity: 0.2 }}>
-                    <span className="text-indigo-400">"syncLedger"</span>: <span className="text-emerald-300 font-bold">"Google Sheets"</span>
-                  </div>
-                  <div className="text-slate-400">&#125;</div>
-                </div>
-
-                {/* Telemetry Hardware Stats */}
-                <div className="mt-2.5 pt-2 border-t border-white/[0.08] grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                    <span className="text-slate-400 block text-[9px]">LPU</span>
-                    <span ref={latencyRef} className="text-cyan-300 font-extrabold text-xs tabular-nums">240ms</span>
-                  </div>
-                  <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                    <span className="text-slate-400 block text-[9px]">RATE</span>
-                    <span ref={lpuRateRef} className="text-emerald-400 font-extrabold text-xs">750 T/s</span>
-                  </div>
-                  <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                    <span className="text-slate-400 block text-[9px]">DOCS</span>
-                    <span className="text-white font-extrabold text-xs">{invoicesCount} Docs</span>
+                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-purple-300">
+                    <span>RFC 2177</span>
                   </div>
                 </div>
 

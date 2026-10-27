@@ -207,54 +207,116 @@ export default function SimulatePage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {PRESET_SCENARIOS.map(preset => {
                         const isThisPresetRunning = isSimulating && activePreset === preset.id;
+
+                        // Theme colors matching Uiverse palette
+                        const colorMap = {
+                            amber: {
+                                border: 'border-amber-500/30',
+                                bg: 'bg-[#261510]',
+                                grad: 'from-[#3A1B14] to-[#200F0C]',
+                                c1: 'bg-amber-500/25',
+                                c2: 'bg-orange-400/25',
+                                c3: 'bg-[#efc745]/70',
+                                dock: 'bg-[#150B08]',
+                                btn: 'bg-amber-600 hover:bg-amber-500 text-white',
+                                badge: 'bg-amber-500/20 text-amber-200 border-amber-400/30'
+                            },
+                            blue: {
+                                border: 'border-blue-500/30',
+                                bg: 'bg-[#0F192E]',
+                                grad: 'from-[#17274B] to-[#0D1526]',
+                                c1: 'bg-blue-500/25',
+                                c2: 'bg-sky-400/25',
+                                c3: 'bg-indigo-300/70',
+                                dock: 'bg-[#080E1A]',
+                                btn: 'bg-blue-600 hover:bg-blue-500 text-white',
+                                badge: 'bg-blue-500/20 text-blue-200 border-blue-400/30'
+                            },
+                            emerald: {
+                                border: 'border-emerald-500/30',
+                                bg: 'bg-[#0B1E19]',
+                                grad: 'from-[#123E33] to-[#0A261F]',
+                                c1: 'bg-emerald-500/25',
+                                c2: 'bg-teal-400/25',
+                                c3: 'bg-amber-400/70',
+                                dock: 'bg-[#061411]',
+                                btn: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+                                badge: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
+                            },
+                            cyan: {
+                                border: 'border-cyan-500/30',
+                                bg: 'bg-[#0A1A2A]',
+                                grad: 'from-[#0F3554] to-[#0A2238]',
+                                c1: 'bg-cyan-500/25',
+                                c2: 'bg-sky-400/25',
+                                c3: 'bg-indigo-400/70',
+                                dock: 'bg-[#050E17]',
+                                btn: 'bg-cyan-600 hover:bg-cyan-500 text-white',
+                                badge: 'bg-cyan-500/20 text-cyan-200 border-cyan-400/30'
+                            }
+                        };
+                        const c = colorMap[preset.tagColor] || colorMap.blue;
 
                         return (
                             <div
                                 key={preset.id}
-                                className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs flex flex-col justify-between"
+                                className={`rounded-[25px] overflow-hidden border ${c.border} ${c.bg} shadow-[0_12px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group`}
                             >
-                                <div>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/[0.05] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/[0.08]">
-                                            {preset.tag}
-                                        </span>
-                                        <span className="text-xs font-mono font-semibold text-gray-900 dark:text-white">
-                                            {preset.expectedAmount}
-                                        </span>
+                                {/* Upper Info Section with Concentric Circles */}
+                                <div className={`relative p-5 overflow-hidden text-white flex-1 flex flex-col justify-between bg-gradient-to-br ${c.grad}`}>
+                                    {/* Concentric Circles Background */}
+                                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                        <div className={`absolute -top-[70%] -right-[35%] w-[220px] h-[220px] rounded-full ${c.c1} blur-[0.5px]`} />
+                                        <div className={`absolute -top-[50%] -right-[20%] w-[150px] h-[150px] rounded-full ${c.c2}`} />
+                                        <div className={`absolute -top-[25%] -right-[5%] w-[75px] h-[75px] rounded-full ${c.c3} shadow-[0_0_20px_rgba(255,255,255,0.4)]`} />
                                     </div>
 
-                                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                                        {preset.vendorName}
-                                    </h3>
-                                    <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
-                                        <Mail className="w-3.5 h-3.5" />
-                                        {preset.senderEmail}
-                                    </p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                                        {preset.description}
-                                    </p>
+                                    <div className="relative z-10">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${c.badge}`}>
+                                                {preset.tag}
+                                            </span>
+                                            <span className="text-xs font-mono font-bold text-white px-2 py-0.5 rounded-md bg-black/30 border border-white/10">
+                                                {preset.expectedAmount}
+                                            </span>
+                                        </div>
+
+                                        <h3 className="text-base font-bold text-white mb-1 drop-shadow-sm">
+                                            {preset.vendorName}
+                                        </h3>
+                                        <p className="text-xs font-mono text-slate-300 mb-2.5 flex items-center gap-1.5 truncate">
+                                            <Mail className="w-3.5 h-3.5 shrink-0 text-cyan-300" />
+                                            <span className="truncate">{preset.senderEmail}</span>
+                                        </p>
+                                        <p className="text-xs text-slate-300/90 leading-relaxed">
+                                            {preset.description}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <button
-                                    onClick={() => handleRunPreset(preset)}
-                                    disabled={isSimulating}
-                                    className="w-full py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-violet-600 dark:bg-white/[0.04] dark:hover:bg-violet-600 text-gray-800 hover:text-white dark:text-gray-200 dark:hover:text-white border border-gray-200 dark:border-white/[0.08] hover:border-transparent font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98]"
-                                >
-                                    {isThisPresetRunning ? (
-                                        <>
-                                            <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                                            <span>Simulating Delivery...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Play className="w-3.5 h-3.5 text-violet-500 group-hover:text-white transition" />
-                                            <span>Simulate Delivery</span>
-                                        </>
-                                    )}
-                                </button>
+                                {/* Recessed Days-Section Dock Strip */}
+                                <div className={`flex items-center justify-between w-full ${c.dock} p-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]`}>
+                                    <button
+                                        onClick={() => handleRunPreset(preset)}
+                                        disabled={isSimulating}
+                                        className={`w-full py-2 px-3 rounded-xl font-mono font-bold text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-95 shadow-sm ${c.btn}`}
+                                    >
+                                        {isThisPresetRunning ? (
+                                            <>
+                                                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                                <span>SIMULATING DELIVERY...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Play className="w-3.5 h-3.5 fill-current" />
+                                                <span>SIMULATE DELIVERY</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}

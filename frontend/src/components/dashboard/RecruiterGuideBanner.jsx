@@ -80,65 +80,92 @@ export default function RecruiterGuideBanner({ onIngestSample, isIngesting, onOp
             Welcome! <strong className="text-white">PDF2Sheet</strong> is an autonomous invoice processing pipeline. It captures invoices from email (IMAP) or uploads, extracts structured financial entities using <strong className="text-cyan-300 font-mono">Groq LPU (Llama 3.3 70B)</strong> in <span className="text-emerald-400 font-mono font-bold">&lt;280ms</span>, verifies mathematical integrity, and writes clean data directly into <strong className="text-emerald-300">Google Sheets</strong>.
           </p>
 
-          {/* Quick 1-Click Interactive Test Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {/* Quick 1-Click Interactive Test Actions - Uiverse Concentric Aesthetic */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Quick Action 1: Ingest AWS Sample */}
             <button
               onClick={() => onIngestSample('aws', 'aws-invoice.pdf', 'AWS Cloud')}
               disabled={isIngesting}
-              className="p-3 rounded-2xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-left transition-all group cursor-pointer disabled:opacity-50"
+              className="relative rounded-[22px] overflow-hidden border border-indigo-500/30 bg-[#0F1426] p-3.5 text-left transition-all duration-200 group cursor-pointer disabled:opacity-50 hover:-translate-y-0.5 hover:border-indigo-400/60 shadow-lg"
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                  1-Click Ingest Sample
-                </span>
-                <span className="text-[9px] font-mono text-cyan-300 bg-cyan-500/15 px-1.5 py-0.2 rounded">
-                  AWS $2,845
-                </span>
+              {/* Concentric Solar Rings */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-[70%] -right-[40%] w-[160px] h-[160px] rounded-full bg-indigo-500/20 blur-[0.5px]" />
+                <div className="absolute -top-[50%] -right-[20%] w-[110px] h-[110px] rounded-full bg-blue-400/20" />
+                <div className="absolute -top-[25%] -right-[5%] w-[55px] h-[55px] rounded-full bg-cyan-400/60" />
               </div>
-              <p className="text-[10px] text-slate-400">
-                Run Groq LPU on a real AWS Cloud invoice without uploading files.
-              </p>
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                    1-Click Ingest Sample
+                  </span>
+                  <span className="text-[9px] font-mono text-cyan-300 bg-cyan-500/15 px-1.5 py-0.2 rounded border border-cyan-400/30">
+                    AWS $2,845
+                  </span>
+                </div>
+                <p className="text-[10px] text-indigo-200/80 leading-snug">
+                  Run Groq LPU on a real AWS Cloud invoice without uploading files.
+                </p>
+              </div>
             </button>
 
             {/* Quick Action 2: Ingest Stripe Sample */}
             <button
               onClick={() => onIngestSample('stripe', 'stripe-invoice.pdf', 'Stripe SaaS')}
               disabled={isIngesting}
-              className="p-3 rounded-2xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-left transition-all group cursor-pointer disabled:opacity-50"
+              className="relative rounded-[22px] overflow-hidden border border-purple-500/30 bg-[#170E28] p-3.5 text-left transition-all duration-200 group cursor-pointer disabled:opacity-50 hover:-translate-y-0.5 hover:border-purple-400/60 shadow-lg"
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-300" />
-                  Ingest Stripe SaaS
-                </span>
-                <span className="text-[9px] font-mono text-purple-300 bg-purple-500/15 px-1.5 py-0.2 rounded">
-                  Stripe $1,420
-                </span>
+              {/* Concentric Solar Rings */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-[70%] -right-[40%] w-[160px] h-[160px] rounded-full bg-purple-500/20 blur-[0.5px]" />
+                <div className="absolute -top-[50%] -right-[20%] w-[110px] h-[110px] rounded-full bg-pink-400/20" />
+                <div className="absolute -top-[25%] -right-[5%] w-[55px] h-[55px] rounded-full bg-purple-300/60" />
               </div>
-              <p className="text-[10px] text-slate-400">
-                Parse SaaS fee structure with high confidence coordinate match.
-              </p>
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                    Ingest Stripe SaaS
+                  </span>
+                  <span className="text-[9px] font-mono text-purple-300 bg-purple-500/15 px-1.5 py-0.2 rounded border border-purple-400/30">
+                    Stripe $1,420
+                  </span>
+                </div>
+                <p className="text-[10px] text-purple-200/80 leading-snug">
+                  Parse SaaS fee structure with high confidence coordinate match.
+                </p>
+              </div>
             </button>
 
             {/* Quick Action 3: Open Simulator */}
             <Link
               to="/simulate"
-              className="p-3 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-left transition-all group cursor-pointer block"
+              className="relative rounded-[22px] overflow-hidden border border-emerald-500/30 bg-[#0B1E19] p-3.5 text-left transition-all duration-200 group cursor-pointer block hover:-translate-y-0.5 hover:border-emerald-400/60 shadow-lg"
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                  <FlaskConical className="w-3.5 h-3.5 text-emerald-400" />
-                  Multi-Currency Lab
-                </span>
-                <span className="text-[9px] font-mono text-emerald-300 bg-emerald-500/15 px-1.5 py-0.2 rounded">
-                  EUR € · INR ₹
-                </span>
+              {/* Concentric Solar Rings */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-[70%] -right-[40%] w-[160px] h-[160px] rounded-full bg-emerald-500/20 blur-[0.5px]" />
+                <div className="absolute -top-[50%] -right-[20%] w-[110px] h-[110px] rounded-full bg-teal-400/20" />
+                <div className="absolute -top-[25%] -right-[5%] w-[55px] h-[55px] rounded-full bg-amber-400/60" />
               </div>
-              <p className="text-[10px] text-slate-400">
-                Simulate SAP Deutschland (EUR) and Apollo Hospital (INR GST).
-              </p>
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <FlaskConical className="w-3.5 h-3.5 text-emerald-400" />
+                    Multi-Currency Lab
+                  </span>
+                  <span className="text-[9px] font-mono text-emerald-300 bg-emerald-500/15 px-1.5 py-0.2 rounded border border-emerald-400/30">
+                    EUR € · INR ₹
+                  </span>
+                </div>
+                <p className="text-[10px] text-emerald-200/80 leading-snug">
+                  Simulate SAP Deutschland (EUR) and Apollo Hospital (INR GST).
+                </p>
+              </div>
             </Link>
 
             {/* Quick Action 4: Live Google Sheet */}
@@ -146,18 +173,27 @@ export default function RecruiterGuideBanner({ onIngestSample, isIngesting, onOp
               href="https://docs.google.com/spreadsheets/d/10XdMg1XgLa8PlRGMDr3_XTZ_0Igu2lI8B5oj8C5B4rs"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 rounded-2xl bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-left transition-all group cursor-pointer block"
+              className="relative rounded-[22px] overflow-hidden border border-teal-500/30 bg-[#0A2222] p-3.5 text-left transition-all duration-200 group cursor-pointer block hover:-translate-y-0.5 hover:border-teal-400/60 shadow-lg"
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-teal-400" />
-                  Live Google Sheet
-                </span>
-                <ExternalLink className="w-3 h-3 text-teal-300" />
+              {/* Concentric Solar Rings */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-[70%] -right-[40%] w-[160px] h-[160px] rounded-full bg-teal-500/20 blur-[0.5px]" />
+                <div className="absolute -top-[50%] -right-[20%] w-[110px] h-[110px] rounded-full bg-cyan-400/20" />
+                <div className="absolute -top-[25%] -right-[5%] w-[55px] h-[55px] rounded-full bg-emerald-300/60" />
               </div>
-              <p className="text-[10px] text-slate-400">
-                Inspect the synchronized live Google Spreadsheet in a new tab.
-              </p>
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-teal-400" />
+                    Live Google Sheet
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-teal-300" />
+                </div>
+                <p className="text-[10px] text-teal-200/80 leading-snug">
+                  Inspect the synchronized live Google Spreadsheet in a new tab.
+                </p>
+              </div>
             </a>
           </div>
 

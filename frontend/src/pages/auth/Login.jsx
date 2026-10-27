@@ -84,29 +84,44 @@ export default function Login() {
                         </p>
                     </div>
 
-                    {/* Recruiter / Guest Demo Access Callout */}
-                    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-emerald-500/10 border border-indigo-500/30">
-                        <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-mono font-bold text-indigo-400 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                                RESUME / PORTFOLIO REVIEW
-                            </span>
-                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 font-bold">
-                                NO LOGIN REQUIRED
-                            </span>
+                    {/* Recruiter / Guest Demo Access Card - Uiverse Architecture */}
+                    <div className="mb-6 rounded-[25px] overflow-hidden border border-indigo-500/30 bg-[#0F1426] shadow-[0_12px_30px_rgba(15,20,38,0.5)] flex flex-col">
+                        <div className="relative p-4 sm:p-5 overflow-hidden text-white bg-gradient-to-br from-[#1E2548] to-[#141A35]">
+                            {/* Concentric Circles Background */}
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                <div className="absolute -top-[70%] -right-[35%] w-[200px] h-[200px] rounded-full bg-indigo-500/25 blur-[0.5px]" />
+                                <div className="absolute -top-[50%] -right-[20%] w-[130px] h-[130px] rounded-full bg-blue-400/25" />
+                                <div className="absolute -top-[25%] -right-[5%] w-[65px] h-[65px] rounded-full bg-emerald-400/70 shadow-[0_0_20px_rgba(52,211,153,0.5)]" />
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-mono font-bold text-indigo-300 flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                                        RECRUITER / PORTFOLIO DEMO
+                                    </span>
+                                    <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30 font-bold">
+                                        ZERO LOGIN
+                                    </span>
+                                </div>
+                                <p className="text-xs text-indigo-200/90 leading-relaxed">
+                                    Evaluating this project for an interview? Jump straight into the full interactive workstation with pre-seeded invoices and Groq LPU OCR.
+                                </p>
+                            </div>
                         </div>
-                        <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                            Evaluating this project for an interview? Jump straight into the full interactive dashboard with pre-loaded invoices and Groq LPU OCR.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={handleGuestAccess}
-                            className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                        >
-                            <Sparkles className="w-4 h-4 text-amber-300" />
-                            <span>Explore as Guest Reviewer</span>
-                            <ArrowRight className="w-4 h-4" />
-                        </button>
+
+                        {/* Recessed Dock Strip */}
+                        <div className="w-full bg-[#0B0E1B] p-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                            <button
+                                type="button"
+                                onClick={handleGuestAccess}
+                                className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-95 active:scale-90"
+                            >
+                                <Sparkles className="w-4 h-4 text-amber-300" />
+                                <span>EXPLORE AS GUEST REVIEWER</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="relative flex items-center justify-center my-4">

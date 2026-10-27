@@ -107,198 +107,243 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Card: Top Vendor Spend Distribution (7 Cols) */}
-            <div className="lg:col-span-7 p-6 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm flex flex-col justify-between">
-                <div>
-                    <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-white/[0.06]">
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
-                                <TrendingUp className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                    Supplier Spend Breakdown
-                                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/[0.08]">
-                                        {baseCurrency}
-                                    </span>
-                                </h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    Consolidated financial volume across active suppliers
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="text-right">
-                            <span className="text-xs font-mono font-bold text-gray-900 dark:text-white">
-                                {formatCurrency(vendorStats.totalSpend, baseCurrency)}
-                            </span>
-                            <span className="block text-[10px] text-gray-400">Total Volume</span>
-                        </div>
+            {/* Left Card: Top Vendor Spend Distribution (7 Cols) - Uiverse Architecture */}
+            <div className="lg:col-span-7 rounded-[25px] overflow-hidden border border-indigo-500/30 bg-[#0F1426] shadow-[0_12px_30px_rgba(15,20,38,0.6)] flex flex-col justify-between transition-all duration-300 hover:border-indigo-500/50">
+                {/* Upper Info Section with Concentric Circles Background */}
+                <div className="relative p-6 overflow-hidden text-white flex-1 bg-gradient-to-br from-[#192142] to-[#101630]">
+                    {/* Concentric Circles Background */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        <div className="absolute -top-[70%] -right-[35%] w-[320px] h-[320px] rounded-full bg-indigo-500/25 blur-[0.5px]" />
+                        <div className="absolute -top-[50%] -right-[20%] w-[220px] h-[220px] rounded-full bg-blue-400/25" />
+                        <div className="absolute -top-[25%] -right-[5%] w-[110px] h-[110px] rounded-full bg-cyan-400/70 shadow-[0_0_25px_rgba(34,211,238,0.6)]" />
                     </div>
 
-                    {/* Vendor Bars */}
-                    <div className="mt-5 space-y-4">
-                        {vendorStats.list.slice(0, 5).map((v, idx) => {
-                            const percentOfTotal = vendorStats.totalSpend > 0 
-                                ? Math.round((v.total / vendorStats.totalSpend) * 100) 
-                                : 0;
-                            const percentOfMax = vendorStats.maxSpend > 0 
-                                ? (v.total / vendorStats.maxSpend) * 100 
-                                : 0;
-
-                            return (
-                                <div key={v.name} className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <span className="w-5 h-5 rounded-md bg-gray-100 dark:bg-white/[0.04] text-gray-500 dark:text-gray-400 text-[10px] font-mono flex items-center justify-center shrink-0">
-                                                0{idx + 1}
-                                            </span>
-                                            <span className="font-medium text-gray-800 dark:text-gray-200 truncate">
-                                                {v.name}
-                                            </span>
-                                            <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500">
-                                                ({v.count} inv{v.count > 1 ? 's' : ''})
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-3 shrink-0 font-mono">
-                                            <span className="text-gray-900 dark:text-gray-100 font-semibold">
-                                                {formatCurrency(v.total, baseCurrency)}
-                                            </span>
-                                            <span className="text-[11px] text-gray-400 w-9 text-right font-medium">
-                                                {percentOfTotal}%
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Cohesive Indigo Progress Bar */}
-                                    <div className="w-full bg-gray-100 dark:bg-white/[0.05] h-2 rounded-full overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${percentOfMax}%` }}
-                                            transition={{ duration: 0.8, ease: "easeOut" }}
-                                            className="h-full rounded-full bg-violet-600 dark:bg-violet-500"
-                                        />
-                                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
+                                    <TrendingUp className="w-4 h-4" />
                                 </div>
-                            );
-                        })}
+                                <div>
+                                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                                        Supplier Spend Breakdown
+                                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30">
+                                            {baseCurrency}
+                                        </span>
+                                    </h3>
+                                    <p className="text-xs text-indigo-200/80 mt-0.5">
+                                        Consolidated financial volume across active suppliers
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="text-right">
+                                <span className="text-sm sm:text-base font-mono font-bold text-white">
+                                    {formatCurrency(vendorStats.totalSpend, baseCurrency)}
+                                </span>
+                                <span className="block text-[10px] text-cyan-300 font-mono">Consolidated Volume</span>
+                            </div>
+                        </div>
+
+                        {/* Vendor Bars */}
+                        <div className="mt-5 space-y-4">
+                            {vendorStats.list.slice(0, 5).map((v, idx) => {
+                                const percentOfTotal = vendorStats.totalSpend > 0 
+                                    ? Math.round((v.total / vendorStats.totalSpend) * 100) 
+                                    : 0;
+                                const percentOfMax = vendorStats.maxSpend > 0 
+                                    ? (v.total / vendorStats.maxSpend) * 100 
+                                    : 0;
+
+                                return (
+                                    <div key={v.name} className="space-y-1.5">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="w-5 h-5 rounded-md bg-white/[0.08] text-indigo-200 text-[10px] font-mono flex items-center justify-center shrink-0 border border-white/10">
+                                                    0{idx + 1}
+                                                </span>
+                                                <span className="font-medium text-white truncate">
+                                                    {v.name}
+                                                </span>
+                                                <span className="text-[10px] font-mono text-indigo-300/70">
+                                                    ({v.count} inv{v.count > 1 ? 's' : ''})
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 shrink-0 font-mono">
+                                                <span className="text-white font-semibold">
+                                                    {formatCurrency(v.total, baseCurrency)}
+                                                </span>
+                                                <span className="text-[11px] text-cyan-300 w-9 text-right font-medium">
+                                                    {percentOfTotal}%
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Cohesive Indigo Progress Bar */}
+                                        <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${percentOfMax}%` }}
+                                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-gray-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                {/* Recessed Days-Section Dock Strip */}
+                <div className="flex items-center justify-between w-full bg-[#0B0E1B] px-5 py-2.5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06] text-xs text-slate-300 font-mono">
                     <span className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-gray-400" />
-                        {vendorStats.list.length} distinct supplier{vendorStats.list.length > 1 ? 's' : ''} recognized
+                        <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>{vendorStats.list.length} distinct supplier{vendorStats.list.length > 1 ? 's' : ''} recognized</span>
                     </span>
-                    <span className="font-mono text-[11px] text-gray-400">
-                        Top supplier: {vendorStats.list[0]?.name || 'N/A'}
+                    <span className="text-[11px] text-cyan-300 font-semibold">
+                        Top: {vendorStats.list[0]?.name || 'N/A'}
                     </span>
                 </div>
             </div>
 
-            {/* Right Card: Forensic Math Health & Hybrid Engine Split (5 Cols) */}
+            {/* Right Card: Forensic Math Health & Hybrid Engine Split (5 Cols) - Uiverse Architecture */}
             <div className="lg:col-span-5 space-y-6">
                 {/* 1. Forensic Math Integrity Gauge */}
-                <div className="p-6 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm">
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-white/[0.06]">
-                        <div className="flex items-center gap-2">
-                            <div className={`p-2 rounded-xl ${auditStats.discrepancyCount > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                                <ShieldCheck className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                                    Mathematical Audit
-                                </h3>
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                                    Line items vs stated grand total verification
-                                </p>
-                            </div>
+                <div className="rounded-[25px] overflow-hidden border border-emerald-500/30 bg-[#0B1E19] shadow-[0_12px_30px_rgba(11,30,25,0.6)] flex flex-col justify-between transition-all duration-300 hover:border-emerald-500/50">
+                    <div className="relative p-6 overflow-hidden text-white bg-gradient-to-br from-[#123E33] to-[#0A261F]">
+                        {/* Concentric Circles Background */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute -top-[70%] -right-[35%] w-[260px] h-[260px] rounded-full bg-emerald-500/25 blur-[0.5px]" />
+                            <div className="absolute -top-[50%] -right-[20%] w-[180px] h-[180px] rounded-full bg-teal-400/25" />
+                            <div className="absolute -top-[25%] -right-[5%] w-[90px] h-[90px] rounded-full bg-amber-400/70 shadow-[0_0_20px_rgba(251,191,36,0.6)]" />
                         </div>
 
-                        <span className={`text-xl font-bold font-mono ${auditStats.integrityRate >= 95 ? 'text-emerald-500' : auditStats.integrityRate >= 80 ? 'text-amber-500' : 'text-rose-500'}`}>
-                            {auditStats.integrityRate}%
-                        </span>
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-emerald-300 border border-white/10">
+                                        <ShieldCheck className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-white">
+                                            Mathematical Audit
+                                        </h3>
+                                        <p className="text-[11px] text-emerald-200/80">
+                                            Line items vs stated grand total verification
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">
+                                    {auditStats.integrityRate}%
+                                </span>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-2xl bg-black/30 border border-white/10">
+                                    <span className="text-[10px] uppercase font-semibold text-emerald-200/80 tracking-wider">
+                                        Reconciled
+                                    </span>
+                                    <div className="text-lg font-bold font-mono text-emerald-400 mt-0.5">
+                                        {auditStats.verifiedCount}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">Exact match</span>
+                                </div>
+
+                                <div className="p-3 rounded-2xl bg-black/30 border border-white/10">
+                                    <span className="text-[10px] uppercase font-semibold text-amber-200/80 tracking-wider">
+                                        Discrepancies
+                                    </span>
+                                    <div className={`text-lg font-bold font-mono mt-0.5 ${auditStats.discrepancyCount > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
+                                        {auditStats.discrepancyCount}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">
+                                        {auditStats.discrepancyCount > 0 ? `Δ ${formatCurrency(auditStats.totalDiscrepancyAmount, baseCurrency)}` : 'Zero variance'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#0B0F19] border border-gray-100 dark:border-white/[0.04]">
-                            <span className="text-[10px] uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wider">
-                                Reconciled
-                            </span>
-                            <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
-                                {auditStats.verifiedCount}
-                            </div>
-                            <span className="text-[10px] text-gray-400">Exact match</span>
-                        </div>
-
-                        <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#0B0F19] border border-gray-100 dark:border-white/[0.04]">
-                            <span className="text-[10px] uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wider">
-                                Discrepancies
-                            </span>
-                            <div className={`text-lg font-bold font-mono mt-0.5 ${auditStats.discrepancyCount > 0 ? 'text-amber-500' : 'text-gray-400'}`}>
-                                {auditStats.discrepancyCount}
-                            </div>
-                            <span className="text-[10px] text-gray-400">
-                                {auditStats.discrepancyCount > 0 ? `Δ ${formatCurrency(auditStats.totalDiscrepancyAmount, baseCurrency)}` : 'Zero variance'}
-                            </span>
-                        </div>
+                    {/* Recessed Days-Section Dock Strip */}
+                    <div className="flex items-center justify-between w-full bg-[#061411] px-5 py-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06] text-[11px] font-mono text-emerald-300">
+                        <span>SUM CHECK: {auditStats.integrityRate === 100 ? '100% BALANCED' : 'NEEDS ATTENTION'}</span>
+                        <span className="text-slate-400">{auditStats.verifiedCount} / {invoices.length} Verified</span>
                     </div>
                 </div>
 
                 {/* 2. Extraction Engine Split */}
-                <div className="p-6 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm">
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-white/[0.06]">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-xl bg-violet-500/10 text-violet-500">
-                                <Cpu className="w-4 h-4" />
+                <div className="rounded-[25px] overflow-hidden border border-cyan-500/30 bg-[#0A1A2A] shadow-[0_12px_30px_rgba(10,26,42,0.6)] flex flex-col justify-between transition-all duration-300 hover:border-cyan-500/50">
+                    <div className="relative p-6 overflow-hidden text-white bg-gradient-to-br from-[#0F3554] to-[#0A2238]">
+                        {/* Concentric Circles Background */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute -top-[70%] -right-[35%] w-[260px] h-[260px] rounded-full bg-cyan-500/25 blur-[0.5px]" />
+                            <div className="absolute -top-[50%] -right-[20%] w-[180px] h-[180px] rounded-full bg-sky-400/25" />
+                            <div className="absolute -top-[25%] -right-[5%] w-[90px] h-[90px] rounded-full bg-indigo-400/70 shadow-[0_0_20px_rgba(129,140,248,0.6)]" />
+                        </div>
+
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
+                                        <Cpu className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-white">
+                                            Extraction Engine
+                                        </h3>
+                                        <p className="text-[11px] text-cyan-200/80">
+                                            Groq LPU vs Spatial Coordinate Rules
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                                    Extraction Engine
-                                </h3>
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                                    Groq LPU vs Spatial Coordinate Rules
-                                </p>
+
+                            <div className="mt-4 space-y-3">
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-xs font-medium">
+                                        <span className="flex items-center gap-1.5 text-slate-200">
+                                            <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                                            Groq LPU (GPT-OSS 120B)
+                                        </span>
+                                        <span className="font-mono text-cyan-300 font-semibold">
+                                            {auditStats.groqAiCount} ({invoices.length > 0 ? Math.round((auditStats.groqAiCount / invoices.length) * 100) : 0}%)
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
+                                        <div 
+                                            className="h-full bg-cyan-400 rounded-full"
+                                            style={{ width: `${invoices.length > 0 ? (auditStats.groqAiCount / invoices.length) * 100 : 0}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-xs font-medium">
+                                        <span className="flex items-center gap-1.5 text-slate-200">
+                                            <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                                            Spatial Coordinate Memory
+                                        </span>
+                                        <span className="font-mono text-indigo-300 font-semibold">
+                                            {auditStats.spatialCount} ({invoices.length > 0 ? Math.round((auditStats.spatialCount / invoices.length) * 100) : 0}%)
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
+                                        <div 
+                                            className="h-full bg-indigo-500 rounded-full"
+                                            style={{ width: `${invoices.length > 0 ? (auditStats.spatialCount / invoices.length) * 100 : 0}%` }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-4 space-y-3">
-                        <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-                                    <Zap className="w-3.5 h-3.5 text-violet-500" />
-                                    Groq LPU (GPT-OSS 120B)
-                                </span>
-                                <span className="font-mono text-gray-900 dark:text-white font-semibold">
-                                    {auditStats.groqAiCount} ({invoices.length > 0 ? Math.round((auditStats.groqAiCount / invoices.length) * 100) : 0}%)
-                                </span>
-                            </div>
-                            <div className="w-full bg-gray-100 dark:bg-white/[0.05] h-1.5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-violet-500 rounded-full"
-                                    style={{ width: `${invoices.length > 0 ? (auditStats.groqAiCount / invoices.length) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-medium">
-                                <span className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-                                    <Layers className="w-3.5 h-3.5 text-cyan-500" />
-                                    Spatial Coordinate Memory
-                                </span>
-                                <span className="font-mono text-gray-900 dark:text-white font-semibold">
-                                    {auditStats.spatialCount} ({invoices.length > 0 ? Math.round((auditStats.spatialCount / invoices.length) * 100) : 0}%)
-                                </span>
-                            </div>
-                            <div className="w-full bg-gray-100 dark:bg-white/[0.05] h-1.5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-cyan-500 rounded-full"
-                                    style={{ width: `${invoices.length > 0 ? (auditStats.spatialCount / invoices.length) * 100 : 0}%` }}
-                                />
-                            </div>
-                        </div>
+                    {/* Recessed Days-Section Dock Strip */}
+                    <div className="flex items-center justify-between w-full bg-[#050E17] px-5 py-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06] text-[11px] font-mono text-cyan-300">
+                        <span>LATENCY: &lt;280ms AVERAGE</span>
+                        <span className="text-slate-400">Dual Hardware Pipeline</span>
                     </div>
                 </div>
             </div>

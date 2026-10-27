@@ -586,78 +586,283 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* 4-KPI Metric Strip */}
+            {/* 4-KPI Metric Strip (Styled with Uiverse Concentric Solar & Dual-Zone Architecture) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Total Invoices */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Total Invoices
-                        </span>
-                        <div className="p-2 rounded-lg bg-violet-500/10 text-violet-500 dark:text-violet-400">
-                            <FileText className="w-4 h-4" />
+                {/* 1. Total Invoices (Indigo / Royal Violet) */}
+                <div className="rounded-[25px] overflow-hidden border border-indigo-500/30 bg-[#0F1426] shadow-[0_12px_30px_rgba(15,20,38,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:shadow-indigo-500/20 group">
+                    {/* Upper Info Section with Concentric Circles */}
+                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#1E2548] to-[#141A35]">
+                        {/* Background Design: 3 Concentric Solar/Orbital Circles */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute -top-[75%] -right-[40%] w-[280px] h-[280px] rounded-full bg-indigo-500/30 blur-[0.5px]" />
+                            <div className="absolute -top-[60%] -right-[25%] w-[190px] h-[190px] rounded-full bg-blue-400/30" />
+                            <div className="absolute -top-[30%] -right-[5%] w-[95px] h-[95px] rounded-full bg-cyan-400/80 shadow-[0_0_25px_rgba(34,211,238,0.7)]" />
+                        </div>
+
+                        {/* Top Metadata Row */}
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
+                                    <FileText className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">
+                                    Total Invoices
+                                </span>
+                            </div>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
+                                RFC 2177
+                            </span>
+                        </div>
+
+                        {/* Bottom Metric & Sub-Range Row */}
+                        <div className="relative z-10 flex items-end justify-between mt-3">
+                            <div>
+                                <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
+                                    {stats.total}
+                                </div>
+                                <div className="text-[11px] text-indigo-200/80 font-mono mt-0.5">
+                                    {stats.processed} Synced · {stats.review} In Review
+                                </div>
+                            </div>
+                            <div className="text-right text-[11px] font-mono text-slate-300">
+                                <div className="text-xs text-white font-bold">100% Ingest</div>
+                                <div className="text-[10px] text-indigo-300">Zero Loss</div>
+                            </div>
                         </div>
                     </div>
-                    <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">
-                        {stats.total}
+
+                    {/* Recessed Days-Section Dock Strip */}
+                    <div className="flex items-center justify-between w-full bg-[#0B0E1B] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                        <button
+                            onClick={() => setStatusFilter('all')}
+                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
+                                statusFilter === 'all'
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+                            }`}
+                        >
+                            <span>ALL ({stats.total})</span>
+                        </button>
+                        <button
+                            onClick={() => setStatusFilter('processed')}
+                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
+                                statusFilter === 'processed'
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+                            }`}
+                        >
+                            <span>SYNCED ({stats.processed})</span>
+                        </button>
+                        <button
+                            onClick={() => setStatusFilter('review_needed')}
+                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
+                                statusFilter === 'review_needed'
+                                    ? 'bg-amber-600 text-white shadow-sm'
+                                    : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+                            }`}
+                        >
+                            <span>REVIEW ({stats.review})</span>
+                        </button>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Ingested across all connected inboxes
-                    </p>
                 </div>
 
-                {/* 2. Total Normalized Volume */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Normalized Volume ({baseCurrency})
-                        </span>
-                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
-                            <DollarSign className="w-4 h-4" />
+                {/* 2. Total Normalized Volume (Emerald / Forest Mint) */}
+                <div className="rounded-[25px] overflow-hidden border border-emerald-500/30 bg-[#0B1E19] shadow-[0_12px_30px_rgba(11,30,25,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-emerald-500/20 group">
+                    {/* Upper Info Section with Concentric Circles */}
+                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#123E33] to-[#0A261F]">
+                        {/* Background Design: 3 Concentric Solar/Orbital Circles */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute -top-[75%] -right-[40%] w-[280px] h-[280px] rounded-full bg-emerald-500/30 blur-[0.5px]" />
+                            <div className="absolute -top-[60%] -right-[25%] w-[190px] h-[190px] rounded-full bg-teal-400/30" />
+                            <div className="absolute -top-[30%] -right-[5%] w-[95px] h-[95px] rounded-full bg-amber-400/80 shadow-[0_0_25px_rgba(251,191,36,0.7)]" />
+                        </div>
+
+                        {/* Top Metadata Row */}
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-xl bg-white/10 backdrop-blur-md text-emerald-300 border border-white/10">
+                                    <DollarSign className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200">
+                                    Normalized Volume
+                                </span>
+                            </div>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 font-bold">
+                                {baseCurrency} BASE
+                            </span>
+                        </div>
+
+                        {/* Bottom Metric & Sub-Range Row */}
+                        <div className="relative z-10 flex items-end justify-between mt-3">
+                            <div className="min-w-0 pr-2">
+                                <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm truncate">
+                                    {formatCurrency(stats.totalAmount, baseCurrency)}
+                                </div>
+                                <div className="text-[11px] text-emerald-200/80 font-mono mt-0.5 truncate">
+                                    Consolidated Supplier Volume
+                                </div>
+                            </div>
+                            <div className="text-right text-[11px] font-mono text-slate-300 shrink-0">
+                                <div className="text-xs text-amber-300 font-bold">{invoices?.length || 0} Bills</div>
+                                <div className="text-[10px] text-emerald-300">Multi-Curr</div>
+                            </div>
                         </div>
                     </div>
-                    <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white truncate">
-                        {formatCurrency(stats.totalAmount, baseCurrency)}
+
+                    {/* Recessed Days-Section Dock Strip */}
+                    <div className="flex items-center justify-between w-full bg-[#061411] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                        {['USD', 'EUR', 'INR'].map((curr) => (
+                            <button
+                                key={curr}
+                                onClick={() => setBaseCurrency(curr)}
+                                className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
+                                    baseCurrency === curr
+                                        ? 'bg-emerald-600 text-white shadow-sm'
+                                        : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+                                }`}
+                            >
+                                <span>{curr} {curr === 'USD' ? '$' : curr === 'EUR' ? '€' : '₹'}</span>
+                            </button>
+                        ))}
                     </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Consolidated supplier volume
-                    </p>
                 </div>
 
-                {/* 3. Automation Rate */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Automation Rate
-                        </span>
-                        <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
-                            <Zap className="w-4 h-4" />
+                {/* 3. Automation Rate (Cyan / Cyber Blue) */}
+                <div className="rounded-[25px] overflow-hidden border border-cyan-500/30 bg-[#0A1A2A] shadow-[0_12px_30px_rgba(10,26,42,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/50 hover:shadow-cyan-500/20 group">
+                    {/* Upper Info Section with Concentric Circles */}
+                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#0F3554] to-[#0A2238]">
+                        {/* Background Design: 3 Concentric Solar/Orbital Circles */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute -top-[75%] -right-[40%] w-[280px] h-[280px] rounded-full bg-cyan-500/30 blur-[0.5px]" />
+                            <div className="absolute -top-[60%] -right-[25%] w-[190px] h-[190px] rounded-full bg-sky-400/30" />
+                            <div className="absolute -top-[30%] -right-[5%] w-[95px] h-[95px] rounded-full bg-indigo-400/80 shadow-[0_0_25px_rgba(129,140,248,0.7)]" />
+                        </div>
+
+                        {/* Top Metadata Row */}
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
+                                    <Zap className="w-3.5 h-3.5 text-cyan-300 fill-cyan-300" />
+                                </div>
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-200">
+                                    Automation Rate
+                                </span>
+                            </div>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
+                                GROQ LPU AI
+                            </span>
+                        </div>
+
+                        {/* Bottom Metric & Sub-Range Row */}
+                        <div className="relative z-10 flex items-end justify-between mt-3">
+                            <div>
+                                <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
+                                    {stats.syncRate}%
+                                </div>
+                                <div className="text-[11px] text-cyan-200/80 font-mono mt-0.5">
+                                    Automated Spreadsheet Sync
+                                </div>
+                            </div>
+                            <div className="text-right text-[11px] font-mono text-slate-300">
+                                <div className="text-xs text-cyan-300 font-bold">&lt;280ms</div>
+                                <div className="text-[10px] text-slate-400">Avg Latency</div>
+                            </div>
                         </div>
                     </div>
-                    <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">
-                        {stats.syncRate}%
+
+                    {/* Recessed Days-Section Dock Strip */}
+                    <div className="flex items-center justify-between w-full bg-[#050E17] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
+                        <button
+                            onClick={() => handleSyncEmail(false)}
+                            disabled={isSyncingEmail}
+                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08]"
+                        >
+                            <span>{isSyncingEmail ? 'SYNCING...' : 'SYNC IMAP'}</span>
+                        </button>
+                        <button
+                            onClick={() => handleIngestSample('aws', 'aws-invoice.pdf', 'AWS Cloud')}
+                            disabled={isIngestingSample}
+                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-cyan-500/20 text-cyan-200 border border-cyan-500/30"
+                        >
+                            <span>INGEST AWS</span>
+                        </button>
+                        <button
+                            onClick={handleGenerateCfoBrief}
+                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08]"
+                        >
+                            <span>CFO BRIEF</span>
+                        </button>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Automated spreadsheet sync
-                    </p>
                 </div>
 
-                {/* 4. Review Queue */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Review Queue
-                        </span>
-                        <div className={`p-2 rounded-lg ${stats.review > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-gray-100 dark:bg-white/[0.04] text-gray-400'}`}>
-                            <Clock className="w-4 h-4" />
+                {/* 4. Review Queue (Warm Sunset Coral / Gold - Exact Uiverse Reference Aesthetic) */}
+                <div className="rounded-[25px] overflow-hidden border border-amber-500/30 bg-[#281318] shadow-[0_12px_30px_rgba(40,19,24,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-amber-500/20 group">
+                    {/* Upper Info Section with Concentric Circles */}
+                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#EC7263] via-[#CA5861] to-[#974859]">
+                        {/* Background Design: 3 Concentric Solar/Orbital Circles (Exact Uiverse geometry) */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute -top-[80%] -right-[50%] w-[300px] h-[300px] rounded-full bg-[#EFC745] opacity-40 blur-[0.5px]" />
+                            <div className="absolute -top-[70%] -right-[30%] w-[210px] h-[210px] rounded-full bg-[#EFC745] opacity-40" />
+                            <div className="absolute -top-[35%] -right-[8%] w-[100px] h-[100px] rounded-full bg-[#EFC745] opacity-100 shadow-[0_0_25px_rgba(239,199,69,0.8)]" />
+                        </div>
+
+                        {/* Top Metadata Row */}
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-xl bg-black/20 backdrop-blur-md text-amber-200 border border-white/20">
+                                    <Clock className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-white">
+                                    Review Queue
+                                </span>
+                            </div>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/25 text-white border border-white/25 font-bold">
+                                FORENSIC AUDIT
+                            </span>
+                        </div>
+
+                        {/* Bottom Metric & Sub-Range Row */}
+                        <div className="relative z-10 flex items-end justify-between mt-3">
+                            <div>
+                                <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
+                                    {stats.review}
+                                </div>
+                                <div className="text-[11px] text-white/90 font-mono mt-0.5">
+                                    Requires Human Verification
+                                </div>
+                            </div>
+                            <div className="text-right text-[11px] font-mono text-white/95">
+                                <div className="text-xs text-[#EFC745] font-extrabold">{stats.review === 0 ? 'ALL VERIFIED' : 'ACTION REQ'}</div>
+                                <div className="text-[10px] text-white/80">Sum Integrity</div>
+                            </div>
                         </div>
                     </div>
-                    <div className={`mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight ${stats.review > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-white'}`}>
-                        {stats.review}
+
+                    {/* Recessed Days-Section Dock Strip (Exact Uiverse #974859 / #a75265) */}
+                    <div className="flex items-center justify-between w-full bg-[#974859] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_#753644] border-t border-black/15">
+                        <button
+                            onClick={() => setStatusFilter('review_needed')}
+                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-[#a75265] text-white shadow-[inset_0_1px_3px_#974859]"
+                        >
+                            <span>SHOW QUEUE</span>
+                        </button>
+                        <button
+                            onClick={() => setNlFilter(prev => ({ ...prev, active: true, mathDiscrepancyOnly: !prev.mathDiscrepancyOnly }))}
+                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
+                                nlFilter?.mathDiscrepancyOnly
+                                    ? 'bg-[#EFC745] text-slate-900 shadow-md font-extrabold'
+                                    : 'bg-[#a75265] text-white shadow-[inset_0_1px_3px_#974859]'
+                            }`}
+                        >
+                            <span>MATH AUDIT</span>
+                        </button>
+                        <button
+                            onClick={() => { setStatusFilter('all'); setNlFilter({ active: false }); }}
+                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-[#a75265] text-white shadow-[inset_0_1px_3px_#974859]"
+                        >
+                            <span>RESET</span>
+                        </button>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Requires human verification
-                    </p>
                 </div>
             </div>
 
