@@ -19,7 +19,7 @@ export default function Register() {
     const handleGuestAccess = () => {
         localStorage.setItem('token', 'guest-demo-token');
         localStorage.setItem('user', JSON.stringify({
-            _id: '6ac54b3cfe90e970a92ea608',
+            _id: '6ae0f1989e78e3eb2b71ff9c',
             email: 'guest@pdf2sheet.com',
             firstName: 'Guest',
             lastName: 'Reviewer',

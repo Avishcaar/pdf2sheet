@@ -6,47 +6,43 @@ export const authenticateToken = async (req, res, next) => {
         const authHeader = req.headers['authorization'];
         const token = (authHeader && authHeader.split(' ')[1]) || req.query?.token;
 
-        // Resume / Portfolio Guest Mode:
-        // If no token is provided, guest token is used, or x-guest-mode header is set,
-        // seamlessly bind to the primary demo user (test@test.com) so interviewers have 100% full access.
-        if (!token || token === 'guest-demo-token' || req.headers['x-guest-mode'] === 'true') {
-            const demoUser = await User.findOne({ email: 'test@test.com' }) || await User.findOne();
-            if (demoUser) {
-                req.user = {
-                    userId: demoUser._id,
-                    email: demoUser.email
-                };
-                return next();
+        // 1. If a valid JWT token is provided, authenticate as that specific user
+        if (token && token !== 'guest-demo-token') {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const user = await User.findById(decoded.userId);
+                if (user) {
+                    req.user = {
+                        userId: user._id,
+                        email: user.email
+                    };
+                    return next();
+                }
+            } catch (jwtError) {
+                // If it was an explicitly provided JWT that failed, only fallback to guest if explicitly requested
+                if (req.headers['x-guest-mode'] !== 'true') {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Session expired. Please log in again.'
+                    });
+                }
             }
         }
 
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await User.findById(decoded.userId);
-
-            if (user) {
-                req.user = {
-                    userId: user._id,
-                    email: user.email
-                };
-                return next();
-            }
-        } catch (jwtError) {
-            // If token is expired or invalid, fallback to demo user so recruiters are never blocked
-            const demoUser = await User.findOne({ email: 'test@test.com' }) || await User.findOne();
-            if (demoUser) {
-                req.user = {
-                    userId: demoUser._id,
-                    email: demoUser.email
-                };
-                return next();
-            }
-            throw jwtError;
+        // 2. Guest / Demo Mode (no token, guest-demo-token, or x-guest-mode header)
+        // Bind strictly to the isolated guest user (guest@pdf2sheet.com)
+        const guestUser = await User.findOne({ email: 'guest@pdf2sheet.com' });
+        if (guestUser) {
+            req.user = {
+                userId: guestUser._id,
+                email: guestUser.email
+            };
+            return next();
         }
 
         return res.status(401).json({
             success: false,
-            error: 'User not found'
+            error: 'Authentication failed'
         });
     } catch (error) {
         return res.status(403).json({
