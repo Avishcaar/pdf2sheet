@@ -350,7 +350,8 @@ export default function Dashboard() {
         }
     };
 
-    const handleSyncEmail = async (force = false) => {
+    const handleSyncEmail = async (forceParam = false) => {
+        const force = typeof forceParam === 'boolean' ? forceParam : false;
         setIsSyncingEmail(true);
         const toastId = toast.loading(force ? 'Force re-importing all inbox invoices...' : 'Scanning Gmail inbox (jaltaasholaa@gmail.com)...');
         try {
@@ -467,7 +468,7 @@ export default function Dashboard() {
                     </button>
 
                     <button
-                        onClick={handleSyncEmail}
+                        onClick={() => handleSyncEmail(false)}
                         disabled={isSyncingEmail}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition active:scale-[0.98] cursor-pointer"
                         title="Scan connected Gmail inbox (jaltaasholaa@gmail.com) for new invoice emails"
