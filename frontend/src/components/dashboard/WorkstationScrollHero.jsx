@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Terminal, 
@@ -12,12 +12,9 @@ import {
   Scan, 
   Cpu, 
   Database, 
-  FileText, 
-  Zap, 
-  Check, 
-  ArrowRight,
   ShieldCheck,
-  Layers
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 import { clamp, easeOutCubic, lerp, range } from '../../utils/math';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -31,17 +28,41 @@ export default function WorkstationScrollHero({
 }) {
   const rootRef = useRef(null);
   const canvasRef = useRef(null);
+  const svgConduitRef = useRef(null);
   
-  // DOM Refs for direct style manipulation (60-120fps, bypass React re-renders)
+  // DOM element refs for direct style manipulation (60-120fps)
+  const intakeBadgeRef = useRef(null);
   const docWrapperRef = useRef(null);
   const laserRef = useRef(null);
   const laserBeamRef = useRef(null);
+  const laserGridRef = useRef(null);
+  const laserCoordRef = useRef(null);
+
+  // Document Bounding Boxes
   const boxVendorRef = useRef(null);
   const boxMetaRef = useRef(null);
   const boxItemsRef = useRef(null);
   const boxTotalRef = useRef(null);
-  const terminalJsonRef = useRef(null);
+
+  // Target lines in the JSON terminal
+  const jsonVendorRef = useRef(null);
+  const jsonMetaRef = useRef(null);
+  const jsonItemsRef = useRef(null);
+  const jsonTotalRef = useRef(null);
+
+  // SVG Data Conduit Paths & Traveling Photons
+  const pathVendorRef = useRef(null);
+  const pathMetaRef = useRef(null);
+  const pathItemsRef = useRef(null);
+  const pathTotalRef = useRef(null);
+  const photonVendorRef = useRef(null);
+  const photonMetaRef = useRef(null);
+  const photonItemsRef = useRef(null);
+  const photonTotalRef = useRef(null);
+
+  // Telemetry HUD Elements
   const terminalBadgeRef = useRef(null);
+  const lpuRateRef = useRef(null);
   const ejectGroupRef = useRef(null);
   const scrollIndicatorRef = useRef(null);
   const progressPercentRef = useRef(null);
@@ -50,7 +71,7 @@ export default function WorkstationScrollHero({
   const [isMinimized, setIsMinimized] = useState(false);
   const reduced = useReducedMotion();
 
-  // Particle Canvas Setup (drifting data motes inspired by Selene)
+  // 1. Interactive Canvas Background (Particle Constellation & Data Field)
   useEffect(() => {
     if (isMinimized) return;
     const canvas = canvasRef.current;
@@ -76,50 +97,75 @@ export default function WorkstationScrollHero({
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    // Initialize 80 floating data particles
-    let seed = 42;
+    // Initialize 70 floating motes
+    let seed = 89;
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const motes = Array.from({ length: 80 }, () => ({
+    const motes = Array.from({ length: 70 }, () => ({
       x: rand(),
       y: rand(),
-      r: 0.8 + rand() * 1.8,
-      speed: 0.15 + rand() * 0.45,
+      vx: (rand() - 0.5) * 0.0003,
+      vy: -0.0002 - rand() * 0.0004,
+      r: 0.9 + rand() * 1.6,
       alpha: 0.2 + rand() * 0.6,
-      hue: rand() > 0.6 ? 217 : rand() > 0.3 ? 160 : 260 // Cyan, Emerald, Indigo
+      hue: rand() > 0.6 ? 217 : rand() > 0.3 ? 160 : 270 // Cyan, Emerald, Purple
     }));
 
     let lastTime = performance.now();
 
-    const renderParticles = (time) => {
+    const render = (time) => {
       const dt = Math.min(0.1, (time - lastTime) / 1000);
       lastTime = time;
 
       ctx.clearRect(0, 0, width, height);
 
+      // Draw faint constellation lines between nearby motes
+      const maxDist = 75;
+      for (let i = 0; i < motes.length; i++) {
+        for (let j = i + 1; j < motes.length; j++) {
+          const dx = (motes[i].x - motes[j].x) * width;
+          const dy = (motes[i].y - motes[j].y) * height;
+          const dist = Math.hypot(dx, dy);
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * 0.12;
+            ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+            ctx.lineWidth = 0.75;
+            ctx.beginPath();
+            ctx.moveTo(motes[i].x * width, mototes_y(motes[i].y, height));
+            ctx.lineTo(motes[j].x * width, mototes_y(motes[j].y, height));
+            ctx.stroke();
+          }
+        }
+      }
+
+      function mototes_y(val, h) {
+        return val * h;
+      }
+
+      // Draw motes
       for (const m of motes) {
         if (!reduced) {
-          m.y -= m.speed * dt * 0.12;
-          m.x += Math.sin(time * 0.001 + m.y * 10) * 0.0003;
+          m.x += m.vx;
+          m.y += m.vy;
           if (m.y < 0) m.y = 1;
           if (m.x < 0) m.x = 1;
           if (m.x > 1) m.x = 0;
         }
 
         ctx.fillStyle = m.hue === 160 
-          ? `rgba(52, 211, 153, ${m.alpha * 0.7})` 
+          ? `rgba(52, 211, 153, ${m.alpha})` 
           : m.hue === 217 
-          ? `rgba(56, 189, 248, ${m.alpha * 0.7})` 
-          : `rgba(167, 139, 250, ${m.alpha * 0.6})`;
+          ? `rgba(56, 189, 248, ${m.alpha})` 
+          : `rgba(168, 85, 247, ${m.alpha})`;
 
         ctx.beginPath();
         ctx.arc(m.x * width, m.y * height, m.r, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      animId = requestAnimationFrame(renderParticles);
+      animId = requestAnimationFrame(render);
     };
 
-    animId = requestAnimationFrame(renderParticles);
+    animId = requestAnimationFrame(render);
 
     return () => {
       cancelAnimationFrame(animId);
@@ -127,7 +173,7 @@ export default function WorkstationScrollHero({
     };
   }, [isMinimized, reduced]);
 
-  // Scroll Choreography Frame Loop
+  // 2. High-Precision Scroll Choreography & Data Stream Conduit
   useEffect(() => {
     if (isMinimized) return;
     const root = rootRef.current;
@@ -135,6 +181,61 @@ export default function WorkstationScrollHero({
 
     let animId;
     let lastP = -1;
+
+    // Helper to calculate and draw SVG curve between two elements
+    const updateConduit = (pathEl, photonEl, fromEl, toEl, progress, color) => {
+      if (!pathEl || !fromEl || !toEl || !svgConduitRef.current) return;
+      const svg = svgConduitRef.current;
+      const sRect = svg.getBoundingClientRect();
+      if (sRect.width === 0) return;
+
+      const fRect = fromEl.getBoundingClientRect();
+      const tRect = toEl.getBoundingClientRect();
+
+      // Right-center of source box -> Left-center of target JSON line
+      const x1 = fRect.right - sRect.left;
+      const y1 = fRect.top + fRect.height / 2 - sRect.top;
+      const x2 = tRect.left - sRect.left;
+      const y2 = tRect.top + tRect.height / 2 - sRect.top;
+
+      const dx = Math.max(40, (x2 - x1) * 0.5);
+      const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+      pathEl.setAttribute('d', d);
+
+      const len = pathEl.getTotalLength ? pathEl.getTotalLength() : 300;
+      pathEl.style.strokeDasharray = `${len}`;
+
+      // Inking progress (0 to 1)
+      const k = easeOutCubic(progress);
+      pathEl.style.strokeDashoffset = `${len * (1 - k)}`;
+      pathEl.style.opacity = String(range(progress, 0.05, 0.25) * (1 - range(progress, 0.90, 1.0)));
+
+      // Moving energy photon
+      if (photonEl && pathEl.getPointAtLength && k > 0.01 && k < 0.99) {
+        const pt = pathEl.getPointAtLength(len * k);
+        photonEl.setAttribute('cx', String(pt.x));
+        photonEl.setAttribute('cy', String(pt.y));
+        photonEl.setAttribute('opacity', '1');
+      } else if (photonEl) {
+        photonEl.setAttribute('opacity', '0');
+      }
+
+      // Target Line Flash on Impact
+      if (k >= 0.95) {
+        toEl.style.opacity = '1';
+        toEl.style.transform = 'translate3d(0, 0, 0)';
+        toEl.style.color = color;
+        toEl.style.textShadow = `0 0 10px ${color}88`;
+      } else if (k > 0.05) {
+        toEl.style.opacity = String(0.25 + k * 0.7);
+        toEl.style.transform = `translate3d(${lerp(8, 0, k)}px, 0, 0)`;
+      } else {
+        toEl.style.opacity = '0.2';
+        toEl.style.transform = 'translate3d(8px, 0, 0)';
+        toEl.style.color = '';
+        toEl.style.textShadow = 'none';
+      }
+    };
 
     const frameLoop = () => {
       const rootEl = rootRef.current;
@@ -161,47 +262,71 @@ export default function WorkstationScrollHero({
           const l = Math.max(120, Math.round(280 - p * 160));
           latencyRef.current.textContent = `${l}ms`;
         }
+        if (lpuRateRef.current) {
+          const rate = p > 0.25 ? Math.round(720 + p * 80) : 0;
+          lpuRateRef.current.textContent = `${rate} T/s`;
+        }
 
-        // 2. Document 3D Inflow and Perspective Unfold
-        // p: 0.0 -> 0.35 (tilts from 14deg down to 0deg flat, scales into crisp view)
+        // 2. Intake Envelope Badge (p: 0.00 -> 0.22)
+        if (intakeBadgeRef.current) {
+          const inProgress = easeOutCubic(range(p, 0.0, 0.16));
+          const outProgress = range(p, 0.16, 0.26);
+          const badgeY = lerp(-15, 0, inProgress) + outProgress * 25;
+          const badgeOpacity = (1 - outProgress);
+          intakeBadgeRef.current.style.transform = `translate3d(0, ${badgeY}px, 0) scale(${lerp(0.96, 1.0, inProgress)})`;
+          intakeBadgeRef.current.style.opacity = String(badgeOpacity);
+        }
+
+        // 3. Document 3D Inflow & Inspection Tilt (p: 0.08 -> 0.35)
         if (docWrapperRef.current) {
-          const unfold = easeOutCubic(range(p, 0.0, 0.32));
-          const rotX = lerp(12, 0, unfold);
-          const rotY = lerp(-10, 0, unfold);
-          const scale = lerp(0.92, 1.0, unfold);
-          const transY = lerp(20, 0, unfold);
+          const unfold = easeOutCubic(range(p, 0.06, 0.32));
+          const rotX = lerp(15, 0, unfold);
+          const rotY = lerp(-12, 0, unfold);
+          const scale = lerp(0.90, 1.0, unfold);
+          const transY = lerp(35, 0, unfold);
+
           const exit = easeOutCubic(range(p, 0.78, 1.0));
-          const exitY = -exit * 60;
-          const exitScale = lerp(1.0, 0.92, exit);
-          const opacity = lerp(1.0, 0.25, exit);
+          const exitY = -exit * 70;
+          const exitScale = lerp(1.0, 0.90, exit);
+          const opacity = lerp(1.0, 0.2, exit);
 
           docWrapperRef.current.style.transform = `perspective(1200px) translate3d(0, ${transY + exitY}px, 0) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale * exitScale})`;
           docWrapperRef.current.style.opacity = String(opacity);
         }
 
-        // 3. Laser Scan Bar & Sweeping Beam
-        // p: 0.20 -> 0.75 (sweeps from 0% top down to 100% bottom of document)
+        // 4. Laser Scan Bar, Sweeping Grid, and Coordinates (p: 0.18 -> 0.78)
         if (laserRef.current && laserBeamRef.current) {
-          const laserActive = range(p, 0.16, 0.78);
           const laserSweep = easeOutCubic(range(p, 0.20, 0.74));
-          const laserOpacity = range(p, 0.18, 0.25) * (1 - range(p, 0.74, 0.80));
+          const laserOpacity = range(p, 0.18, 0.24) * (1 - range(p, 0.75, 0.82));
 
           laserRef.current.style.top = `${laserSweep * 100}%`;
           laserRef.current.style.opacity = String(laserOpacity);
 
           laserBeamRef.current.style.height = `${laserSweep * 100}%`;
-          laserBeamRef.current.style.opacity = String(laserOpacity * 0.45);
+          laserBeamRef.current.style.opacity = String(laserOpacity * 0.55);
+
+          if (laserGridRef.current) {
+            laserGridRef.current.style.height = `${laserSweep * 100}%`;
+            laserGridRef.current.style.opacity = String(laserOpacity * 0.35);
+          }
+
+          if (laserCoordRef.current) {
+            const yCoord = Math.round(laserSweep * 680);
+            laserCoordRef.current.textContent = `Y:${yCoord}px · 600DPI`;
+          }
         }
 
-        // 4. Bounding Box Illuminations triggered as laser passes each region
+        // 5. Bounding Box Illuminations & Reticle Snapping
         const updateBox = (el, start, end, activeBorder, activeBg) => {
           if (!el) return;
           const a = easeOutCubic(range(p, start, end));
           const tag = el.querySelector('.box-tag');
+          const reticles = el.querySelectorAll('.reticle-corner');
+
           if (a > 0.05) {
             el.style.borderColor = activeBorder;
             el.style.backgroundColor = activeBg;
-            el.style.boxShadow = `0 0 ${Math.round(a * 15)}px ${activeBorder}33`;
+            el.style.boxShadow = `0 0 ${Math.round(a * 20)}px ${activeBorder}44`;
           } else {
             el.style.borderColor = 'rgba(255, 255, 255, 0.08)';
             el.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
@@ -209,29 +334,43 @@ export default function WorkstationScrollHero({
           }
           if (tag) {
             tag.style.opacity = String(a);
-            tag.style.transform = `scale(${lerp(0.85, 1.0, a)})`;
+            tag.style.transform = `scale(${lerp(0.8, 1.0, a)})`;
           }
+          reticles.forEach((r) => {
+            r.style.opacity = String(a);
+            r.style.borderColor = activeBorder;
+          });
         };
 
-        // Box 1: Vendor Header (triggered at p > 0.22)
-        updateBox(boxVendorRef.current, 0.22, 0.32, 'rgb(52, 211, 153)', 'rgba(52, 211, 153, 0.1)');
+        // Box 1: Vendor Header (p: 0.22 -> 0.32)
+        updateBox(boxVendorRef.current, 0.22, 0.32, '#34d399', 'rgba(52, 211, 153, 0.12)');
+        // Box 2: Meta / Invoice Number (p: 0.36 -> 0.46)
+        updateBox(boxMetaRef.current, 0.36, 0.46, '#22d3ee', 'rgba(34, 211, 238, 0.12)');
+        // Box 3: Line Items (p: 0.48 -> 0.58)
+        updateBox(boxItemsRef.current, 0.48, 0.58, '#818cf8', 'rgba(129, 140, 248, 0.12)');
+        // Box 4: Total & Tax (p: 0.60 -> 0.70)
+        updateBox(boxTotalRef.current, 0.60, 0.70, '#c084fc', 'rgba(192, 132, 252, 0.14)');
 
-        // Box 2: Meta / Invoice Number (triggered at p > 0.36)
-        updateBox(boxMetaRef.current, 0.36, 0.46, 'rgb(34, 211, 238)', 'rgba(34, 211, 238, 0.1)');
+        // 6. SVG Data Conduit Streams (Box -> JSON line photon transfers)
+        const progVendor = range(p, 0.24, 0.40);
+        updateConduit(pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, jsonVendorRef.current, progVendor, '#fcd34d');
 
-        // Box 3: Line Items (triggered at p > 0.48)
-        updateBox(boxItemsRef.current, 0.48, 0.58, 'rgb(129, 140, 248)', 'rgba(129, 140, 248, 0.1)');
+        const progMeta = range(p, 0.38, 0.54);
+        updateConduit(pathMetaRef.current, photonMetaRef.current, boxMetaRef.current, jsonMetaRef.current, progMeta, '#38bdf8');
 
-        // Box 4: Total & Tax (triggered at p > 0.60)
-        updateBox(boxTotalRef.current, 0.60, 0.70, 'rgb(192, 132, 252)', 'rgba(192, 132, 252, 0.12)');
+        const progItems = range(p, 0.50, 0.66);
+        updateConduit(pathItemsRef.current, photonItemsRef.current, boxItemsRef.current, jsonItemsRef.current, progItems, '#a78bfa');
 
-        // 5. Terminal JSON Stream & Badge
+        const progTotal = range(p, 0.62, 0.78);
+        updateConduit(pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, jsonTotalRef.current, progTotal, '#34d399');
+
+        // 7. Terminal Header & LPU Status Badge
         if (terminalBadgeRef.current) {
-          if (p < 0.22) {
+          if (p < 0.20) {
             terminalBadgeRef.current.textContent = 'STANDBY · AWAITING BUFFER';
             terminalBadgeRef.current.className = 'font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
           } else if (p < 0.68) {
-            terminalBadgeRef.current.textContent = 'GROQ LPU · OCR SCAN IN PROGRESS';
+            terminalBadgeRef.current.textContent = 'GROQ LPU · 750 T/s PARSING';
             terminalBadgeRef.current.className = 'font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 animate-pulse';
           } else {
             terminalBadgeRef.current.textContent = 'RECONCILED · LEDGER COMMITTED';
@@ -239,34 +378,19 @@ export default function WorkstationScrollHero({
           }
         }
 
-        if (terminalJsonRef.current) {
-          // Progressively reveal JSON lines as p advances
-          const lines = terminalJsonRef.current.querySelectorAll('.json-line');
-          lines.forEach((line, idx) => {
-            const threshold = 0.22 + idx * 0.08;
-            if (p >= threshold) {
-              line.style.opacity = '1';
-              line.style.transform = 'translate3d(0, 0, 0)';
-            } else {
-              line.style.opacity = '0.15';
-              line.style.transform = 'translate3d(6px, 0, 0)';
-            }
-          });
-        }
-
-        // 6. Ejection Group (Data Pills flying towards ledger)
-        // p: 0.72 -> 0.96
+        // 8. Ejection Group (Committed Ledger Row ready to drop into table)
+        // p: 0.72 -> 0.98
         if (ejectGroupRef.current) {
           const ejProgress = easeOutCubic(range(p, 0.72, 0.94));
-          const ejOpacity = range(p, 0.70, 0.78) * (1 - range(p, 0.95, 1.0));
-          const ejY = lerp(-20, 40, ejProgress);
+          const ejOpacity = range(p, 0.70, 0.78) * (1 - range(p, 0.96, 1.0));
+          const ejY = lerp(-25, 45, ejProgress);
           ejectGroupRef.current.style.opacity = String(ejOpacity);
-          ejectGroupRef.current.style.transform = `translate3d(0, ${ejY}px, 0)`;
+          ejectGroupRef.current.style.transform = `translate3d(0, ${ejY}px, 0) scale(${lerp(0.96, 1.0, ejProgress)})`;
         }
 
-        // 7. Scroll indicator fade out
+        // 9. Scroll indicator fade out
         if (scrollIndicatorRef.current) {
-          scrollIndicatorRef.current.style.opacity = String(1 - range(p, 0.70, 0.85));
+          scrollIndicatorRef.current.style.opacity = String(1 - range(p, 0.72, 0.88));
         }
       }
 
@@ -317,20 +441,20 @@ export default function WorkstationScrollHero({
       className="relative w-full mb-2"
       style={{ height: '240vh' }}
     >
-      <div className="sticky top-0 w-full h-[540px] sm:h-[580px] lg:h-[620px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#070A11] flex flex-col justify-between select-none">
+      <div className="sticky top-0 w-full h-[540px] sm:h-[580px] lg:h-[620px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#06080F] flex flex-col justify-between select-none">
         
-        {/* Layer 0: Dynamic Canvas Background with drifting data particles */}
+        {/* Layer 0: Dynamic Canvas Background with drifting constellation particles */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 size-full pointer-events-none z-0"
         />
 
         {/* Ambient Radial Gradient Glows */}
-        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none z-0" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute top-1/4 left-1/4 w-[480px] h-[480px] bg-indigo-600/[0.08] rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] bg-cyan-500/[0.08] rounded-full blur-3xl pointer-events-none z-0" />
 
         {/* Top Control Bar & Telemetry HUD */}
-        <div className="relative z-30 p-4 sm:p-5 flex items-center justify-between border-b border-white/[0.06] bg-[#070A11]/60 backdrop-blur-md">
+        <div className="relative z-30 p-4 sm:p-5 flex items-center justify-between border-b border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-inner">
               <Scan className="w-4 h-4 animate-pulse" />
@@ -352,7 +476,6 @@ export default function WorkstationScrollHero({
           </div>
 
           <div className="flex items-center gap-2.5">
-            {/* Quick action buttons right in the bar */}
             <button
               onClick={onUploadClick}
               className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all cursor-pointer"
@@ -397,52 +520,116 @@ export default function WorkstationScrollHero({
           </div>
         </div>
 
-        {/* Center Stage: Split Screen (Left: 3D Document Scan, Right: Live Extraction Terminal) */}
-        <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center p-4 sm:p-6 lg:p-8 gap-6 z-10 overflow-hidden">
+        {/* Center Stage: Split Screen with SVG Neural Data Conduits */}
+        <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center p-4 sm:p-6 lg:p-8 gap-6 sm:gap-8 z-10 overflow-hidden">
           
-          {/* LEFT: 3D Glassmorphic Invoice Document */}
-          <div className="w-full lg:w-[52%] max-w-lg flex items-center justify-center">
+          {/* Incoming Email Intake Hologram Badge (Appears at start, drops invoice into scanner) */}
+          <div
+            ref={intakeBadgeRef}
+            className="absolute top-2 sm:top-3 z-40 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/40 backdrop-blur-md shadow-lg flex items-center gap-2 pointer-events-none will-change-transform"
+            style={{ opacity: 0 }}
+          >
+            <Mail className="w-3.5 h-3.5 text-indigo-400 animate-bounce" />
+            <span className="font-mono text-[11px] text-white">
+              INCOMING RFC 2177 ATTACHMENT: <span className="text-cyan-300 font-semibold">invoice_acme_9041.pdf</span>
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          </div>
+
+          {/* SVG DATA CONDUITS (Beams firing data from Document to JSON Terminal) */}
+          <svg
+            ref={svgConduitRef}
+            className="absolute inset-0 size-full pointer-events-none z-25 hidden lg:block"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Path 1: Vendor */}
+            <path ref={pathVendorRef} fill="none" stroke="#34d399" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
+            <circle ref={photonVendorRef} r="4" fill="#6ee7b7" opacity="0" filter="url(#glow)" />
+
+            {/* Path 2: Meta */}
+            <path ref={pathMetaRef} fill="none" stroke="#22d3ee" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
+            <circle ref={photonMetaRef} r="4" fill="#a5f3fc" opacity="0" filter="url(#glow)" />
+
+            {/* Path 3: Line Items */}
+            <path ref={pathItemsRef} fill="none" stroke="#818cf8" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
+            <circle ref={photonItemsRef} r="4" fill="#c7d2fe" opacity="0" filter="url(#glow)" />
+
+            {/* Path 4: Total */}
+            <path ref={pathTotalRef} fill="none" stroke="#c084fc" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
+            <circle ref={photonTotalRef} r="4" fill="#f5d0fe" opacity="0" filter="url(#glow)" />
+          </svg>
+
+          {/* LEFT: 3D High-Tech Invoice Document */}
+          <div className="w-full lg:w-[48%] max-w-md flex items-center justify-center">
             <div
               ref={docWrapperRef}
-              className="relative w-full max-w-[420px] aspect-[1/1.3] bg-white/[0.04] backdrop-blur-xl border border-white/[0.14] rounded-2xl p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] will-change-transform overflow-hidden flex flex-col justify-between"
+              className="relative w-full aspect-[1/1.3] bg-white/[0.04] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] will-change-transform overflow-hidden flex flex-col justify-between"
               style={{
-                transform: 'perspective(1200px) rotateX(12deg) rotateY(-10deg) scale(0.92)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+                transform: 'perspective(1200px) rotateX(15deg) rotateY(-12deg) scale(0.90)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
               }}
             >
-              {/* Laser Scanning Bar and Beam */}
+              {/* Laser Scanning Grid Wash & Bar */}
               <div
-                ref={laserBeamRef}
-                className="absolute inset-x-0 top-0 bg-gradient-to-b from-cyan-500/20 via-indigo-500/10 to-transparent pointer-events-none will-change-transform z-20"
+                ref={laserGridRef}
+                className="absolute inset-x-0 top-0 bg-[linear-gradient(to_right,rgba(34,211,238,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(34,211,238,0.1)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none will-change-transform z-15"
                 style={{ height: '0%', opacity: 0 }}
               />
+
+              <div
+                ref={laserBeamRef}
+                className="absolute inset-x-0 top-0 bg-gradient-to-b from-cyan-500/25 via-indigo-500/15 to-transparent pointer-events-none will-change-transform z-20"
+                style={{ height: '0%', opacity: 0 }}
+              />
+
               <div
                 ref={laserRef}
-                className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee,0_0_30px_#818cf8] pointer-events-none will-change-transform z-30 flex items-center justify-center"
+                className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_20px_#22d3ee,0_0_40px_#38bdf8] pointer-events-none will-change-transform z-30 flex items-center justify-between px-3"
                 style={{ top: '0%', opacity: 0 }}
               >
-                <div className="w-2.5 h-2.5 rounded-full bg-cyan-300 shadow-[0_0_10px_#22d3ee] animate-ping" />
+                <div className="w-2.5 h-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_#22d3ee] animate-ping" />
+                <span ref={laserCoordRef} className="font-mono text-[8px] text-cyan-200 tracking-wider bg-black/60 px-1 rounded shadow">
+                  Y:0px · 600DPI
+                </span>
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#34d399] animate-ping" />
               </div>
 
               {/* DOCUMENT CONTENT */}
-              <div className="space-y-4 relative z-10">
+              <div className="space-y-3.5 relative z-10">
                 {/* 1. Document Header / Vendor */}
                 <div
                   ref={boxVendorRef}
-                  className="relative p-2 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
+                  className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
                 >
+                  {/* AI Vision Reticle Target Marks */}
+                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+
                   <div 
                     className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-emerald-500 text-black font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     VENDOR · 99.8%
                   </div>
+
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-white tracking-tight">Acme Cloud Infrastructure Inc.</h3>
-                      <p className="text-[10px] text-slate-300 font-mono">billing@acmecloud.io · San Francisco, CA</p>
+                      <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight">Acme Cloud Infrastructure Inc.</h3>
+                      <p className="text-[9px] sm:text-[10px] text-slate-300 font-mono">billing@acmecloud.io · San Francisco, CA</p>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-mono text-xs font-bold">
+                    <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-mono text-[11px] font-bold">
                       AC
                     </div>
                   </div>
@@ -451,25 +638,31 @@ export default function WorkstationScrollHero({
                 {/* 2. Metadata: Invoice # & Dates */}
                 <div
                   ref={boxMetaRef}
-                  className="relative p-2 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
+                  className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
                 >
+                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+
                   <div 
                     className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-cyan-500 text-black font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     META · 99.4%
                   </div>
-                  <div className="grid grid-cols-3 gap-2 font-mono text-[10px]">
+
+                  <div className="grid grid-cols-3 gap-2 font-mono text-[9px] sm:text-[10px]">
                     <div>
-                      <span className="text-slate-400 block text-[9px]">INVOICE NO</span>
+                      <span className="text-slate-400 block text-[8px] sm:text-[9px]">INVOICE NO</span>
                       <span className="text-white font-semibold">INV-2026-9041</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[9px]">ISSUE DATE</span>
+                      <span className="text-slate-400 block text-[8px] sm:text-[9px]">ISSUE DATE</span>
                       <span className="text-white font-semibold">2026-10-27</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[9px]">TERMS</span>
+                      <span className="text-slate-400 block text-[8px] sm:text-[9px]">TERMS</span>
                       <span className="text-emerald-400 font-semibold">NET 30</span>
                     </div>
                   </div>
@@ -478,28 +671,34 @@ export default function WorkstationScrollHero({
                 {/* 3. Line Items Table */}
                 <div
                   ref={boxItemsRef}
-                  className="relative p-2 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform space-y-1.5"
+                  className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform space-y-1.5"
                 >
+                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+
                   <div 
                     className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-indigo-500 text-white font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     3 ITEMS · 99.1%
                   </div>
-                  <div className="flex justify-between text-[9px] font-mono text-slate-400 border-b border-white/10 pb-1">
+
+                  <div className="flex justify-between text-[8px] sm:text-[9px] font-mono text-slate-400 border-b border-white/10 pb-1">
                     <span>DESCRIPTION</span>
                     <span>AMOUNT</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-mono text-slate-200">
+                  <div className="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-200">
                     <span className="truncate pr-2">Enterprise GPU Cluster (L40S)</span>
                     <span className="text-white font-medium">$3,400.00</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-mono text-slate-200">
+                  <div className="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-200">
                     <span className="truncate pr-2">Global Edge CDN Bandwidth</span>
                     <span className="text-white font-medium">$950.00</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-mono text-slate-200">
-                    <span className="truncate pr-2">Encrypted Bucket Storage</span>
+                  <div className="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-200">
+                    <span className="truncate pr-2">Encrypted Storage Bucket</span>
                     <span className="text-white font-medium">$500.00</span>
                   </div>
                 </div>
@@ -509,18 +708,24 @@ export default function WorkstationScrollHero({
                   ref={boxTotalRef}
                   className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
                 >
+                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+
                   <div 
                     className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-purple-500 text-white font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     TOTAL · 100%
                   </div>
+
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-mono text-purple-200 block">TOTAL PAYABLE (USD)</span>
-                      <span className="text-xl font-bold font-mono text-white tracking-tight">$4,850.00</span>
+                      <span className="text-[9px] sm:text-[10px] font-mono text-purple-200 block">TOTAL PAYABLE (USD)</span>
+                      <span className="text-lg sm:text-xl font-bold font-mono text-white tracking-tight">$4,850.00</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-medium">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[9px] sm:text-[10px] font-mono font-medium">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                       <span>Ledger Verified</span>
                     </div>
@@ -528,21 +733,21 @@ export default function WorkstationScrollHero({
                 </div>
               </div>
 
-              {/* Watermark & Footer */}
-              <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between text-[9px] font-mono text-slate-400">
+              {/* Watermark & Verification Footer */}
+              <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between text-[8px] sm:text-[9px] font-mono text-slate-400">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                  Groq LPU Llama-3-Vision Checked
+                  Groq LPU Llama-3-Vision Verified
                 </span>
                 <span>AUTHENTIC RFC 2177</span>
               </div>
             </div>
           </div>
 
-          {/* RIGHT: Live Telemetry Terminal & JSON Inspector */}
-          <div className="w-full lg:w-[48%] max-w-lg flex flex-col justify-center space-y-3">
+          {/* RIGHT: Live Telemetry Terminal & Target Inspector */}
+          <div className="w-full lg:w-[48%] max-w-md flex flex-col justify-center space-y-3">
             {/* Terminal Window Header */}
-            <div className="rounded-xl border border-white/[0.1] bg-[#0B0F19]/90 backdrop-blur-md shadow-2xl p-4 font-mono text-xs overflow-hidden">
+            <div className="rounded-xl border border-white/[0.1] bg-[#0A0D18]/90 backdrop-blur-md shadow-2xl p-4 font-mono text-xs overflow-hidden">
               <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5">
@@ -554,90 +759,105 @@ export default function WorkstationScrollHero({
                     extraction_stream.json
                   </span>
                 </div>
-                <span ref={terminalBadgeRef} className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                  STANDBY · AWAITING BUFFER
-                </span>
+
+                {/* Hardware Pulse Equalizer & Status */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-end gap-0.5 h-3">
+                    <span className="w-0.5 h-2 bg-indigo-400 animate-pulse" />
+                    <span className="w-0.5 h-3 bg-cyan-400 animate-pulse" style={{ animationDelay: '0.15s' }} />
+                    <span className="w-0.5 h-1.5 bg-emerald-400 animate-pulse" style={{ animationDelay: '0.3s' }} />
+                  </div>
+                  <span ref={terminalBadgeRef} className="font-mono text-[9px] sm:text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                    STANDBY · AWAITING BUFFER
+                  </span>
+                </div>
               </div>
 
-              {/* JSON Lines Stream */}
-              <div ref={terminalJsonRef} className="space-y-1 text-[11px] leading-relaxed">
-                <div className="json-line transition-all duration-200 text-slate-400 font-mono">
-                  &#123;
-                </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
+              {/* JSON Lines Stream (Directly targets of SVG fiber conduits) */}
+              <div className="space-y-1 text-[11px] leading-relaxed select-text">
+                <div className="text-slate-400 font-mono">&#123;</div>
+                <div className="pl-4 font-mono">
                   <span className="text-cyan-400">"status"</span>: <span className="text-emerald-300">"RECONCILED"</span>,
                 </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
-                  <span className="text-cyan-400">"vendor"</span>: <span className="text-amber-300">"Acme Cloud Infrastructure Inc."</span>,
+                
+                {/* Target 1: Vendor */}
+                <div ref={jsonVendorRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400">"vendor"</span>: <span>"Acme Cloud Infrastructure Inc."</span>,
                 </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
-                  <span className="text-cyan-400">"invoiceNumber"</span>: <span className="text-indigo-300">"INV-2026-9041"</span>,
+
+                {/* Target 2: Meta / Invoice Number */}
+                <div ref={jsonMetaRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400">"invoiceNumber"</span>: <span>"INV-2026-9041"</span>,
                 </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
+
+                <div className="pl-4 font-mono">
                   <span className="text-cyan-400">"date"</span>: <span className="text-slate-200">"2026-10-27"</span>,
                 </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
+                <div className="pl-4 font-mono">
                   <span className="text-cyan-400">"currency"</span>: <span className="text-purple-300">"USD"</span>,
                 </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
-                  <span className="text-cyan-400">"totalAmount"</span>: <span className="text-emerald-400 font-bold">4850.00</span>,
+
+                {/* Target 4: Total Amount */}
+                <div ref={jsonTotalRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400">"totalAmount"</span>: <span className="font-bold">4850.00</span>,
                 </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
-                  <span className="text-cyan-400">"lineItems"</span>: <span className="text-slate-400">[3 extracted]</span>,
+
+                {/* Target 3: Line Items */}
+                <div ref={jsonItemsRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400">"lineItems"</span>: <span>[3 items parsed & verified]</span>,
                 </div>
-                <div className="json-line transition-all duration-200 pl-4 font-mono">
+
+                <div className="pl-4 font-mono">
                   <span className="text-cyan-400">"syncLedger"</span>: <span className="text-emerald-300">"Google Sheets (Active)"</span>
                 </div>
-                <div className="json-line transition-all duration-200 text-slate-400 font-mono">
-                  &#125;
-                </div>
+                <div className="text-slate-400 font-mono">&#125;</div>
               </div>
 
               {/* Hardware & Pipeline Telemetry Stats Bar */}
               <div className="mt-3.5 pt-2.5 border-t border-white/[0.08] grid grid-cols-3 gap-2 text-[10px]">
                 <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[9px]">LPU INFERENCE</span>
+                  <span className="text-slate-400 block text-[8px] sm:text-[9px]">LPU INFERENCE</span>
                   <span ref={latencyRef} className="text-cyan-300 font-bold tabular-nums">240ms</span>
                 </div>
                 <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[9px]">MATCH RATE</span>
-                  <span className="text-emerald-400 font-bold">{syncRate}% Auto</span>
+                  <span className="text-slate-400 block text-[8px] sm:text-[9px]">THROUGHPUT</span>
+                  <span ref={lpuRateRef} className="text-emerald-400 font-bold">750 T/s</span>
                 </div>
                 <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[9px]">TOTAL INVOICES</span>
+                  <span className="text-slate-400 block text-[8px] sm:text-[9px]">TOTAL INVOICES</span>
                   <span className="text-white font-bold">{invoicesCount} Docs</span>
                 </div>
               </div>
             </div>
 
-            {/* Ejected Data Flight Pills (appears at p > 0.70 streaming into table) */}
+            {/* Ejected Data Flight Capsule (Ready to drop into table at p > 0.72) */}
             <div
               ref={ejectGroupRef}
-              className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-indigo-500/10 border border-emerald-500/30 backdrop-blur-md shadow-xl transition-all will-change-transform flex items-center justify-between"
+              className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/15 via-cyan-500/10 to-indigo-500/15 border border-emerald-500/40 backdrop-blur-md shadow-2xl transition-all will-change-transform flex items-center justify-between"
               style={{ opacity: 0 }}
             >
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-inner">
                   <Database className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold text-white">Streaming Record to Live Ledger</p>
-                  <p className="text-[10px] font-mono text-emerald-300">INV-2026-9041 · $4,850.00 USD</p>
+                  <p className="text-[11px] font-semibold text-white">Record Ready for Google Sheets</p>
+                  <p className="text-[10px] font-mono text-emerald-300">INV-2026-9041 · $4,850.00 USD (Reconciled)</p>
                 </div>
               </div>
               <button
                 onClick={scrollToTable}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-[10px] font-bold hover:bg-emerald-400 transition-colors cursor-pointer shadow"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-bold transition-all cursor-pointer shadow-lg active:scale-95"
               >
-                <span>View Row</span>
-                <ArrowDown className="w-3 h-3" />
+                <span>Commit to Row</span>
+                <ArrowDown className="w-3 h-3 animate-bounce" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Bottom Status Ribbon & Interactive Scroll Prompt */}
-        <div className="relative z-30 p-3 sm:p-4 border-t border-white/[0.06] bg-[#070A11]/60 backdrop-blur-md flex items-center justify-between text-[11px] font-mono text-slate-400">
+        <div className="relative z-30 p-3 sm:p-4 border-t border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md flex items-center justify-between text-[11px] font-mono text-slate-400">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
             <span className="text-white font-medium">Pipeline Telemetry Online</span>
