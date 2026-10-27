@@ -7,6 +7,7 @@ import api from '../../services/api';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import InvoiceDrawer from '../../components/invoices/InvoiceDrawer';
 import SpendAnalytics from '../../components/dashboard/SpendAnalytics';
+import WorkstationScrollHero from '../../components/dashboard/WorkstationScrollHero';
 import CfoBriefModal from '../../components/dashboard/CfoBriefModal';
 import SmartOmnibar from '../../components/dashboard/SmartOmnibar';
 import { exportToCsv, exportToJson } from '../../utils/exportUtils';
@@ -394,8 +395,17 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto space-y-8 relative pb-16">
             <Toaster position="top-center" />
 
+            {/* Interactive Multi-Layer Scroll-Driven Workstation */}
+            <WorkstationScrollHero
+                onUploadClick={() => document.getElementById('direct-upload-input')?.click()}
+                onSyncEmailClick={() => handleSyncEmail(false)}
+                isSyncingEmail={isSyncingEmail}
+                invoicesCount={invoices?.length || 0}
+                syncRate={stats.syncRate}
+            />
+
             {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div id="invoices-table-section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
                         Invoices
@@ -437,6 +447,7 @@ export default function Dashboard() {
                         )}
                         <span>{isUploadingRandom ? 'Extracting...' : 'Upload Invoice'}</span>
                         <input
+                            id="direct-upload-input"
                             type="file"
                             accept="application/pdf"
                             className="hidden"

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Sun, Moon, ChevronDown, LogOut, User, Sparkles } from 'lucide-react';
+import { Sun, Moon, ChevronDown, LogOut, User } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Header() {
@@ -46,15 +46,6 @@ export default function Header() {
             </div>
 
             <div className="flex items-center gap-2">
-                <Link
-                    to="/"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors mr-1"
-                    title="View Public Landing Page"
-                >
-                    <Sparkles className="w-3.5 h-3.5 text-violet-500" />
-                    <span>Landing Page</span>
-                </Link>
-
                 <button
                     onClick={toggleDarkMode}
                     className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
