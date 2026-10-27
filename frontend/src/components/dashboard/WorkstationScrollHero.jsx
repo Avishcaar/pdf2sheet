@@ -15,7 +15,9 @@ import {
   ShieldCheck,
   Zap,
   ArrowRight,
-  FileText
+  FileText,
+  Lock,
+  Layers
 } from 'lucide-react';
 import { clamp, easeOutCubic, lerp, range } from '../../utils/math';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -29,9 +31,12 @@ export default function WorkstationScrollHero({
 }) {
   const rootRef = useRef(null);
   const canvasRef = useRef(null);
+  const stageRef = useRef(null);
+  const svgConduitRef = useRef(null);
   
   // Parallax Layer Refs
   const roomBgRef = useRef(null);
+  const holoBeamRef = useRef(null);
   const monitorGlowRef = useRef(null);
   const monitorScreenRef = useRef(null);
   const manChairRef = useRef(null);
@@ -40,6 +45,16 @@ export default function WorkstationScrollHero({
   const laserRef = useRef(null);
   const laserBeamRef = useRef(null);
   const auditStampRef = useRef(null);
+
+  // SVG Data Conduit Paths & Photons
+  const pathVendorRef = useRef(null);
+  const pathTotalRef = useRef(null);
+  const photonVendorRef = useRef(null);
+  const photonTotalRef = useRef(null);
+
+  // Bounding Boxes on Floating Invoice
+  const boxVendorRef = useRef(null);
+  const boxTotalRef = useRef(null);
 
   // Holographic HUD & Terminal
   const hudTerminalRef = useRef(null);
@@ -99,7 +114,7 @@ export default function WorkstationScrollHero({
 
     let seed = 137;
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const motes = Array.from({ length: 75 }, () => ({
+    const motes = Array.from({ length: 80 }, () => ({
       x: rand(),
       y: rand(),
       vx: (rand() - 0.5) * 0.0003,
@@ -118,7 +133,7 @@ export default function WorkstationScrollHero({
       ctx.clearRect(0, 0, width, height);
 
       // Draw faint constellation lines
-      const maxDist = 85;
+      const maxDist = 90;
       for (let i = 0; i < motes.length; i++) {
         for (let j = i + 1; j < motes.length; j++) {
           const dx = (motes[i].x - motes[j].x) * width;
@@ -195,15 +210,15 @@ export default function WorkstationScrollHero({
     const spawnX = x - cRect.left;
     const spawnY = y - cRect.top;
 
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 18; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 1.4 + Math.random() * 4.0;
+      const speed = 1.5 + Math.random() * 4.2;
       sparksRef.current.push({
         x: spawnX,
         y: spawnY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        r: 1.4 + Math.random() * 2.0,
+        r: 1.4 + Math.random() * 2.2,
         color: color,
         life: 1.0
       });
@@ -221,6 +236,42 @@ export default function WorkstationScrollHero({
     let targetP = 0;
     let lastSmoothP = -1;
     let sparksTriggered = false;
+
+    // Helper for SVG conduit inking & photon travel
+    const updateConduit = (pathEl, photonEl, fromEl, toEl, progress, color) => {
+      if (!pathEl || !fromEl || !toEl || !svgConduitRef.current) return;
+      const svg = svgConduitRef.current;
+      const sRect = svg.getBoundingClientRect();
+      if (sRect.width === 0) return;
+
+      const fRect = fromEl.getBoundingClientRect();
+      const tRect = toEl.getBoundingClientRect();
+
+      const x1 = fRect.right - sRect.left;
+      const y1 = fRect.top + fRect.height / 2 - sRect.top;
+      const x2 = tRect.left - sRect.left;
+      const y2 = tRect.top + tRect.height / 2 - sRect.top;
+
+      const dx = Math.max(30, (x2 - x1) * 0.5);
+      const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+      pathEl.setAttribute('d', d);
+
+      const len = pathEl.getTotalLength ? pathEl.getTotalLength() : 250;
+      pathEl.style.strokeDasharray = `${len}`;
+
+      const k = easeOutCubic(progress);
+      pathEl.style.strokeDashoffset = `${len * (1 - k)}`;
+      pathEl.style.opacity = String(range(progress, 0.05, 0.25) * (1 - range(progress, 0.90, 1.0)));
+
+      if (photonEl && pathEl.getPointAtLength && k > 0.01 && k < 0.99) {
+        const pt = pathEl.getPointAtLength(len * k);
+        photonEl.setAttribute('cx', String(pt.x));
+        photonEl.setAttribute('cy', String(pt.y));
+        photonEl.setAttribute('opacity', '1');
+      } else if (photonEl) {
+        photonEl.setAttribute('opacity', '0');
+      }
+    };
 
     const frameLoop = (time) => {
       const rootEl = rootRef.current;
@@ -276,38 +327,43 @@ export default function WorkstationScrollHero({
         }
 
         // 3. Layer 2: Operator on Rolling Chair (svg1)
-        // Rolls smoothly into the desk from left (-12% -> 0%) and settles at the mouse
+        // Rolls smoothly into the desk with organic spring overshoot
         if (manChairRef.current) {
-          const rollIn = easeOutCubic(range(p, 0.06, 0.42));
-          const manX = lerp(-10, 0, rollIn);
-          const manY = lerp(20, 0, rollIn) + exitY * 0.9;
+          const rollIn = easeOutCubic(range(p, 0.06, 0.40));
+          const springOvershoot = Math.sin(rollIn * Math.PI) * 4;
+          const manX = lerp(-14, 0, rollIn) + springOvershoot;
+          const manY = lerp(22, 0, rollIn) + exitY * 0.9;
           const manScale = lerp(1.03, 1.0, rollIn);
           const mouseManX = mouse.current.x * 16;
           const mouseManY = mouse.current.y * 12;
           manChairRef.current.style.transform = `translate3d(${manX + mouseManX}px, ${manY + mouseManY}px, 0) scale(${manScale})`;
         }
 
-        // 4. Layer 3: Active Computer Monitor Screen & Hologram Light Beam
+        // 4. Layer 3: Active Computer Monitor Screen & Hologram Light Beam Cone
+        const screenPower = easeOutCubic(range(p, 0.18, 0.45));
         if (monitorGlowRef.current) {
-          const screenPower = easeOutCubic(range(p, 0.18, 0.45));
           monitorGlowRef.current.style.opacity = String(screenPower * 0.85);
         }
         if (monitorScreenRef.current) {
-          const screenPower = easeOutCubic(range(p, 0.18, 0.45));
           monitorScreenRef.current.style.opacity = String(screenPower);
         }
+        if (holoBeamRef.current) {
+          // Projects outward from monitor towards floating invoice
+          const beamActive = range(p, 0.22, 0.75);
+          holoBeamRef.current.style.opacity = String(beamActive * 0.55);
+        }
 
-        // 5. Layer 4: Floating Invoice 1 (Raw Inflow Document)
-        // Enters from top-left, floats into center, gets scanned, and resolves
+        // 5. Layer 4: Floating Invoice 1 (Raw Inflow Document with 3D Perspective Tilt)
         if (invoice1Ref.current) {
           const inv1Inflow = easeOutCubic(range(p, 0.08, 0.38));
-          const inv1X = lerp(-60, 0, inv1Inflow) + mouse.current.x * 22;
-          const inv1Y = lerp(-40, 0, inv1Inflow) + Math.sin(time * 0.002) * 5 + exitY * 0.8;
-          const inv1Scale = lerp(0.85, 1.0, inv1Inflow);
-          const inv1Rot = lerp(-18, -6, inv1Inflow) + mouse.current.x * 8;
+          const inv1X = lerp(-80, 0, inv1Inflow) + mouse.current.x * 24;
+          const inv1Y = lerp(-50, 0, inv1Inflow) + Math.sin(time * 0.002) * 6 + exitY * 0.8;
+          const inv1Scale = lerp(0.88, 1.0, inv1Inflow);
+          const inv1RotX = lerp(14, 6, inv1Inflow) - mouse.current.y * 10;
+          const inv1RotY = lerp(-20, -10, inv1Inflow) + mouse.current.x * 12;
           const inv1Opacity = range(p, 0.05, 0.20) * (1 - range(p, 0.82, 0.96));
 
-          invoice1Ref.current.style.transform = `translate3d(${inv1X}px, ${inv1Y}px, 0) rotate(${inv1Rot}deg) scale(${inv1Scale})`;
+          invoice1Ref.current.style.transform = `perspective(1000px) translate3d(${inv1X}px, ${inv1Y}px, 0) rotateX(${inv1RotX}deg) rotateY(${inv1RotY}deg) scale(${inv1Scale})`;
           invoice1Ref.current.style.opacity = String(inv1Opacity);
         }
 
@@ -320,16 +376,34 @@ export default function WorkstationScrollHero({
           laserRef.current.style.opacity = String(laserOpacity);
 
           laserBeamRef.current.style.height = `${laserSweep * 100}%`;
-          laserBeamRef.current.style.opacity = String(laserOpacity * 0.6);
+          laserBeamRef.current.style.opacity = String(laserOpacity * 0.65);
         }
 
+        // Bounding Boxes on Floating Invoice
+        if (boxVendorRef.current) {
+          const vA = easeOutCubic(range(p, 0.30, 0.44));
+          boxVendorRef.current.style.borderColor = vA > 0.1 ? '#34d399' : 'rgba(255, 255, 255, 0.1)';
+          boxVendorRef.current.style.backgroundColor = vA > 0.1 ? 'rgba(52, 211, 153, 0.12)' : 'transparent';
+        }
+        if (boxTotalRef.current) {
+          const tA = easeOutCubic(range(p, 0.50, 0.64));
+          boxTotalRef.current.style.borderColor = tA > 0.1 ? '#c084fc' : 'rgba(255, 255, 255, 0.1)';
+          boxTotalRef.current.style.backgroundColor = tA > 0.1 ? 'rgba(192, 132, 252, 0.14)' : 'transparent';
+        }
+
+        // SVG Data Conduits (Floating Invoice -> Monitor Screen)
+        const progVendor = range(p, 0.32, 0.52);
+        updateConduit(pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, monitorScreenRef.current, progVendor, '#34d399');
+
+        const progTotal = range(p, 0.52, 0.72);
+        updateConduit(pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, monitorScreenRef.current, progTotal, '#c084fc');
+
         // 6. Layer 5: Floating Invoice 2 (Verified Document with Green Checkmark)
-        // Floats in from top-right at p > 0.45
         if (invoice2Ref.current) {
           const inv2Inflow = easeOutCubic(range(p, 0.42, 0.70));
-          const inv2X = lerp(60, 0, inv2Inflow) + mouse.current.x * 18;
-          const inv2Y = lerp(-30, 0, inv2Inflow) + Math.sin(time * 0.0025 + 1) * 6 + exitY * 0.85;
-          const inv2Scale = lerp(0.8, 1.0, inv2Inflow);
+          const inv2X = lerp(70, 0, inv2Inflow) + mouse.current.x * 18;
+          const inv2Y = lerp(-30, 0, inv2Inflow) + Math.sin(time * 0.0025 + 1.2) * 6 + exitY * 0.85;
+          const inv2Scale = lerp(0.85, 1.0, inv2Inflow);
           const inv2Rot = lerp(16, 8, inv2Inflow) - mouse.current.x * 6;
           const inv2Opacity = range(p, 0.40, 0.52) * (1 - range(p, 0.82, 0.96));
 
@@ -357,7 +431,7 @@ export default function WorkstationScrollHero({
         // 8. Holographic HUD Telemetry Window (Right Side)
         if (hudTerminalRef.current) {
           const hudIn = easeOutCubic(range(p, 0.16, 0.42));
-          const hudX = lerp(40, 0, hudIn) - mouse.current.x * 8;
+          const hudX = lerp(50, 0, hudIn) - mouse.current.x * 10;
           const hudY = lerp(20, 0, hudIn) + exitY * 0.7;
           const hudOpacity = range(p, 0.14, 0.28) * (1 - range(p, 0.82, 0.96));
 
@@ -373,7 +447,7 @@ export default function WorkstationScrollHero({
               line.style.transform = 'translate3d(0, 0, 0)';
             } else {
               line.style.opacity = '0.2';
-              line.style.transform = 'translate3d(8px, 0, 0)';
+              line.style.transform = 'translate3d(10px, 0, 0)';
             }
           });
         }
@@ -500,7 +574,7 @@ export default function WorkstationScrollHero({
                 </span>
               </div>
               <p className="text-xs font-mono text-slate-400 hidden sm:block mt-0.5">
-                Multi-Depth Ingestion · Groq LPU OCR · Live Google Sheets Ledger
+                Multi-Depth Ingestion · Dual Groq LPU OCR · Live Google Sheets Ledger
               </p>
             </div>
           </div>
@@ -554,8 +628,48 @@ export default function WorkstationScrollHero({
         <div className="relative flex-1 flex items-center justify-center px-4 sm:px-8 lg:px-12 py-4 z-10 overflow-hidden">
           
           {/* STAGE CONTAINER (Strictly registered 944:704 aspect ratio box) */}
-          <div className="relative w-full max-w-5xl h-full flex items-center justify-center">
+          <div ref={stageRef} className="relative aspect-[944/704] h-full max-h-full max-w-full flex items-center justify-center">
             
+            {/* SVG OVERLAY: Volumetric Hologram Light Cone & Fiber Data Streams */}
+            <svg
+              ref={svgConduitRef}
+              className="absolute inset-0 size-full pointer-events-none z-22 overflow-visible"
+              viewBox="0 0 944 704"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <defs>
+                <linearGradient id="holoConeGrad" x1="100%" y1="50%" x2="0%" y2="50%">
+                  <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.4" />
+                  <stop offset="60%" stopColor="#818cf8" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                </linearGradient>
+
+                <filter id="laserGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Volumetric Hologram Light Cone projecting from monitor to floating invoice */}
+              <polygon
+                ref={holoBeamRef}
+                points="450,290 190,170 190,470 450,380"
+                fill="url(#holoConeGrad)"
+                style={{ opacity: 0 }}
+              />
+
+              {/* Conduit 1: Vendor */}
+              <path ref={pathVendorRef} fill="none" stroke="#34d399" strokeWidth="2.5" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#laserGlow)" />
+              <circle ref={photonVendorRef} r="4.5" fill="#6ee7b7" opacity="0" filter="url(#laserGlow)" />
+
+              {/* Conduit 2: Total */}
+              <path ref={pathTotalRef} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#laserGlow)" />
+              <circle ref={photonTotalRef} r="4.5" fill="#f5d0fe" opacity="0" filter="url(#laserGlow)" />
+            </svg>
+
             {/* LAYER 1: Desktop Room Background (Desk, Monitor, Coffee Mug, Trash Can) */}
             <div
               ref={roomBgRef}
@@ -566,10 +680,27 @@ export default function WorkstationScrollHero({
                 <img
                   src="/landing/desktop_bg.png"
                   alt="Desktop Workspace"
-                  className="max-h-full max-w-full object-contain object-center drop-shadow-2xl"
+                  className="h-full w-full object-contain object-center drop-shadow-2xl"
                   loading="eager"
                 />
               </picture>
+            </div>
+
+            {/* Micro-Detail 1: Steam wisps rising from purple coffee cup */}
+            <div
+              className="absolute pointer-events-none z-14 flex items-center justify-center"
+              style={{ left: '24.5%', top: '44%', width: '3%', height: '5%' }}
+            >
+              <div className="w-1 h-3 bg-white/20 rounded-full blur-[1px] animate-pulse" style={{ animationDuration: '2s' }} />
+              <div className="w-1 h-4 bg-white/15 rounded-full blur-[1.5px] animate-pulse -ml-0.5" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+            </div>
+
+            {/* Micro-Detail 2: Power cord active green LED on wall outlet */}
+            <div
+              className="absolute pointer-events-none z-14 flex items-center justify-center"
+              style={{ left: '71.2%', top: '75%', width: '1.5%', height: '2%' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping" />
             </div>
 
             {/* LAYER 2: Live Cybernetic Monitor Display (Anchored right onto the illustrated monitor!) */}
@@ -598,13 +729,13 @@ export default function WorkstationScrollHero({
                     <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
                     GROQ_LPU_OCR
                   </span>
-                  <span className="text-[7px] text-cyan-400">240ms</span>
+                  <span className="text-[7px] text-cyan-400 font-bold">240ms</span>
                 </div>
                 <div className="space-y-0.5 leading-tight text-[7px] sm:text-[8px] text-slate-300">
                   <p className="truncate text-emerald-300">&gt; INGESTING BUFFER...</p>
                   <p className="truncate text-cyan-200">&gt; PARSING INV-2026-9041</p>
                   <p className="truncate text-amber-200">&gt; MATCH: ACME CLOUD</p>
-                  <p className="truncate text-purple-200">&gt; LEDGER: $4,850.00 USD</p>
+                  <p className="truncate text-purple-200 font-bold">&gt; LEDGER: $4,850.00 USD</p>
                 </div>
                 <div className="pt-0.5 border-t border-cyan-500/20 text-[6px] sm:text-[7px] flex justify-between text-slate-400">
                   <span>RFC 2177</span>
@@ -617,14 +748,14 @@ export default function WorkstationScrollHero({
             <div
               ref={manChairRef}
               className="absolute inset-0 size-full flex items-center justify-center pointer-events-none will-change-transform z-20"
-              style={{ transform: 'translate3d(-10px, 20px, 0)' }}
+              style={{ transform: 'translate3d(-14px, 22px, 0)' }}
             >
               <picture className="w-full h-full flex items-center justify-center">
                 <source srcSet="/landing/man_chair.webp" type="image/webp" />
                 <img
                   src="/landing/man_chair.png"
                   alt="Operator at Desktop"
-                  className="max-h-full max-w-full object-contain object-center drop-shadow-2xl"
+                  className="h-full w-full object-contain object-center drop-shadow-2xl"
                   loading="eager"
                 />
               </picture>
@@ -633,10 +764,10 @@ export default function WorkstationScrollHero({
             {/* LAYER 4: Floating Invoice 1 (Raw Inflow Document with Active Laser Scan) */}
             <div
               ref={invoice1Ref}
-              className="absolute left-[12%] sm:left-[16%] top-[24%] sm:top-[26%] w-48 sm:w-56 lg:w-64 z-25 pointer-events-none will-change-transform"
+              className="absolute left-[8%] sm:left-[12%] top-[20%] sm:top-[22%] w-56 sm:w-64 lg:w-72 z-25 pointer-events-none will-change-transform"
               style={{ opacity: 0 }}
             >
-              <div className="relative rounded-2xl bg-[#0C101D]/90 backdrop-blur-xl border border-white/20 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden">
+              <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-white/20 p-4 sm:p-5 shadow-[0_25px_60px_rgba(0,0,0,0.85)] overflow-hidden">
                 {/* Laser Scanning Line & Beam */}
                 <div
                   ref={laserBeamRef}
@@ -645,44 +776,70 @@ export default function WorkstationScrollHero({
                 />
                 <div
                   ref={laserRef}
-                  className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_15px_#22d3ee] pointer-events-none"
+                  className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_20px_#22d3ee] pointer-events-none flex items-center justify-between px-2"
                   style={{ top: '0%', opacity: 0 }}
-                />
+                >
+                  <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#22d3ee] animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_10px_#34d399] animate-ping" />
+                </div>
 
                 {/* Audit Stamp */}
                 <div
                   ref={auditStampRef}
-                  className="absolute bottom-2 right-2 z-30 pointer-events-none will-change-transform"
+                  className="absolute bottom-3 right-3 z-30 pointer-events-none will-change-transform"
                   style={{ opacity: 0 }}
                 >
-                  <div className="w-14 h-14 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/20 backdrop-blur-xs flex flex-col items-center justify-center p-1 shadow-[0_0_15px_rgba(52,211,153,0.5)]">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    <span className="font-mono text-[7px] font-black text-emerald-300">AUDITED</span>
+                  <div className="w-16 h-16 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/20 backdrop-blur-xs flex flex-col items-center justify-center p-1 shadow-[0_0_18px_rgba(52,211,153,0.5)]">
+                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />
+                    <span className="font-mono text-[8px] font-black text-emerald-300 tracking-tighter">RFC 2177</span>
+                    <span className="font-mono text-[7px] text-emerald-400 font-bold uppercase tracking-widest">AUDITED</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-2">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-2.5">
+                  <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-indigo-400" />
-                    <span className="font-mono text-xs font-bold text-white">INVOICE</span>
+                    <span className="font-mono text-xs font-bold text-white tracking-wide">COMMERCIAL INVOICE</span>
                   </div>
-                  <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                    PDF INTAKE
+                  <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/25 font-bold">
+                    RFC 2177 INTAKE
                   </span>
                 </div>
 
-                <div className="space-y-1.5 font-mono text-[11px]">
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400 text-[10px]">VENDOR</span>
-                    <span className="font-semibold text-white">Acme Cloud</span>
+                <div className="space-y-2 font-mono text-xs">
+                  {/* Bounding Box 1: Vendor */}
+                  <div
+                    ref={boxVendorRef}
+                    className="p-1.5 rounded-lg border border-dashed border-white/10 transition-colors"
+                  >
+                    <span className="text-slate-400 text-[10px] block">VENDOR</span>
+                    <span className="font-bold text-white text-xs sm:text-sm">Acme Cloud Infrastructure Inc.</span>
                   </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400 text-[10px]">INVOICE #</span>
-                    <span>INV-9041</span>
+
+                  {/* Metadata Row */}
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                    <div>
+                      <span className="text-slate-400 text-[9px] block">INVOICE NO</span>
+                      <span className="font-semibold text-white">INV-2026-9041</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-[9px] block">TERMS</span>
+                      <span className="font-semibold text-emerald-400">NET 30</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400 text-[10px]">TOTAL</span>
-                    <span className="font-bold text-emerald-400">$4,850.00</span>
+
+                  {/* Bounding Box 2: Total */}
+                  <div
+                    ref={boxTotalRef}
+                    className="p-2 rounded-lg border border-dashed border-white/10 transition-colors flex items-center justify-between"
+                  >
+                    <div>
+                      <span className="text-slate-400 text-[9px] block">TOTAL AMOUNT</span>
+                      <span className="font-extrabold text-emerald-400 text-sm sm:text-base">$4,850.00 USD</span>
+                    </div>
+                    <span className="font-mono text-[9px] text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                      GROQ 100%
+                    </span>
                   </div>
                 </div>
               </div>
@@ -691,20 +848,20 @@ export default function WorkstationScrollHero({
             {/* LAYER 5: Floating Invoice 2 (Verified Document with Green Checkmark) */}
             <div
               ref={invoice2Ref}
-              className="absolute right-[8%] sm:right-[12%] top-[18%] sm:top-[20%] w-40 sm:w-48 z-25 pointer-events-none will-change-transform"
+              className="absolute right-[8%] sm:right-[12%] top-[18%] sm:top-[20%] w-44 sm:w-52 z-25 pointer-events-none will-change-transform"
               style={{ opacity: 0 }}
             >
-              <div className="relative rounded-2xl bg-[#0C101D]/90 backdrop-blur-xl border border-emerald-500/40 p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
+              <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-emerald-500/40 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-inner">
+                    <CheckCircle2 className="w-4.5 h-4.5" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold text-white">Verified Ledger Row</p>
-                    <p className="text-[9px] font-mono text-emerald-400">100% Normalized</p>
+                    <p className="text-xs font-bold text-white">Verified Ledger Row</p>
+                    <p className="text-[10px] font-mono text-emerald-400">100% Normalized</p>
                   </div>
                 </div>
-                <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] font-mono text-[10px] text-slate-300 space-y-1">
+                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] font-mono text-[11px] text-slate-300 space-y-1">
                   <p className="flex justify-between">
                     <span className="text-slate-400">Status</span>
                     <span className="text-emerald-300 font-bold">Auto-Reconciled</span>
@@ -720,10 +877,10 @@ export default function WorkstationScrollHero({
             {/* LAYER 6: Holographic Extraction HUD Terminal (Right-Center) */}
             <div
               ref={hudTerminalRef}
-              className="absolute right-2 sm:right-6 bottom-[14%] sm:bottom-[16%] w-72 sm:w-80 lg:w-96 z-30 pointer-events-none will-change-transform"
+              className="absolute right-2 sm:right-6 bottom-[12%] sm:bottom-[14%] w-72 sm:w-80 lg:w-96 z-30 pointer-events-none will-change-transform"
               style={{ opacity: 0 }}
             >
-              <div className="rounded-2xl border border-white/[0.12] bg-[#0A0D18]/94 backdrop-blur-xl shadow-2xl p-4 sm:p-5 font-mono text-xs">
+              <div className="rounded-2xl border border-white/[0.12] bg-[#0A0D18]/95 backdrop-blur-xl shadow-2xl p-4 sm:p-5 font-mono text-xs">
                 <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-white/[0.08]">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
@@ -735,7 +892,7 @@ export default function WorkstationScrollHero({
                       extraction_stream.json
                     </span>
                   </div>
-                  <span ref={terminalBadgeRef} className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  <span ref={terminalBadgeRef} className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-semibold">
                     STANDBY
                   </span>
                 </div>
@@ -777,7 +934,7 @@ export default function WorkstationScrollHero({
             {/* Ejected Data Flight Capsule (Ready to drop into table at p > 0.70) */}
             <div
               ref={ejectGroupRef}
-              className="absolute left-1/2 -translate-x-1/2 bottom-3 z-35 w-full max-w-md p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-cyan-500/15 to-indigo-500/20 border border-emerald-500/40 backdrop-blur-xl shadow-2xl transition-all will-change-transform flex items-center justify-between"
+              className="absolute left-1/2 -translate-x-1/2 bottom-2 z-35 w-full max-w-md p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-cyan-500/15 to-indigo-500/20 border border-emerald-500/40 backdrop-blur-xl shadow-2xl transition-all will-change-transform flex items-center justify-between"
               style={{ opacity: 0 }}
             >
               <div className="flex items-center gap-3">
