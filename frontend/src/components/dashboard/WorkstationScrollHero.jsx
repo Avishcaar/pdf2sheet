@@ -39,7 +39,6 @@ export default function WorkstationScrollHero({
   const holoBeamRef = useRef(null);
   const monitorGlowRef = useRef(null);
   const monitorScreenRef = useRef(null);
-  const manChairRef = useRef(null);
   const invoice1Ref = useRef(null);
   const invoice2Ref = useRef(null);
   const laserRef = useRef(null);
@@ -247,10 +246,13 @@ export default function WorkstationScrollHero({
       const fRect = fromEl.getBoundingClientRect();
       const tRect = toEl.getBoundingClientRect();
 
-      const x1 = fRect.right - sRect.left;
-      const y1 = fRect.top + fRect.height / 2 - sRect.top;
-      const x2 = tRect.left - sRect.left;
-      const y2 = tRect.top + tRect.height / 2 - sRect.top;
+      const scaleX = 944 / sRect.width;
+      const scaleY = 704 / sRect.height;
+
+      const x1 = (fRect.right - sRect.left) * scaleX;
+      const y1 = (fRect.top + fRect.height / 2 - sRect.top) * scaleY;
+      const x2 = (tRect.left - sRect.left) * scaleX;
+      const y2 = (tRect.top + tRect.height / 2 - sRect.top) * scaleY;
 
       const dx = Math.max(30, (x2 - x1) * 0.5);
       const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
@@ -316,8 +318,8 @@ export default function WorkstationScrollHero({
         const exit = easeOutCubic(range(p, 0.78, 1.0));
         const exitY = -exit * 70;
 
-        // 2. Layer 1: Desktop Room Background (svg2)
-        // Moves slowly with subtle depth
+        // 2. Master Workstation Diorama (Upscaled Operator, Desk, Monitor & Room)
+        // Moves smoothly with subtle depth and 3D parallax
         if (roomBgRef.current) {
           const bgParallaxY = lerp(0, -25, p) + exitY * 0.5;
           const bgScale = lerp(1.04, 1.0, easeOutCubic(range(p, 0, 0.4)));
@@ -326,20 +328,7 @@ export default function WorkstationScrollHero({
           roomBgRef.current.style.transform = `translate3d(${mouseBgX}px, ${bgParallaxY + mouseBgY}px, 0) scale(${bgScale})`;
         }
 
-        // 3. Layer 2: Operator on Rolling Chair (svg1)
-        // Rolls smoothly into the desk with organic spring overshoot
-        if (manChairRef.current) {
-          const rollIn = easeOutCubic(range(p, 0.06, 0.40));
-          const springOvershoot = Math.sin(rollIn * Math.PI) * 4;
-          const manX = lerp(-14, 0, rollIn) + springOvershoot;
-          const manY = lerp(22, 0, rollIn) + exitY * 0.9;
-          const manScale = lerp(1.03, 1.0, rollIn);
-          const mouseManX = mouse.current.x * 16;
-          const mouseManY = mouse.current.y * 12;
-          manChairRef.current.style.transform = `translate3d(${manX + mouseManX}px, ${manY + mouseManY}px, 0) scale(${manScale})`;
-        }
-
-        // 4. Layer 3: Active Computer Monitor Screen & Hologram Light Beam Cone
+        // 3. Active Computer Monitor Screen & Hologram Light Beam Cone
         const screenPower = easeOutCubic(range(p, 0.18, 0.45));
         if (monitorGlowRef.current) {
           monitorGlowRef.current.style.opacity = String(screenPower * 0.85);
@@ -670,95 +659,78 @@ export default function WorkstationScrollHero({
               <circle ref={photonTotalRef} r="4.5" fill="#f5d0fe" opacity="0" filter="url(#laserGlow)" />
             </svg>
 
-            {/* LAYER 1: Desktop Room Background (Desk, Monitor, Coffee Mug, Trash Can) */}
+            {/* LAYER 1: Master Upscaled Workstation Diorama (Operator, Desk, Monitor & Room) */}
             <div
               ref={roomBgRef}
               className="absolute inset-0 size-full flex items-center justify-center pointer-events-none will-change-transform z-10"
             >
               <picture className="w-full h-full flex items-center justify-center">
-                <source srcSet="/landing/desktop_bg.webp" type="image/webp" />
+                <source srcSet="/landing/workstation_upscaled.webp" type="image/webp" />
                 <img
-                  src="/landing/desktop_bg.png"
-                  alt="Desktop Workspace"
+                  src="/landing/workstation_upscaled.png"
+                  alt="Upscaled Workstation Master"
                   className="h-full w-full object-contain object-center drop-shadow-2xl"
                   loading="eager"
                 />
               </picture>
-            </div>
 
-            {/* Micro-Detail 1: Steam wisps rising from purple coffee cup */}
-            <div
-              className="absolute pointer-events-none z-14 flex items-center justify-center"
-              style={{ left: '24.5%', top: '44%', width: '3%', height: '5%' }}
-            >
-              <div className="w-1 h-3 bg-white/20 rounded-full blur-[1px] animate-pulse" style={{ animationDuration: '2s' }} />
-              <div className="w-1 h-4 bg-white/15 rounded-full blur-[1.5px] animate-pulse -ml-0.5" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
-            </div>
-
-            {/* Micro-Detail 2: Power cord active green LED on wall outlet */}
-            <div
-              className="absolute pointer-events-none z-14 flex items-center justify-center"
-              style={{ left: '71.2%', top: '75%', width: '1.5%', height: '2%' }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping" />
-            </div>
-
-            {/* LAYER 2: Live Cybernetic Monitor Display (Anchored right onto the illustrated monitor!) */}
-            <div
-              ref={monitorScreenRef}
-              className="absolute pointer-events-none z-15 will-change-transform flex items-center justify-center"
-              style={{
-                left: '46.2%',
-                top: '40.5%',
-                width: '18%',
-                height: '19%',
-                opacity: 0
-              }}
-            >
-              {/* Holographic glowing scan beam from the monitor */}
+              {/* Micro-Detail 1: Steam wisps rising from purple coffee cup */}
               <div
-                ref={monitorGlowRef}
-                className="absolute -inset-16 bg-gradient-to-tr from-cyan-500/25 via-indigo-500/20 to-transparent blur-2xl rounded-full pointer-events-none"
-                style={{ opacity: 0 }}
-              />
+                className="absolute pointer-events-none z-14 flex items-center justify-center"
+                style={{ left: '24.5%', top: '44%', width: '3%', height: '5%' }}
+              >
+                <div className="w-1 h-3 bg-white/20 rounded-full blur-[1px] animate-pulse" style={{ animationDuration: '2s' }} />
+                <div className="w-1 h-4 bg-white/15 rounded-full blur-[1.5px] animate-pulse -ml-0.5" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+              </div>
 
-              {/* Terminal Code Screen inside Monitor */}
-              <div className="w-full h-full bg-[#070B14]/95 border border-cyan-400/60 rounded-sm p-1.5 font-mono text-[8px] sm:text-[9px] text-cyan-300 flex flex-col justify-between overflow-hidden shadow-[0_0_15px_rgba(34,211,238,0.4)]">
-                <div className="flex items-center justify-between border-b border-cyan-500/30 pb-0.5">
-                  <span className="flex items-center gap-1 font-bold text-white text-[7px] sm:text-[8px]">
-                    <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                    GROQ_LPU_OCR
-                  </span>
-                  <span className="text-[7px] text-cyan-400 font-bold">240ms</span>
-                </div>
-                <div className="space-y-0.5 leading-tight text-[7px] sm:text-[8px] text-slate-300">
-                  <p className="truncate text-emerald-300">&gt; INGESTING BUFFER...</p>
-                  <p className="truncate text-cyan-200">&gt; PARSING INV-2026-9041</p>
-                  <p className="truncate text-amber-200">&gt; MATCH: ACME CLOUD</p>
-                  <p className="truncate text-purple-200 font-bold">&gt; LEDGER: $4,850.00 USD</p>
-                </div>
-                <div className="pt-0.5 border-t border-cyan-500/20 text-[6px] sm:text-[7px] flex justify-between text-slate-400">
-                  <span>RFC 2177</span>
-                  <span className="text-emerald-400 font-bold">ACTIVE</span>
+              {/* Micro-Detail 2: Power cord active green LED on wall outlet */}
+              <div
+                className="absolute pointer-events-none z-14 flex items-center justify-center"
+                style={{ left: '71.2%', top: '75%', width: '1.5%', height: '2%' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping" />
+              </div>
+
+              {/* LAYER 2: Live Cybernetic Monitor Display (Anchored right onto the illustrated monitor!) */}
+              <div
+                ref={monitorScreenRef}
+                className="absolute pointer-events-none z-15 will-change-transform flex items-center justify-center"
+                style={{
+                  left: '46.2%',
+                  top: '40.5%',
+                  width: '18%',
+                  height: '19%',
+                  opacity: 0
+                }}
+              >
+                {/* Holographic glowing scan beam from the monitor */}
+                <div
+                  ref={monitorGlowRef}
+                  className="absolute -inset-16 bg-gradient-to-tr from-cyan-500/25 via-indigo-500/20 to-transparent blur-2xl rounded-full pointer-events-none"
+                  style={{ opacity: 0 }}
+                />
+
+                {/* Terminal Code Screen inside Monitor */}
+                <div className="w-full h-full bg-[#070B14]/95 border border-cyan-400/60 rounded-sm p-1.5 font-mono text-[8px] sm:text-[9px] text-cyan-300 flex flex-col justify-between overflow-hidden shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+                  <div className="flex items-center justify-between border-b border-cyan-500/30 pb-0.5">
+                    <span className="flex items-center gap-1 font-bold text-white text-[7px] sm:text-[8px]">
+                      <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                      GROQ_LPU_OCR
+                    </span>
+                    <span className="text-[7px] text-cyan-400 font-bold">240ms</span>
+                  </div>
+                  <div className="space-y-0.5 leading-tight text-[7px] sm:text-[8px] text-slate-300">
+                    <p className="truncate text-emerald-300">&gt; INGESTING BUFFER...</p>
+                    <p className="truncate text-cyan-200">&gt; PARSING INV-2026-9041</p>
+                    <p className="truncate text-amber-200">&gt; MATCH: ACME CLOUD</p>
+                    <p className="truncate text-purple-200 font-bold">&gt; LEDGER: $4,850.00 USD</p>
+                  </div>
+                  <div className="pt-0.5 border-t border-cyan-500/20 text-[6px] sm:text-[7px] flex justify-between text-slate-400">
+                    <span>RFC 2177</span>
+                    <span className="text-emerald-400 font-bold">ACTIVE</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* LAYER 3: Operator on Rolling Office Chair (Rolls into desk with momentum) */}
-            <div
-              ref={manChairRef}
-              className="absolute inset-0 size-full flex items-center justify-center pointer-events-none will-change-transform z-20"
-              style={{ transform: 'translate3d(-14px, 22px, 0)' }}
-            >
-              <picture className="w-full h-full flex items-center justify-center">
-                <source srcSet="/landing/man_chair.webp" type="image/webp" />
-                <img
-                  src="/landing/man_chair.png"
-                  alt="Operator at Desktop"
-                  className="h-full w-full object-contain object-center drop-shadow-2xl"
-                  loading="eager"
-                />
-              </picture>
             </div>
 
             {/* LAYER 4: Floating Invoice 1 (Raw Inflow Document with Active Laser Scan) */}
