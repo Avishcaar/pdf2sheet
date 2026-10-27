@@ -13,13 +13,31 @@ import {
   FileText,
   BarChart3,
   HelpCircle,
-  Database
+  Database,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function RecruiterGuideBanner({ onIngestSample, isIngesting, onOpenCfoBrief }) {
   const [isDismissed, setIsDismissed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const token = localStorage.getItem('token');
+  const isPersonalAccount = storedUser?.email && storedUser.email !== 'guest@pdf2sheet.com' && token && token !== 'guest-demo-token';
+
+  const switchToGuestMode = () => {
+    localStorage.setItem('token', 'guest-demo-token');
+    localStorage.setItem('demo_mode', 'true');
+    localStorage.setItem('user', JSON.stringify({
+      _id: '6ae0f1989e78e3eb2b71ff9c',
+      email: 'guest@pdf2sheet.com',
+      firstName: 'Guest',
+      lastName: 'Reviewer',
+      role: 'demo'
+    }));
+    window.location.reload();
+  };
 
   if (isDismissed) {
     return (
@@ -76,6 +94,23 @@ export default function RecruiterGuideBanner({ onIngestSample, isIngesting, onOp
 
       {isExpanded && (
         <div className="relative z-10 pt-3.5 space-y-4">
+          {isPersonalAccount && (
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>
+                  You are currently viewing your personal account (<strong>{storedUser?.email}</strong>). Interviewers and recruiters test in the isolated demo sandbox.
+                </span>
+              </div>
+              <button
+                onClick={switchToGuestMode}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold font-mono text-xs shrink-0 transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                Switch to Demo Sandbox
+              </button>
+            </div>
+          )}
+
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
             Welcome! <strong className="text-white">PDF2Sheet</strong> is an autonomous invoice processing pipeline. It captures invoices from email (IMAP) or uploads, extracts structured financial entities using <strong className="text-cyan-300 font-mono">Groq LPU (Llama 3.3 70B)</strong> in <span className="text-emerald-400 font-mono font-bold">&lt;280ms</span>, verifies mathematical integrity, and writes clean data directly into <strong className="text-emerald-300">Google Sheets</strong>.
           </p>

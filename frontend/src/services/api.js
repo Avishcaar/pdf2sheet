@@ -7,16 +7,17 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     let token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-        if (token === 'guest-demo-token') {
-            config.headers['x-guest-mode'] = 'true';
-        }
-    } else {
+
+    // If no token or explicit demo mode flag or guest-demo-token:
+    const isGuest = !token || token === 'guest-demo-token' || localStorage.getItem('demo_mode') === 'true';
+
+    if (isGuest) {
         token = 'guest-demo-token';
         localStorage.setItem('token', token);
         config.headers.Authorization = `Bearer ${token}`;
         config.headers['x-guest-mode'] = 'true';
+    } else {
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
@@ -25,10 +26,8 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            const token = localStorage.getItem('token');
-            if (token === 'guest-demo-token') {
-                localStorage.setItem('token', 'guest-demo-token');
-            }
+            localStorage.setItem('token', 'guest-demo-token');
+            localStorage.setItem('demo_mode', 'true');
         }
         return Promise.reject(error);
     }
