@@ -334,9 +334,7 @@ export default function Dashboard() {
             const formData = new FormData();
             formData.append('invoice', file);
 
-            const response = await api.post('/email/test-upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const response = await api.post('/email/test-upload', formData);
 
             toast.success(
                 `Ingested: ${response.data.data?.vendorName || 'Invoice'} (${formatCurrency(response.data.data?.extractedData?.totalAmount || '0.00', response.data.data?.extractedData?.currency || 'USD')})`,
@@ -353,23 +351,30 @@ export default function Dashboard() {
         }
     };
 
-    const handleIngestSample = async (samplePath = '/samples/aws-invoice.pdf', sampleName = 'aws-invoice.pdf', vendor = 'AWS Cloud') => {
-        setIsIngestingSample(true);
-        const toastId = toast.loading(`Loading sample "${vendor}" and analyzing with Groq LPU AI...`);
-        try {
-            const res = await fetch(samplePath);
-            const blob = await res.blob();
-            const file = new File([blob], sampleName, { type: 'application/pdf' });
-            const formData = new FormData();
-            formData.append('invoice', file);
-            formData.append('vendorName', vendor);
+    const handleIngestSample = async (scenarioOrPath = 'aws', sampleName = 'aws-invoice.pdf', vendor = 'AWS Cloud') => {
+        let scenarioId = 'aws';
+        if (typeof scenarioOrPath === 'string') {
+            const lower = scenarioOrPath.toLowerCase();
+            if (lower.includes('stripe')) scenarioId = 'stripe';
+            else if (lower.includes('sap')) scenarioId = 'sap';
+            else if (lower.includes('apollo')) scenarioId = 'apollo';
+            else if (lower.includes('github')) scenarioId = 'github';
+            else scenarioId = 'aws';
+        }
 
-            const uploadRes = await api.post('/email/test-upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+        const displayVendor = vendor || (scenarioId === 'stripe' ? 'Stripe SaaS' : 'AWS Cloud');
+
+        setIsIngestingSample(true);
+        const toastId = toast.loading(`Loading sample "${displayVendor}" and analyzing with Groq LPU AI...`);
+        try {
+            const uploadRes = await api.post('/email/sample-ingest', {
+                scenarioId,
+                vendorName: displayVendor
             });
 
+            const invoiceData = uploadRes.data?.data;
             toast.success(
-                `🎉 Ingested: ${uploadRes.data.data?.vendorName || vendor} (${formatCurrency(uploadRes.data.data?.extractedData?.totalAmount || '0.00', uploadRes.data.data?.extractedData?.currency || 'USD')})`,
+                `🎉 Ingested: ${invoiceData?.vendorName || displayVendor} (${formatCurrency(invoiceData?.extractedData?.totalAmount || '0.00', invoiceData?.extractedData?.currency || 'USD')})`,
                 { id: toastId, duration: 5000 }
             );
             refetch();

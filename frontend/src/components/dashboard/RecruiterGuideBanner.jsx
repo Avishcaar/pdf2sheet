@@ -84,7 +84,7 @@ export default function RecruiterGuideBanner({ onIngestSample, isIngesting, onOp
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {/* Quick Action 1: Ingest AWS Sample */}
             <button
-              onClick={() => onIngestSample('/samples/aws-invoice.pdf', 'aws-invoice.pdf', 'AWS Cloud')}
+              onClick={() => onIngestSample('aws', 'aws-invoice.pdf', 'AWS Cloud')}
               disabled={isIngesting}
               className="p-3 rounded-2xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-left transition-all group cursor-pointer disabled:opacity-50"
             >
@@ -104,7 +104,7 @@ export default function RecruiterGuideBanner({ onIngestSample, isIngesting, onOp
 
             {/* Quick Action 2: Ingest Stripe Sample */}
             <button
-              onClick={() => onIngestSample('/samples/stripe-invoice.pdf', 'stripe-invoice.pdf', 'Stripe SaaS')}
+              onClick={() => onIngestSample('stripe', 'stripe-invoice.pdf', 'Stripe SaaS')}
               disabled={isIngesting}
               className="p-3 rounded-2xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-left transition-all group cursor-pointer disabled:opacity-50"
             >

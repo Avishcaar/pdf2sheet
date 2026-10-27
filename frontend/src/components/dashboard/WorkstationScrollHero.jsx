@@ -587,7 +587,7 @@ export default function WorkstationScrollHero({
             </button>
 
             <button
-              onClick={() => onIngestSampleClick && onIngestSampleClick('/samples/aws-invoice.pdf', 'aws-invoice.pdf', 'AWS Cloud')}
+              onClick={() => onIngestSampleClick && onIngestSampleClick('aws', 'aws-invoice.pdf', 'AWS Cloud')}
               disabled={isIngestingSample}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-mono text-amber-300 font-bold transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
               title="1-Click Demo Ingestion (AWS Cloud)"
