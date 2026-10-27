@@ -10,14 +10,10 @@ import Settings from './pages/settings/Settings';
 import SimulatePage from './pages/devtools/SimulatePage';
 
 import VisualMapper from './components/Review/VisualMapper';
-import FilmGrain from './components/common/FilmGrain';
-import CustomCursor from './components/common/CustomCursor';
 
 function App() {
   return (
     <div className="min-h-screen">
-      <CustomCursor />
-      <FilmGrain />
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />

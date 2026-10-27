@@ -121,13 +121,13 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                         {/* Header */}
                         <div className="p-6 border-b border-gray-200 dark:border-white/[0.08] flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-violet-500/20">
+                                <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center font-bold">
                                     {invoice.vendorName?.charAt(0) || 'U'}
                                 </div>
                                 <div>
                                     <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                                         {invoice.vendorName || 'Unknown Vendor'}
-                                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-500 border border-violet-500/20">
+                                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/[0.08]">
                                             {extracted.currency || 'USD'}
                                         </span>
                                     </h2>
@@ -138,7 +138,7 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                             </div>
                             <button
                                 onClick={onClose}
-                                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition"
+                                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition cursor-pointer"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -147,13 +147,12 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                         {/* Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             {/* Hero Amount & Confidence Card */}
-                            <div className="p-5 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-white/[0.03] dark:to-white/[0.01] border border-gray-200/80 dark:border-white/[0.08]">
+                            <div className="p-5 rounded-2xl bg-gray-50/75 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.08]">
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Total Extracted
                                     </span>
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getConfidenceColor(confidence)}`}>
-                                        <Sparkles className="w-3 h-3" />
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-medium border ${getConfidenceColor(confidence)}`}>
                                         {confidence}% Confidence
                                     </span>
                                 </div>
@@ -180,30 +179,26 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                                 </div>
 
                                 <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
-                                    <span className="flex items-center gap-1">
-                                        <Bot className="w-3.5 h-3.5 text-violet-500" />
-                                        <span>Engine: <strong>{engineName}</strong></span>
-                                    </span>
+                                    <span>Engine: <strong>{engineName}</strong></span>
                                     <span className="capitalize font-medium text-gray-700 dark:text-gray-300">
-                                        {isProcessed ? 'Auto-Synced to Sheet' : 'Pending Verification'}
+                                        {isProcessed ? 'Synced to Sheet' : 'Pending Verification'}
                                     </span>
                                 </div>
                             </div>
 
-                            {/* Executive AI Summary (if present) */}
+                            {/* Executive Summary (if present) */}
                             {extracted.aiSummary && (
-                                <div className="p-4 rounded-xl bg-violet-500/5 border border-violet-500/20 text-xs">
-                                    <div className="flex items-center gap-1.5 font-semibold text-violet-600 dark:text-violet-400 mb-1">
-                                        <Sparkles className="w-3.5 h-3.5" />
-                                        AI Executive Summary
+                                <div className="p-4 rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.08] text-xs">
+                                    <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                        Executive Summary
                                     </div>
-                                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                                         {extracted.aiSummary}
                                     </p>
                                 </div>
                             )}
 
-                            {/* Forensic Mathematical Audit Banner */}
+                            {/* Mathematical Audit Banner */}
                             {mathAudit && (
                                 <div className={`p-4 rounded-xl border flex items-start gap-3 text-xs ${
                                     mathAudit.isValid 
@@ -217,8 +212,8 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                                     )}
                                     <div className="flex-1">
                                         <div className="font-semibold flex items-center justify-between mb-0.5">
-                                            <span>Forensic Math Audit</span>
-                                            <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
+                                            <span>Mathematical Audit</span>
+                                            <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10">
                                                 Calculated: {formatCurrency(mathAudit.calculatedTotal, extracted.currency || 'USD')}
                                             </span>
                                         </div>

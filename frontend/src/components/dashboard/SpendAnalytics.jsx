@@ -105,14 +105,6 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
         return null;
     }
 
-    const colorGradients = [
-        'from-violet-500 to-indigo-500',
-        'from-cyan-500 to-blue-500',
-        'from-emerald-500 to-teal-500',
-        'from-amber-500 to-orange-500',
-        'from-pink-500 to-rose-500'
-    ];
-
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Card: Top Vendor Spend Distribution (7 Cols) */}
@@ -124,14 +116,14 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
                                 <TrendingUp className="w-4 h-4" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                    Vendor Spend Distribution
-                                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                                        Normalized {baseCurrency}
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                    Supplier Spend Breakdown
+                                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/[0.08]">
+                                        {baseCurrency}
                                     </span>
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    Multi-currency consolidated financial outflow across suppliers
+                                    Consolidated financial volume across active suppliers
                                 </p>
                             </div>
                         </div>
@@ -140,7 +132,7 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
                             <span className="text-xs font-mono font-bold text-gray-900 dark:text-white">
                                 {formatCurrency(vendorStats.totalSpend, baseCurrency)}
                             </span>
-                            <span className="block text-[10px] text-gray-400">Normalized Volume</span>
+                            <span className="block text-[10px] text-gray-400">Total Volume</span>
                         </div>
                     </div>
 
@@ -153,7 +145,6 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
                             const percentOfMax = vendorStats.maxSpend > 0 
                                 ? (v.total / vendorStats.maxSpend) * 100 
                                 : 0;
-                            const gradient = colorGradients[idx % colorGradients.length];
 
                             return (
                                 <div key={v.name} className="space-y-1.5">
@@ -179,13 +170,13 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
                                         </div>
                                     </div>
 
-                                    {/* Animated Progress Bar */}
+                                    {/* Cohesive Indigo Progress Bar */}
                                     <div className="w-full bg-gray-100 dark:bg-white/[0.05] h-2 rounded-full overflow-hidden">
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${percentOfMax}%` }}
                                             transition={{ duration: 0.8, ease: "easeOut" }}
-                                            className={`h-full rounded-full bg-gradient-to-r ${gradient}`}
+                                            className="h-full rounded-full bg-violet-600 dark:bg-violet-500"
                                         />
                                     </div>
                                 </div>
@@ -215,11 +206,11 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
                                 <ShieldCheck className="w-4 h-4" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                                    Forensic Math Health
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                    Mathematical Audit
                                 </h3>
-                                <p className="text-[11px] text-gray-400">
-                                    Line-item vs Stated Grand Total Audit
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                    Line items vs stated grand total verification
                                 </p>
                             </div>
                         </div>
@@ -231,17 +222,17 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#0B0F19] border border-gray-100 dark:border-white/[0.04]">
-                            <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">
-                                100% Validated
+                            <span className="text-[10px] uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wider">
+                                Reconciled
                             </span>
                             <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
                                 {auditStats.verifiedCount}
                             </div>
-                            <span className="text-[10px] text-gray-400">Clean line audits</span>
+                            <span className="text-[10px] text-gray-400">Exact match</span>
                         </div>
 
                         <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#0B0F19] border border-gray-100 dark:border-white/[0.04]">
-                            <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">
+                            <span className="text-[10px] uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wider">
                                 Discrepancies
                             </span>
                             <div className={`text-lg font-bold font-mono mt-0.5 ${auditStats.discrepancyCount > 0 ? 'text-amber-500' : 'text-gray-400'}`}>
@@ -254,26 +245,22 @@ export default function SpendAnalytics({ invoices = [], baseCurrency = 'USD' }) 
                     </div>
                 </div>
 
-                {/* 2. Hybrid Dual-Engine Split */}
+                {/* 2. Extraction Engine Split */}
                 <div className="p-6 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm">
                     <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-white/[0.06]">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
+                            <div className="p-2 rounded-xl bg-violet-500/10 text-violet-500">
                                 <Cpu className="w-4 h-4" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                                    Dual-Engine Pipeline
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                    Extraction Engine
                                 </h3>
-                                <p className="text-[11px] text-gray-400">
-                                    Groq LPU vs Learned Spatial Rules
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                    Groq LPU vs Spatial Coordinate Rules
                                 </p>
                             </div>
                         </div>
-
-                        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                            Hybrid Mode
-                        </span>
                     </div>
 
                     <div className="mt-4 space-y-3">

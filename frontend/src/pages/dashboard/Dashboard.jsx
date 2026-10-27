@@ -397,52 +397,38 @@ export default function Dashboard() {
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
-                        Invoices Command Center
-                        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                            Auto-Pilot
-                        </span>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        Invoices
                     </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        High-precision invoice extraction pipeline syncing live with Google Sheets.
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        Centralized document extraction and live Google Sheets ledger sync.
                     </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                     {/* Base Currency Selector */}
-                    <div className="flex items-center p-1 bg-gray-100 dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/[0.06] rounded-xl text-xs font-mono">
-                        <span className="px-2 text-gray-400 text-[10px] uppercase font-sans font-semibold hidden md:inline">Base:</span>
-                        {['USD', 'INR', 'EUR', 'GBP'].map(curr => (
+                    <div className="flex items-center p-0.5 bg-gray-100 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-lg text-xs font-mono">
+                        {['USD', 'EUR', 'INR', 'GBP'].map(curr => (
                             <button
                                 key={curr}
                                 onClick={() => setBaseCurrency(curr)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
                                     baseCurrency === curr
-                                        ? 'bg-white dark:bg-[#1E293B] text-violet-600 dark:text-violet-400 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                                        ? 'bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-xs'
+                                        : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
                                 }`}
-                                title={`Switch portfolio normalization to ${curr}`}
+                                title={`Portfolio normalization: ${curr}`}
                             >
                                 {curr}
                             </button>
                         ))}
                     </div>
 
-                    {/* CFO Brief Button */}
-                    <button
-                        onClick={handleGenerateCfoBrief}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md shadow-violet-500/25 transition-all active:scale-[0.98] cursor-pointer"
-                        title="Generate Autonomous CFO Intelligence Brief with Groq AI"
-                    >
-                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                        <span>CFO Brief</span>
-                    </button>
-
                     {/* Direct Upload Any Invoice */}
-                    <label className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold ${
+                    <label className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium ${
                         isUploadingRandom 
-                            ? 'bg-emerald-700 text-white cursor-wait opacity-80' 
-                            : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-sm shadow-emerald-500/20 active:scale-[0.98]'
+                            ? 'bg-violet-700 text-white cursor-wait opacity-80' 
+                            : 'bg-violet-600 hover:bg-violet-500 text-white cursor-pointer shadow-xs active:scale-[0.98]'
                     } transition-all`}>
                         {isUploadingRandom ? (
                             <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -459,38 +445,49 @@ export default function Dashboard() {
                         />
                     </label>
 
-                    <button
-                        onClick={() => navigate('/simulate')}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition"
-                    >
-                        <Plus className="w-3.5 h-3.5 text-violet-500" />
-                        <span className="hidden sm:inline">Presets</span>
-                    </button>
-
+                    {/* Sync Email */}
                     <button
                         onClick={() => handleSyncEmail(false)}
                         disabled={isSyncingEmail}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition active:scale-[0.98] cursor-pointer"
-                        title="Scan connected Gmail inbox (jaltaasholaa@gmail.com) for new invoice emails"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition active:scale-[0.98] cursor-pointer"
+                        title="Scan connected Gmail inbox (jaltaasholaa@gmail.com)"
                     >
-                        <Mail className={`w-3.5 h-3.5 text-violet-500 ${isSyncingEmail ? 'animate-spin' : ''}`} />
-                        <span className="hidden sm:inline">{isSyncingEmail ? 'Scanning...' : 'Sync Email'}</span>
+                        <Mail className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 ${isSyncingEmail ? 'animate-spin' : ''}`} />
+                        <span>{isSyncingEmail ? 'Scanning...' : 'Sync Email'}</span>
+                    </button>
+
+                    {/* Financial Brief */}
+                    <button
+                        onClick={handleGenerateCfoBrief}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition cursor-pointer"
+                        title="Generate financial summary report"
+                    >
+                        <FileText className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                        <span>Financial Brief</span>
+                    </button>
+
+                    {/* Simulator Presets */}
+                    <button
+                        onClick={() => navigate('/simulate')}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition cursor-pointer"
+                        title="Open simulation runner"
+                    >
+                        <span>Simulator</span>
                     </button>
 
                     {stats.total > 0 && (
                         <button
                             onClick={() => setIsClearAllModalOpen(true)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition"
-                            title="Clear all invoices from database"
+                            className="p-2 rounded-lg border border-gray-200 dark:border-white/[0.08] text-gray-400 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer"
+                            title="Clear all invoices"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Clear DB</span>
                         </button>
                     )}
 
                     <button
                         onClick={() => refetch()}
-                        className="p-2 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-600 dark:text-gray-300 transition"
+                        className="p-2 rounded-lg border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-500 dark:text-gray-400 transition cursor-pointer"
                         title="Refresh data"
                     >
                         <RefreshCw className="w-3.5 h-3.5" />
@@ -500,45 +497,42 @@ export default function Dashboard() {
 
             {/* Google Sheets Reconnect / Sync Alert */}
             {userProfile && !userProfile.hasGoogleConnection && (
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-                            <AlertTriangle className="w-5 h-5" />
+                        <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                            <AlertTriangle className="w-4 h-4" />
                         </div>
                         <div>
-                            <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                                Google Sheets Disconnected / OAuth Token Expired
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-normal">
-                                    Action Required
-                                </span>
+                            <p className="font-semibold text-gray-900 dark:text-white">
+                                Google Sheets Disconnected
                             </p>
                             <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
-                                Invoices are successfully parsed & saved in MongoDB, but automatic push to your Google Sheet requires re-authorizing Google OAuth2.
+                                Invoices are parsed and saved in database, but automatic push to Google Sheets requires connecting your Google account.
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={() => navigate('/settings')}
-                        className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs shadow-sm transition whitespace-nowrap self-start sm:self-auto cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs shadow-xs transition whitespace-nowrap self-start sm:self-auto cursor-pointer"
                     >
-                        Connect Google Sheets →
+                        Connect Google Sheets
                     </button>
                 </div>
             )}
 
-            {/* 4-KPI Metric Strip (Normalized to baseCurrency) */}
+            {/* 4-KPI Metric Strip */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. Total Invoices */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm relative overflow-hidden">
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Total Invoices
                         </span>
-                        <div className="p-2 rounded-xl bg-violet-500/10 text-violet-500 dark:text-violet-400">
+                        <div className="p-2 rounded-lg bg-violet-500/10 text-violet-500 dark:text-violet-400">
                             <FileText className="w-4 h-4" />
                         </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">
+                    <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">
                         {stats.total}
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -547,52 +541,52 @@ export default function Dashboard() {
                 </div>
 
                 {/* 2. Total Normalized Volume */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm relative overflow-hidden">
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Normalized Volume ({baseCurrency})
                         </span>
-                        <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
                             <DollarSign className="w-4 h-4" />
                         </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white truncate">
+                    <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white truncate">
                         {formatCurrency(stats.totalAmount, baseCurrency)}
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Multi-currency normalized spend
+                        Consolidated supplier volume
                     </p>
                 </div>
 
-                {/* 3. Auto-Pilot Rate */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm relative overflow-hidden">
+                {/* 3. Automation Rate */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Auto-Pilot Rate
+                            Automation Rate
                         </span>
-                        <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
+                        <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
                             <Zap className="w-4 h-4" />
                         </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">
+                    <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">
                         {stats.syncRate}%
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Zero-touch spreadsheet sync
+                        Automated spreadsheet sync
                     </p>
                 </div>
 
                 {/* 4. Review Queue */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm relative overflow-hidden">
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Review Queue
                         </span>
-                        <div className={`p-2 rounded-xl ${stats.review > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-gray-100 dark:bg-white/[0.04] text-gray-400'}`}>
+                        <div className={`p-2 rounded-lg ${stats.review > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-gray-100 dark:bg-white/[0.04] text-gray-400'}`}>
                             <Clock className="w-4 h-4" />
                         </div>
                     </div>
-                    <div className={`mt-3 text-3xl font-bold font-mono tracking-tight ${stats.review > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-white'}`}>
+                    <div className={`mt-3 text-2xl sm:text-3xl font-bold font-mono tracking-tight ${stats.review > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-white'}`}>
                         {stats.review}
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -601,37 +595,30 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Forensic Spend Analytics & Engine Intelligence */}
+            {/* Spend & Supplier Analytics */}
             <SpendAnalytics invoices={invoices} baseCurrency={baseCurrency} />
 
-            {/* Natural Language AI Omnibar */}
-            <SmartOmnibar 
-                onFilterChange={setNlFilter}
-                activeFilter={nlFilter}
-                onClearFilter={() => setNlFilter(null)}
-            />
-
-            {/* Filter, Search & Export Toolbar */}
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Unified Filter, Search & Export Toolbar */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     {/* Status Tabs */}
                     <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/[0.06] self-start">
                         {[
                             { id: 'all', label: 'All Invoices', count: stats.total },
-                            { id: 'processed', label: 'Auto-Pilot', count: stats.processed },
+                            { id: 'processed', label: 'Processed', count: stats.processed },
                             { id: 'review_needed', label: 'Needs Review', count: stats.review },
                         ].map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setStatusFilter(tab.id)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
                                     statusFilter === tab.id
-                                        ? 'bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-sm'
+                                        ? 'bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-xs'
                                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                                 }`}
                             >
                                 {tab.label}
-                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                                <span className={`px-1.5 py-0.2 rounded-md text-[10px] ${
                                     statusFilter === tab.id
                                         ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400 font-mono'
                                         : 'bg-gray-200/60 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400 font-mono'
@@ -642,16 +629,16 @@ export default function Dashboard() {
                         ))}
                     </div>
 
-                    {/* Right Toolbar Controls: Search, Sort & Export */}
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        {/* Search Bar */}
-                        <div className="relative flex-1 sm:w-64">
+                    {/* Right Toolbar Controls: Integrated Search, Sort & Export */}
+                    <div className="flex flex-wrap items-center gap-2.5 flex-1 lg:justify-end">
+                        {/* Unified Search Input */}
+                        <div className="relative flex-1 sm:w-80 sm:flex-none">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search vendor, #, amount..."
+                                placeholder="Search vendor, invoice #, amount..."
                                 className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-violet-500 transition"
                             />
                             {searchQuery && (
@@ -684,7 +671,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => handleExportFiltered('csv')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs font-medium text-gray-700 dark:text-gray-300 transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs font-medium text-gray-700 dark:text-gray-300 transition cursor-pointer"
                                 title="Export to CSV"
                             >
                                 <Download className="w-3.5 h-3.5" />
@@ -692,7 +679,7 @@ export default function Dashboard() {
                             </button>
                             <button
                                 onClick={() => handleExportFiltered('json')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs font-medium text-gray-700 dark:text-gray-300 transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs font-medium text-gray-700 dark:text-gray-300 transition cursor-pointer"
                                 title="Export to JSON"
                             >
                                 <Download className="w-3.5 h-3.5" />
@@ -700,6 +687,47 @@ export default function Dashboard() {
                             </button>
                         </div>
                     </div>
+                </div>
+
+                {/* Quick Filter Chips & Active Filter Indicator */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-white/[0.04] text-xs">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mr-1">Quick Filters:</span>
+                        {[
+                            { label: '> $1,000', filter: { active: true, minAmount: 1000, explanation: 'Amount > $1,000' } },
+                            { label: 'Math Discrepancy', filter: { active: true, mathDiscrepancyOnly: true, explanation: 'Math Discrepancies' } },
+                            { label: 'INR (₹)', filter: { active: true, currency: 'INR', explanation: 'Currency: INR' } },
+                            { label: 'EUR (€)', filter: { active: true, currency: 'EUR', explanation: 'Currency: EUR' } },
+                        ].map((chip, idx) => {
+                            const isCurrent = nlFilter?.explanation === chip.filter.explanation;
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => setNlFilter(isCurrent ? null : chip.filter)}
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+                                        isCurrent
+                                            ? 'bg-violet-600 text-white'
+                                            : 'bg-gray-100 dark:bg-white/[0.04] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                    }`}
+                                >
+                                    {chip.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {nlFilter?.active && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[11px] font-medium">
+                            <span>Filter: {nlFilter.explanation}</span>
+                            <button
+                                onClick={() => setNlFilter(null)}
+                                className="p-0.5 hover:text-violet-800 dark:hover:text-violet-200 cursor-pointer"
+                                title="Clear filter"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Batch Action Toolbar */}
@@ -801,26 +829,17 @@ export default function Dashboard() {
                                                 />
                                             </td>
 
-                                            {/* Vendor Name & Extraction Engine */}
+                                            {/* Vendor Name */}
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-                                                        <FileText className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                                                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/[0.04] text-gray-500 dark:text-gray-400 flex items-center justify-center shrink-0">
+                                                        <FileText className="w-4 h-4" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="font-semibold text-gray-900 dark:text-white truncate">
-                                                                {invoice.vendorName || invoice.extractedData?.vendorName || 'Auto-Detected Vendor'}
-                                                            </span>
-                                                            <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded shrink-0 font-medium ${
-                                                                (invoice.extractedData?.engine?.toLowerCase().includes('groq') || invoice.confidenceScore >= 85)
-                                                                    ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20'
-                                                                    : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'
-                                                            }`}>
-                                                                {(invoice.extractedData?.engine?.toLowerCase().includes('groq') || invoice.confidenceScore >= 85) ? 'Groq LPU' : 'Spatial'}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-xs text-gray-400 dark:text-gray-500 truncate flex items-center gap-1">
+                                                        <span className="font-medium text-gray-900 dark:text-gray-100 truncate block">
+                                                            {invoice.vendorName || invoice.extractedData?.vendorName || 'Auto-Detected Vendor'}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400 dark:text-gray-500 truncate flex items-center gap-1 mt-0.5">
                                                             <Mail className="w-3 h-3 shrink-0" />
                                                             {invoice.senderEmail || 'No Email'}
                                                         </span>
@@ -851,7 +870,7 @@ export default function Dashboard() {
                                             {/* Date / Due Date */}
                                             <td className="px-5 py-4">
                                                 <div className="text-xs flex flex-col">
-                                                    <span className="text-gray-700 dark:text-gray-300">
+                                                    <span className="text-gray-700 dark:text-gray-300 font-medium">
                                                         {invoice.extractedData?.invoiceDate || '—'}
                                                     </span>
                                                     {invoice.extractedData?.dueDate && (
@@ -882,7 +901,7 @@ export default function Dashboard() {
                                                             {invoice.extractedData.mathAudit.isValid !== false ? (
                                                                 <>
                                                                     <ShieldCheck className="w-2.5 h-2.5" />
-                                                                    Math 100%
+                                                                    100% Match
                                                                 </>
                                                             ) : (
                                                                 <>
@@ -895,16 +914,15 @@ export default function Dashboard() {
                                                 </div>
                                             </td>
 
-                                            {/* Confidence Score Pill */}
+                                            {/* Confidence Score */}
                                             <td className="px-5 py-4">
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border ${
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-medium ${
                                                     isHighConf
-                                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                                         : confScore >= 60
-                                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                                                        : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                                        : 'bg-rose-500/10 text-rose-500'
                                                 }`}>
-                                                    <Sparkles className="w-3 h-3" />
                                                     {confScore}%
                                                 </span>
                                             </td>
@@ -912,9 +930,9 @@ export default function Dashboard() {
                                             {/* Status Badge */}
                                             <td className="px-5 py-4">
                                                 {invoice.status === 'processed' ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                                         <CheckCircle className="w-3.5 h-3.5" />
-                                                        Auto-Pilot
+                                                        Processed
                                                     </span>
                                                 ) : (
                                                     <button
@@ -922,7 +940,7 @@ export default function Dashboard() {
                                                             e.stopPropagation();
                                                             navigate(`/review/${invoice._id}`);
                                                         }}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer"
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all cursor-pointer"
                                                         title="Click to map coordinates"
                                                     >
                                                         <Clock className="w-3.5 h-3.5" />

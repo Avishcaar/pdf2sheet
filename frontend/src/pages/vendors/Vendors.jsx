@@ -70,24 +70,21 @@ export default function Vendors() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
-                        Vendors & Learned Models
-                        <span className="text-xs font-mono font-medium px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                            Coordinate Hub
-                        </span>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        Vendors
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Directory of discovered invoice senders, spatial bounding box rules, and OCR confidence weights.
+                        Directory of recognized supplier profiles and extraction rules.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-2.5">
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white shadow-sm shadow-violet-500/20 transition-all active:scale-[0.98]"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium bg-violet-600 hover:bg-violet-500 text-white shadow-xs transition-all active:scale-[0.98] cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
-                        Add Vendor Rule
+                        Add Vendor
                     </button>
                 </div>
             </div>
