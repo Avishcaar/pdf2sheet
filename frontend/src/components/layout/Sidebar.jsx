@@ -104,14 +104,6 @@ export default function Sidebar() {
               >
                 <Icon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
 
-                {/* macOS Running App Active Indicator Dot */}
-                {isActive && (
-                  <span 
-                    aria-hidden="true" 
-                    className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-indigo-500 dark:bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]" 
-                  />
-                )}
-
                 {/* macOS Floating Tooltip */}
                 <div className="absolute left-full ml-3 px-2.5 py-1 rounded-md bg-[#0B0F19]/90 text-white text-[11px] font-medium tracking-wide whitespace-nowrap shadow-xl border border-white/10 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 pointer-events-none z-50">
                   {item.label}
