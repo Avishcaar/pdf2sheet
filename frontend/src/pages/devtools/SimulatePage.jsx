@@ -26,6 +26,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const PRESET_SCENARIOS = [
     {
+        id: 'apollo',
+        vendorName: 'Apollo Hospitals Enterprises Ltd',
+        senderEmail: 'billing@apollohospitals.com',
+        pdfUrl: '/samples/apollo-inr-invoice.pdf',
+        filename: 'apollo-inr-invoice.pdf',
+        tag: 'Multi-Currency (INR ₹)',
+        tagColor: 'amber',
+        description: 'Indian Rupee hospital bill with GSTIN, CGST/SGST 9%, and UPI markers.',
+        expectedAmount: '₹12,450.00',
+        badge: 'Rupee Auto-Detect (₹)'
+    },
+    {
+        id: 'sap',
+        vendorName: 'SAP Deutschland SE & Co. KG',
+        senderEmail: 'invoicing@sap.de',
+        pdfUrl: '/samples/sap-eur-invoice.pdf',
+        filename: 'sap-eur-invoice.pdf',
+        tag: 'European Union (EUR €)',
+        tagColor: 'blue',
+        description: 'Eurozone enterprise cloud invoice with 19% MwSt and SEPA IBAN details.',
+        expectedAmount: '€3,400.00',
+        badge: 'Euro & MwSt (€)'
+    },
+    {
         id: 'stripe',
         vendorName: 'Stripe Payments',
         senderEmail: 'billing@stripe.com',
@@ -148,12 +172,12 @@ export default function SimulatePage() {
     // Custom Form Submit
     const handleCustomSubmit = async (e) => {
         e.preventDefault();
-        if (!file || !senderEmail) {
-            toast.error('Please provide both an invoice PDF and sender email');
+        if (!file) {
+            toast.error('Please provide an invoice PDF file to upload');
             return;
         }
         setActivePreset('custom');
-        await executeSimulation(file, senderEmail);
+        await executeSimulation(file, senderEmail || '');
     };
 
     return (
@@ -419,7 +443,7 @@ export default function SimulatePage() {
                     {/* Sender Email Input & Suggestion Chips */}
                     <div className="space-y-2">
                         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                            Simulated Sender Email Address
+                            Sender Email Address <span className="text-gray-400 font-normal">(Optional — AI automatically recognizes vendor from invoice)</span>
                         </label>
                         <div className="relative">
                             <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -427,8 +451,7 @@ export default function SimulatePage() {
                                 type="email"
                                 value={senderEmail}
                                 onChange={(e) => setSenderEmail(e.target.value)}
-                                placeholder="billing@company.com"
-                                required
+                                placeholder="e.g. billing@company.com (optional)"
                                 className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-white dark:bg-[#0B0F19] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-violet-500 transition"
                             />
                         </div>

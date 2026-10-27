@@ -7,6 +7,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import api from '../../services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
+import { formatCurrency } from '../../utils/currencyUtils';
 import { 
     ArrowLeft, 
     ZoomIn, 
@@ -42,7 +43,7 @@ const FIELD_CONFIGS = [
     { key: 'invoiceNumber', label: 'Invoice #', icon: Hash, placeholder: 'e.g., INV-2026-001', color: 'cyan' },
     { key: 'invoiceDate', label: 'Invoice Date', icon: Calendar, placeholder: 'DD-MM-YYYY or MM/DD/YYYY', color: 'emerald' },
     { key: 'dueDate', label: 'Due Date', icon: Clock, placeholder: 'DD-MM-YYYY or MM/DD/YYYY', color: 'amber' },
-    { key: 'totalAmount', label: 'Total Amount ($)', icon: DollarSign, placeholder: 'e.g., 1250.00', color: 'blue', isMono: true },
+    { key: 'totalAmount', label: 'Total Amount', icon: DollarSign, placeholder: 'e.g., 1250.00', color: 'blue', isMono: true },
 ];
 
 export default function VisualMapper() {
@@ -68,7 +69,8 @@ export default function VisualMapper() {
         invoiceDate: '',
         totalAmount: '',
         invoiceNumber: '',
-        dueDate: ''
+        dueDate: '',
+        currency: 'USD'
     });
 
     const pdfWrapperRef = useRef(null);
@@ -103,7 +105,8 @@ export default function VisualMapper() {
                         invoiceDate: foundInvoice.extractedData?.invoiceDate || '',
                         invoiceNumber: foundInvoice.extractedData?.invoiceNumber || '',
                         totalAmount: foundInvoice.extractedData?.totalAmount || '',
-                        dueDate: foundInvoice.extractedData?.dueDate || ''
+                        dueDate: foundInvoice.extractedData?.dueDate || '',
+                        currency: foundInvoice.extractedData?.currency || 'USD'
                     });
 
                     // Download PDF Blob
@@ -521,7 +524,7 @@ export default function VisualMapper() {
                                                 {mappings.invoiceDate || '—'}
                                             </td>
                                             <td className="px-2 py-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                                                ${mappings.totalAmount || '0.00'}
+                                                {formatCurrency(mappings.totalAmount || '0.00', mappings.currency || invoice?.extractedData?.currency || 'USD')}
                                             </td>
                                             <td className="px-2 py-1.5">
                                                 {mappings.dueDate || '—'}

@@ -1,8 +1,10 @@
+import { broadcastSSE } from '../services/sseService.js';
 import express from 'express';
 import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
 import VendorMap from '../models/VendorMap.js';
-import { extractData, calculateConfidence } from '../services/extractionService.js';
+import { extractData, calculateConfidence, extractTextWithCoordinates } from '../services/extractionService.js';
+import { extractWithAI } from '../services/aiExtractionService.js';
 import Invoice from '../models/Invoice.js';
 import { appendToSheet } from '../services/sheetsService.js';
 import fs from 'fs';
@@ -17,133 +19,193 @@ if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
+import { syncEmailNow, getEmailStatus } from '../services/imapService.js';
+
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+router.get('/status', authenticateToken, (req, res) => {
+    try {
+        const status = getEmailStatus();
+        res.json({ success: true, data: status });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/sync', authenticateToken, async (req, res) => {
+    try {
+        const force = Boolean(req.body?.force);
+        const result = await syncEmailNow(force);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 router.post('/test-upload', authenticateToken, upload.single('invoice'), async (req, res, next) => {
     try {
         const { vendorEmail, vendorName } = req.body;
-        const pdfBuffer = req.file.buffer;
+        const pdfBuffer = req.file?.buffer;
 
         console.log(`[Version 2.0] Processing Upload. Email: '${vendorEmail}', Name: '${vendorName}'`);
-
-        console.log(`[Upload] File received: ${req.file.originalname}, Size: ${req.file.size}, Buffer: ${req.file.buffer ? 'Present' : 'MISSING'}`);
+        console.log(`[Upload] File received: ${req.file?.originalname}, Size: ${req.file?.size}, Buffer: ${pdfBuffer ? 'Present' : 'MISSING'}`);
 
         if (!pdfBuffer) {
-            return res.status(400).json({ success: false, error: 'File buffer missing. Multer config?' });
+            return res.status(400).json({ success: false, error: 'File buffer missing. Please provide a valid PDF file.' });
         }
 
-        if (!vendorEmail && !vendorName) {
-            return res.status(400).json({
-                success: false,
-                error: 'Please provide either vendor email or vendor name'
-            });
-        }
+        let effectiveVendorName = vendorName ? vendorName.trim() : null;
+        let effectiveVendorEmail = vendorEmail ? vendorEmail.trim().toLowerCase() : null;
 
+        // 1. Search database for existing learned Vendor if info was provided
         let query = { userId: req.user.userId };
         const conditions = [];
 
-        if (vendorEmail) {
-            conditions.push({ senderEmail: vendorEmail.trim().toLowerCase() });
+        if (effectiveVendorEmail) {
+            conditions.push({ senderEmail: effectiveVendorEmail });
         }
-        if (vendorName) {
-            conditions.push({ vendorName: { $regex: new RegExp(`^${vendorName.trim()}$`, 'i') } });
+        if (effectiveVendorName) {
+            conditions.push({ vendorName: { $regex: new RegExp(`^${effectiveVendorName}$`, 'i') } });
         }
-
         if (conditions.length > 0) {
             query.$or = conditions;
         }
 
-        console.log('Searching for vendor with query:', query);
-        let vendor = await VendorMap.findOne(query).lean();
+        let vendor = conditions.length > 0 ? await VendorMap.findOne(query).lean() : null;
 
         let extractedData = {};
         let confidence = 0;
         let fullText = "";
+        let aiResult = null;
+
+        // 2. Parse PDF Text
+        try {
+            const parsedPdf = await extractTextWithCoordinates(pdfBuffer);
+            fullText = parsedPdf.fullText || "";
+        } catch (pdfErr) {
+            console.warn('[PDF] Failed to extract coordinates/text:', pdfErr.message);
+        }
+
+        // 3. High-Speed AI Extraction (Groq Llama 3.3)
+        try {
+            if (fullText && fullText.trim().length > 0) {
+                console.log(`[AI Engine] Invoking Groq Llama 3.3 extraction on ${fullText.length} characters...`);
+                aiResult = await extractWithAI(fullText, req.file.originalname);
+                console.log(`[AI Engine] Succeeded: Vendor="${aiResult.vendorName}", Total="${aiResult.extractedData.totalAmount}", LineItems=${aiResult.extractedData.lineItems?.length}`);
+                extractedData = aiResult.extractedData;
+                confidence = aiResult.confidenceScore;
+            }
+        } catch (aiErr) {
+            console.warn('[AI Engine] Groq AI extraction error, falling back to spatial engine:', aiErr.message);
+        }
+
+        // 4. Augment with Learned Spatial Coordinate Rules (if vendor exists)
+        if (!vendor && aiResult?.vendorName) {
+            vendor = await VendorMap.findOne({
+                userId: req.user.userId,
+                vendorName: { $regex: new RegExp(`^${aiResult.vendorName.trim()}$`, 'i') }
+            }).lean();
+        }
 
         if (vendor) {
             console.log(`[Identity] Found vendor via Email/Name: ${vendor.vendorName}`);
-            const extraction = await extractData(pdfBuffer, vendor.extractionRules);
-            extractedData = extraction.results;
-            fullText = extraction.fullText || "";
-            confidence = calculateConfidence(extractedData, vendor.extractionRules);
-
-            console.log(`[Identity] Extraction Confidence: ${confidence}%`);
-
-            console.log(`[Identity] Verifying vendor identity in document text...`);
+            try {
+                const extraction = await extractData(pdfBuffer, vendor.extractionRules);
+                if (extraction.results) {
+                    for (const [k, v] of Object.entries(extraction.results)) {
+                        if (!extractedData[k] && v) extractedData[k] = v;
+                    }
+                }
+                if (!confidence) {
+                    confidence = calculateConfidence(extractedData, vendor.extractionRules);
+                }
+            } catch (spatialErr) {
+                console.warn('[Spatial Engine] Extraction error:', spatialErr.message);
+            }
 
             const isVendorInText = fullText.toLowerCase().includes(vendor.vendorName.toLowerCase());
-
-            if (!isVendorInText) {
-                console.log(`[Identity] NOTE: Vendor "${vendor.vendorName}" NOT explicitly found in document text.`);
-                console.log(`[Identity] However, we found a direct match via Email/Name in DB. Trusting DB Record.`);
-
-                // PREVIOUSLY: We would invalidate the vendor here. 
-                // NOW: We trust the match.
-
-                // Optional: We could score confidence slightly lower, but we keep the vendor linkage.
-            } else {
-                console.log(`[Identity] Confirmed: Vendor "${vendor.vendorName}" found in text.`);
-                confidence = Math.min(confidence + 10, 100); // Boost confidence if name is in text
+            if (isVendorInText) {
+                confidence = Math.min(confidence + 5, 100);
             }
         }
 
+        // 5. Handle New / Unregistered Vendor
         if (!vendor) {
-            console.log('Vendor not found (or rejected by Sanity Check). Creating "Review Needed" invoice.');
+            console.log('Vendor not registered yet. Creating invoice with AI-extracted vendor identity.');
 
-            let guessedVendorName = null;
-            let heuristicData = {};
+            let finalVendorName = aiResult?.vendorName || vendorName || null;
 
-            try {
-                if (!fullText) {
-                    const { results, fullText: ft } = await extractData(pdfBuffer, []);
-                    heuristicData = results;
-                    fullText = ft;
-                } else {
+            if (!aiResult) {
+                try {
                     const { results } = await extractData(pdfBuffer, []);
-                    heuristicData = results;
-                }
-
-                console.log('Heuristic Extraction Result:', JSON.stringify(heuristicData, null, 2));
-
-                const allVendors = await VendorMap.find({ userId: req.user.userId }).select('vendorName');
-                for (const v of allVendors) {
-                    if (fullText && fullText.toLowerCase().includes(v.vendorName.toLowerCase())) {
-                        console.log(`[Heuristic] Found potential vendor match in text: "${v.vendorName}"`);
-                        guessedVendorName = v.vendorName;
-                        break;
+                    extractedData = results;
+                    const allVendors = await VendorMap.find({ userId: req.user.userId }).select('vendorName');
+                    for (const v of allVendors) {
+                        if (fullText && fullText.toLowerCase().includes(v.vendorName.toLowerCase())) {
+                            finalVendorName = v.vendorName;
+                            break;
+                        }
                     }
+                } catch (err) {
+                    console.error('Heuristic extraction failed:', err);
                 }
-            } catch (err) {
-                console.error('Heuristic extraction failed:', err);
             }
+
+            const isHighConfidence = confidence >= 80 && extractedData?.totalAmount;
+            const invoiceStatus = isHighConfidence ? 'processed' : 'review_needed';
+
+            const finalSenderEmail = effectiveVendorEmail || (finalVendorName && finalVendorName !== 'Unregistered Vendor' ? `${finalVendorName.toLowerCase().replace(/[^a-z0-9]/g, '')}@billing.auto` : 'manual-upload@pdf2sheet.local');
 
             const reviewInvoice = await Invoice.create({
                 userId: req.user.userId,
-                vendorName: guessedVendorName || undefined,
-                senderEmail: vendorEmail,
-                status: 'review_needed',
+                vendorName: finalVendorName || 'Unregistered Vendor',
+                senderEmail: finalSenderEmail,
+                status: invoiceStatus,
                 originalFileName: req.file ? req.file.originalname : 'unknown_file.pdf',
-                confidenceScore: 0,
+                confidenceScore: confidence || 60,
                 processedAt: new Date(),
-                extractedData: heuristicData,
+                extractedData,
                 pdfData: pdfBuffer,
                 contentType: 'application/pdf'
             });
 
-            console.log(`[NOTIFICATION] Sending "New Vendor Detected" email TO USER: ${req.user.email} (Vendor: ${vendorEmail || 'Unknown'})`);
+            if (invoiceStatus === 'processed') {
+                try {
+                    const rowData = [
+                        reviewInvoice.vendorName || '',
+                        extractedData.invoiceNumber || '',
+                        extractedData.invoiceDate || '',
+                        extractedData.totalAmount || '',
+                        extractedData.dueDate || '',
+                        extractedData.currency || 'USD',
+                        extractedData.subtotal || '',
+                        extractedData.taxAmount || '',
+                        extractedData.mathAudit?.isValid === true ? 'VERIFIED' : (extractedData.mathAudit?.isValid === false ? 'DISCREPANCY' : 'UNCHECKED'),
+                        extractedData.engine || 'Groq LPU (GPT-OSS 120B)',
+                        new Date().toISOString()
+                    ];
+                    await appendToSheet(req.user.userId, rowData);
+                } catch (sheetError) {
+                    console.warn('[Sheet] Sync failed:', sheetError.message);
+                }
+            }
 
             return res.status(201).json({
                 success: true,
-                message: 'Vendor not found. Invoice saved for review.',
+                message: isHighConfidence ? 'Invoice processed with AI!' : 'Vendor not found. Invoice saved for review.',
+                _broadcast: broadcastSSE('INVOICE_INGESTED', { invoice: reviewInvoice }),
                 data: {
                     invoiceId: reviewInvoice._id,
-                    status: 'review_needed',
-                    reason: 'Unknown Vendor'
+                    status: invoiceStatus,
+                    vendorName: reviewInvoice.vendorName,
+                    confidenceScore: confidence || 60,
+                    extractedData
                 }
             });
         }
 
+        // 6. Existing Vendor - Register Invoice
         const invoice = await Invoice.create({
             userId: req.user.userId,
             vendorMapId: vendor._id,
@@ -165,21 +227,25 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
                     extractedData.invoiceNumber || '',
                     extractedData.invoiceDate || '',
                     extractedData.totalAmount || '',
-                    extractedData.dueDate || ''
+                    extractedData.dueDate || '',
+                    extractedData.currency || 'USD',
+                    extractedData.subtotal || '',
+                    extractedData.taxAmount || '',
+                    extractedData.mathAudit?.isValid === true ? 'VERIFIED' : (extractedData.mathAudit?.isValid === false ? 'DISCREPANCY' : 'UNCHECKED'),
+                    extractedData.engine || 'Groq LPU (Llama 3.3 70B)',
+                    new Date().toISOString()
                 ];
 
                 await appendToSheet(req.user.userId, rowData);
-                console.log('Added to Google Sheet');
+                console.log('Added to Google Sheet with forensic audit fields');
             } catch (sheetError) {
                 console.error('Failed to update Google Sheet:', sheetError.message);
             }
-        } else if (invoice.status === 'review_needed') {
-            console.log(`[NOTIFICATION] Sending "Low Confidence Breakdown" email to user: ${req.user.email}`);
         }
 
         res.status(201).json({
             success: true,
-            message: 'Invoice processed successfully',
+            message: 'Invoice processed successfully with AI',
             data: {
                 invoiceId: invoice._id,
                 vendorName: vendor.vendorName,
@@ -192,6 +258,5 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
         next(error);
     }
 });
-
 
 export default router;

@@ -30,7 +30,32 @@ const invoiceSchema = new mongoose.Schema({
         invoiceDate: String,
         totalAmount: String,
         dueDate: String,
-        lineItems: []
+        currency: { type: String, default: 'USD' },
+        subtotal: String,
+        taxAmount: String,
+        taxRate: String,
+        discount: String,
+        paymentTerms: String,
+        vendorAddress: String,
+        vendorTaxId: String,
+        lineItems: [{
+            description: String,
+            quantity: Number,
+            unitPrice: String,
+            amount: String
+        }],
+        mathAudit: {
+            type: mongoose.Schema.Types.Mixed,
+            default: () => ({
+                isValid: true,
+                calculatedTotal: '0.00',
+                statedTotal: '0.00',
+                discrepancy: 0,
+                summary: 'Audited'
+            })
+        },
+        aiSummary: String,
+        engine: { type: String, default: 'Spatial Heuristics' }
     },
     confidenceScore: {
         type: Number,

@@ -75,7 +75,16 @@ const userSchema = new mongoose.Schema({
         },
         spreadsheetId: {
             type: String
-        }
+        },
+        clearedInvoicesAt: {
+            type: Date,
+            default: null
+        },
+        deletedInvoices: [{
+            filename: String,
+            senderEmail: String,
+            deletedAt: { type: Date, default: Date.now }
+        }]
     },
     googleTokens: {
         access_token: String,

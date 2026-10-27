@@ -6,7 +6,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Settings() {
-    const { data: user, isLoading, error } = useUserProfile();
+    const { data: user, isLoading, error, refetch } = useUserProfile();
     const { darkMode } = useTheme();
 
     useEffect(() => {
@@ -14,6 +14,24 @@ export default function Settings() {
             toast.error('Failed to load user profile');
         }
     }, [error]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const err = params.get('error');
+        if (params.get('connected') === 'true') {
+            toast.success('Successfully connected to Google Sheets! Auto-sync is active.', { duration: 6000 });
+            refetch();
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (err === 'missing_sheets_scope') {
+            toast.error('Permission not granted! Please click Connect again and check the box for "See, edit, create, and delete all your Google Sheets spreadsheets".', { duration: 10000 });
+            refetch();
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (err) {
+            toast.error('Google Sheets connection failed: ' + err, { duration: 6000 });
+            refetch();
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, [refetch]);
 
     if (isLoading) {
         return (

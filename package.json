@@ -6,6 +6,7 @@
   "scripts": {
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
+    "clean:invoices": "cd backend && npm run clean:invoices",
     "install:all": "cd backend && npm install && cd ../frontend && npm install",
     "build:frontend": "cd frontend && npm run build"
   }

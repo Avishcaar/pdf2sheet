@@ -1,3 +1,4 @@
+import User from '../models/User.js';
 import Invoice from '../models/Invoice.js';
 import VendorMap from '../models/VendorMap.js';
 import { appendToSheet } from '../services/sheetsService.js';
@@ -56,7 +57,7 @@ export const updateInvoice = async (req, res) => {
         }
 
         if (updates.extractedData) {
-            invoice.extractedData = { ...invoice.extractedData, ...updates.extractedData };
+            if (!invoice.extractedData) invoice.extractedData = {}; for (const [k, v] of Object.entries(updates.extractedData)) { if (v !== undefined) invoice.extractedData[k] = v; } invoice.markModified('extractedData');
         }
         if (updates.status) {
             invoice.status = updates.status;
@@ -69,16 +70,22 @@ export const updateInvoice = async (req, res) => {
 
         if (updates.status === 'processed') {
             try {
+                const ed = invoice.extractedData || {};
                 const rowData = [
                     invoice.vendorName || updates.vendorName || '',
-                    invoice.extractedData.invoiceNumber || '',
-                    invoice.extractedData.invoiceDate || '',
-                    invoice.extractedData.totalAmount || '',
-                    invoice.extractedData.dueDate || ''
+                    ed.invoiceNumber || '',
+                    ed.invoiceDate || '',
+                    ed.totalAmount || '',
+                    ed.dueDate || '',
+                    ed.currency || 'USD',
+                    ed.subtotal || '',
+                    ed.taxAmount || '',
+                    ed.mathAudit?.isValid === true ? 'VERIFIED' : (ed.mathAudit?.isValid === false ? 'DISCREPANCY' : 'UNCHECKED'),
+                    ed.engine || 'Manual Approval',
+                    new Date().toISOString()
                 ];
 
                 await appendToSheet(req.user.userId, rowData);
-                await addToSheet(req.user.userId, invoice);
             } catch (sheetError) {
                 console.error('Failed to sync manually approved invoice:', sheetError);
             }
@@ -160,7 +167,7 @@ export const processAndLearn = async (req, res) => {
             if (extractedData.invoiceDate) extractedData.invoiceDate = formatDateToDDMMYYYY(extractedData.invoiceDate);
             if (extractedData.dueDate) extractedData.dueDate = formatDateToDDMMYYYY(extractedData.dueDate);
 
-            invoice.extractedData = { ...invoice.extractedData, ...extractedData };
+            if (!invoice.extractedData) invoice.extractedData = {}; for (const [k, v] of Object.entries(extractedData)) { if (v !== undefined) invoice.extractedData[k] = v; } invoice.markModified('extractedData');
         }
         if (vendorName) invoice.vendorName = vendorName;
         invoice.status = 'processed';
@@ -269,12 +276,19 @@ export const processAndLearn = async (req, res) => {
 
 
         try {
+            const ed = invoice.extractedData || {};
             const rowData = [
                 invoice.vendorName || vendorName || '',
-                invoice.extractedData.invoiceNumber || '',
-                invoice.extractedData.invoiceDate || '',
-                invoice.extractedData.totalAmount || '',
-                invoice.extractedData.dueDate || ''
+                ed.invoiceNumber || '',
+                ed.invoiceDate || '',
+                ed.totalAmount || '',
+                ed.dueDate || '',
+                ed.currency || 'USD',
+                ed.subtotal || '',
+                ed.taxAmount || '',
+                ed.mathAudit?.isValid === true ? 'VERIFIED' : (ed.mathAudit?.isValid === false ? 'DISCREPANCY' : 'UNCHECKED'),
+                ed.engine || 'Learned Spatial Coordinates',
+                new Date().toISOString()
             ];
             await appendToSheet(userId, rowData);
             console.log(`[Sheet] Synced invoice ${id}`);
@@ -314,11 +328,108 @@ export const deleteInvoice = async (req, res) => {
             }
         }
 
+        if (invoice.originalFileName) {
+            await User.findByIdAndUpdate(req.user.userId, {
+                $push: {
+                    'settings.deletedInvoices': {
+                        filename: invoice.originalFileName,
+                        senderEmail: invoice.senderEmail || '',
+                        deletedAt: new Date()
+                    }
+                }
+            });
+        }
+
         await Invoice.deleteOne({ _id: id });
 
         res.json({ success: true, message: 'Invoice deleted successfully' });
     } catch (error) {
         console.error('Delete error:', error);
         res.status(500).json({ success: false, error: 'Failed to delete invoice' });
+    }
+};
+
+
+export const clearAllInvoices = async (req, res) => {
+    try {
+        const result = await Invoice.deleteMany({ userId: req.user.userId });
+        
+        // Record timestamp so background email sync never resurrects emails received before this clear
+        await User.findByIdAndUpdate(req.user.userId, {
+            $set: {
+                'settings.clearedInvoicesAt': new Date(),
+                'settings.deletedInvoices': []
+            }
+        });
+        try {
+            const { clearProcessedUids } = await import('../services/imapService.js');
+            clearProcessedUids();
+        } catch (e) {
+            // ignore if imapService not active
+        }
+        res.json({
+            success: true,
+            message: `Successfully cleared ${result.deletedCount} invoices from database`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error('Clear all error:', error);
+        res.status(500).json({ success: false, error: 'Failed to clear invoices' });
+    }
+};
+
+export const askInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { question } = req.body;
+
+        if (!question || !question.trim()) {
+            return res.status(400).json({ success: false, error: 'Question is required' });
+        }
+
+        const invoice = await Invoice.findOne({ _id: id, userId: req.user.userId });
+        if (!invoice) {
+            return res.status(404).json({ success: false, error: 'Invoice not found' });
+        }
+
+        const { askInvoiceQuestion } = await import('../services/aiExtractionService.js');
+        const answer = await askInvoiceQuestion(invoice, question);
+
+        res.json({ success: true, answer });
+    } catch (error) {
+        console.error('Ask invoice error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to answer question' });
+    }
+};
+
+export const getCFOExecutiveBrief = async (req, res) => {
+    try {
+        const { baseCurrency = 'USD' } = req.body;
+        const invoices = await Invoice.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+
+        const { generateCFOBrief } = await import('../services/aiExtractionService.js');
+        const brief = await generateCFOBrief(invoices, baseCurrency);
+
+        res.json({ success: true, data: brief });
+    } catch (error) {
+        console.error('CFO Brief Error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate CFO brief' });
+    }
+};
+
+export const parseInvoiceQueryNL = async (req, res) => {
+    try {
+        const { query } = req.body;
+        if (!query || !query.trim()) {
+            return res.json({ success: true, filter: { active: false } });
+        }
+
+        const { parseNaturalLanguageQuery } = await import('../services/aiExtractionService.js');
+        const filter = await parseNaturalLanguageQuery(query);
+
+        res.json({ success: true, filter });
+    } catch (error) {
+        console.error('NL Query Error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to parse query' });
     }
 };

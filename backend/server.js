@@ -1,6 +1,9 @@
 import app from './src/app.js';
 import connectDatabase from './src/config/database.js';
+import { connectImap } from './src/services/imapService.js';
+
 connectDatabase();
+connectImap();
 
 const PORT = process.env.PORT || 5000;
 
@@ -12,8 +15,7 @@ const server = app.listen(PORT, () => {
 });
 
 process.on('unhandledRejection', (err) => {
-    console.error(' Unhandled Rejection:', err);
-    server.close(() => process.exit(1));
+    console.error(' [Server Warning] Unhandled Rejection:', err?.message || err);
 });
 
 process.on('SIGTERM', () => {

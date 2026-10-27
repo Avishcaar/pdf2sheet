@@ -1,5 +1,6 @@
 
 import PDFParser from 'pdf2json';
+import { detectCurrency } from '../utils/currencyDetector.js';
 
 const DEFAULT_RULES = [
     { targetField: 'invoiceNumber', method: 'keyword_proximity', keyword: 'Invoice Number', searchDirection: 'auto' },
@@ -258,7 +259,10 @@ export const extractTextWithCoordinates = (buffer) => {
                 });
             });
 
-            resolve({ fullText: '', textItems, pageCount: pdfData.Pages.length });
+            const lines = assembleLines(textItems);
+            fullText = lines.map(l => l.str).join('\n');
+
+            resolve({ fullText, textItems, pageCount: pdfData.Pages.length });
         });
 
         pdfParser.parseBuffer(buffer);
@@ -267,7 +271,7 @@ export const extractTextWithCoordinates = (buffer) => {
 
 export const extractData = async (buffer, rules) => {
     try {
-        const { textItems } = await extractTextWithCoordinates(buffer);
+        const { textItems, fullText } = await extractTextWithCoordinates(buffer);
         const results = {};
         const activeRules = (rules && rules.length > 0) ? rules : DEFAULT_RULES;
 
@@ -338,7 +342,14 @@ export const extractData = async (buffer, rules) => {
             }
         }
 
-        return { results, textItems, fullText: '' };
+        if (!results.currency && fullText) {
+            const detected = detectCurrency(fullText);
+            results.currency = detected.code;
+        } else if (!results.currency) {
+            results.currency = 'USD';
+        }
+
+        return { results, textItems, fullText };
     } catch (e) { throw e; }
 };
 

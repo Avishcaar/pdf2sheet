@@ -1,11 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useInvoices from '../../hooks/useInvoices';
+import { useUserProfile } from '../../hooks/useUser';
 import toast, { Toaster } from 'react-hot-toast';
 import api from '../../services/api';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import InvoiceDrawer from '../../components/invoices/InvoiceDrawer';
+import SpendAnalytics from '../../components/dashboard/SpendAnalytics';
+import CfoBriefModal from '../../components/dashboard/CfoBriefModal';
+import SmartOmnibar from '../../components/dashboard/SmartOmnibar';
 import { exportToCsv, exportToJson } from '../../utils/exportUtils';
+import { convertCurrency, formatCurrency } from '../../utils/currencyUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FileText, 
@@ -27,14 +32,30 @@ import {
     ArrowUpDown, 
     RefreshCw,
     X,
-    Plus
+    Plus,
+    ShieldCheck,
+    AlertTriangle,
+    UploadCloud,
+    Globe
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Dashboard() {
     const { data: invoices, isLoading, error, refetch } = useInvoices();
+    const { data: userProfile } = useUserProfile();
     const navigate = useNavigate();
     const { darkMode } = useTheme();
+
+    // Multi-Currency Normalizer State
+    const [baseCurrency, setBaseCurrency] = useState('USD'); // 'USD' | 'INR' | 'EUR' | 'GBP'
+
+    // Natural Language Search Filter
+    const [nlFilter, setNlFilter] = useState(null);
+
+    // CFO Brief State
+    const [isCfoModalOpen, setIsCfoModalOpen] = useState(false);
+    const [cfoBriefData, setCfoBriefData] = useState(null);
+    const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
 
     // Filtering & Search
     const [searchQuery, setSearchQuery] = useState('');
@@ -50,12 +71,17 @@ export default function Dashboard() {
     // Delete Modal state
     const [deleteId, setDeleteId] = useState(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
     const [isBatchDelete, setIsBatchDelete] = useState(false);
 
     // Copied indicator
     const [copiedId, setCopiedId] = useState(null);
 
-    // KPI Metrics
+    // Direct Upload state
+    const [isUploadingRandom, setIsUploadingRandom] = useState(false);
+    const [isSyncingEmail, setIsSyncingEmail] = useState(false);
+
+    // KPI Metrics (Normalized to baseCurrency)
     const stats = useMemo(() => {
         if (!invoices || invoices.length === 0) {
             return { total: 0, processed: 0, review: 0, syncRate: 0, totalAmount: 0 };
@@ -69,11 +95,13 @@ export default function Dashboard() {
             const raw = curr.extractedData?.totalAmount;
             if (!raw) return acc;
             const parsed = parseFloat(String(raw).replace(/[^0-9.-]+/g, ''));
-            return isNaN(parsed) ? acc : acc + parsed;
+            const num = isNaN(parsed) ? 0 : parsed;
+            const invCurr = curr.extractedData?.currency || 'USD';
+            return acc + convertCurrency(num, invCurr, baseCurrency);
         }, 0);
 
         return { total, processed, review, syncRate, totalAmount };
-    }, [invoices]);
+    }, [invoices, baseCurrency]);
 
     // Filtered & Sorted Invoices
     const processedInvoices = useMemo(() => {
@@ -86,7 +114,52 @@ export default function Dashboard() {
             list = list.filter(i => i.status === statusFilter);
         }
 
-        // Search Query
+        // Natural Language AI Filter
+        if (nlFilter && nlFilter.active) {
+            if (nlFilter.vendorName) {
+                const v = nlFilter.vendorName.toLowerCase();
+                list = list.filter(i => 
+                    (i.vendorName && i.vendorName.toLowerCase().includes(v)) ||
+                    (i.extractedData?.vendorName && i.extractedData.vendorName.toLowerCase().includes(v))
+                );
+            }
+            if (nlFilter.minAmount !== null && nlFilter.minAmount !== undefined) {
+                list = list.filter(i => {
+                    const raw = i.extractedData?.totalAmount;
+                    const parsed = raw ? parseFloat(String(raw).replace(/[^0-9.-]+/g, '')) : 0;
+                    const converted = convertCurrency(parsed, i.extractedData?.currency || 'USD', baseCurrency);
+                    return converted >= nlFilter.minAmount;
+                });
+            }
+            if (nlFilter.maxAmount !== null && nlFilter.maxAmount !== undefined) {
+                list = list.filter(i => {
+                    const raw = i.extractedData?.totalAmount;
+                    const parsed = raw ? parseFloat(String(raw).replace(/[^0-9.-]+/g, '')) : 0;
+                    const converted = convertCurrency(parsed, i.extractedData?.currency || 'USD', baseCurrency);
+                    return converted <= nlFilter.maxAmount;
+                });
+            }
+            if (nlFilter.currency) {
+                const c = nlFilter.currency.toUpperCase();
+                list = list.filter(i => (i.extractedData?.currency || 'USD').toUpperCase() === c);
+            }
+            if (nlFilter.status) {
+                list = list.filter(i => i.status === nlFilter.status);
+            }
+            if (nlFilter.mathDiscrepancyOnly) {
+                list = list.filter(i => i.extractedData?.mathAudit && i.extractedData.mathAudit.isValid === false);
+            }
+            if (nlFilter.searchTerm) {
+                const s = nlFilter.searchTerm.toLowerCase();
+                list = list.filter(i => 
+                    (i.vendorName && i.vendorName.toLowerCase().includes(s)) ||
+                    (i.senderEmail && i.senderEmail.toLowerCase().includes(s)) ||
+                    (i.extractedData?.invoiceNumber && String(i.extractedData.invoiceNumber).toLowerCase().includes(s))
+                );
+            }
+        }
+
+        // Standard Search Query
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
             list = list.filter(i => 
@@ -106,13 +179,13 @@ export default function Dashboard() {
                 return new Date(a.createdAt || a.processedAt || 0) - new Date(b.createdAt || b.processedAt || 0);
             }
             if (sortBy === 'amount_desc') {
-                const aVal = parseFloat(String(a.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0;
-                const bVal = parseFloat(String(b.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0;
+                const aVal = convertCurrency(parseFloat(String(a.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0, a.extractedData?.currency || 'USD', baseCurrency);
+                const bVal = convertCurrency(parseFloat(String(b.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0, b.extractedData?.currency || 'USD', baseCurrency);
                 return bVal - aVal;
             }
             if (sortBy === 'amount_asc') {
-                const aVal = parseFloat(String(a.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0;
-                const bVal = parseFloat(String(b.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0;
+                const aVal = convertCurrency(parseFloat(String(a.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0, a.extractedData?.currency || 'USD', baseCurrency);
+                const bVal = convertCurrency(parseFloat(String(b.extractedData?.totalAmount || '0').replace(/[^0-9.-]+/g, '')) || 0, b.extractedData?.currency || 'USD', baseCurrency);
                 return aVal - bVal;
             }
             if (sortBy === 'confidence_desc') {
@@ -124,7 +197,7 @@ export default function Dashboard() {
         });
 
         return list;
-    }, [invoices, statusFilter, searchQuery, sortBy]);
+    }, [invoices, statusFilter, searchQuery, sortBy, nlFilter, baseCurrency]);
 
     // Batch Selection Helpers
     const toggleSelectAll = () => {
@@ -184,6 +257,21 @@ export default function Dashboard() {
         }
     };
 
+    const handleClearAllInvoices = async () => {
+        const toastId = toast.loading('Clearing all invoices from database...');
+        try {
+            const res = await api.delete('/invoices/all');
+            toast.success(res.data.message || 'All invoices cleared successfully!', { id: toastId });
+            setSelectedIds(new Set());
+            refetch();
+        } catch (err) {
+            console.error('Clear all failed:', err);
+            toast.error(err.response?.data?.error || 'Failed to clear invoices', { id: toastId });
+        } finally {
+            setIsClearAllModalOpen(false);
+        }
+    };
+
     const handleApproveFromDrawer = async (invoice) => {
         try {
             await api.post(`/invoices/${invoice._id}/process`, {
@@ -227,6 +315,80 @@ export default function Dashboard() {
         }
     };
 
+    const handleDirectUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            toast.error('Please upload a PDF file');
+            return;
+        }
+
+        setIsUploadingRandom(true);
+        const toastId = toast.loading(`Analyzing "${file.name}" with Groq LPU AI...`);
+
+        try {
+            const formData = new FormData();
+            formData.append('invoice', file);
+
+            const response = await api.post('/email/test-upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            toast.success(
+                `Ingested: ${response.data.data?.vendorName || 'Invoice'} (${formatCurrency(response.data.data?.extractedData?.totalAmount || '0.00', response.data.data?.extractedData?.currency || 'USD')})`,
+                { id: toastId, duration: 4000 }
+            );
+
+            refetch();
+        } catch (err) {
+            console.error('Direct upload failed:', err);
+            toast.error(err.response?.data?.error || 'Failed to extract invoice', { id: toastId });
+        } finally {
+            setIsUploadingRandom(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleSyncEmail = async (force = false) => {
+        setIsSyncingEmail(true);
+        const toastId = toast.loading(force ? 'Force re-importing all inbox invoices...' : 'Scanning Gmail inbox (jaltaasholaa@gmail.com)...');
+        try {
+            const res = await api.post('/email/sync', { force });
+            const data = res.data;
+            if (data?.newInvoicesCount > 0) {
+                const names = data.ingestedInvoices?.map(i => `${i.vendorName} (${i.currency} ${i.totalAmount})`).join(', ');
+                toast.success(`🎉 Ingested ${data.newInvoicesCount} new invoice(s): ${names}!`, { id: toastId, duration: 5000 });
+            } else {
+                toast.success(data?.message || 'Inbox checked. All invoices are up to date.', { id: toastId });
+            }
+            refetch();
+        } catch (err) {
+            console.error('Email sync failed:', err);
+            toast.error(err.response?.data?.error || err.message || 'Could not check email inbox', { id: toastId });
+        } finally {
+            setIsSyncingEmail(false);
+        }
+    };
+
+    const handleGenerateCfoBrief = async () => {
+        setIsCfoModalOpen(true);
+        fetchCfoBrief();
+    };
+
+    const fetchCfoBrief = async () => {
+        setIsGeneratingBrief(true);
+        try {
+            const res = await api.post('/invoices/cfo-brief', { baseCurrency });
+            setCfoBriefData(res.data?.data);
+        } catch (err) {
+            console.error('CFO Brief failed:', err);
+            toast.error(err.response?.data?.error || 'Failed to generate CFO Brief');
+        } finally {
+            setIsGeneratingBrief(false);
+        }
+    };
+
     return (
         <div className="max-w-7xl mx-auto space-y-8 relative pb-16">
             <Toaster position="top-center" />
@@ -245,25 +407,125 @@ export default function Dashboard() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Base Currency Selector */}
+                    <div className="flex items-center p-1 bg-gray-100 dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/[0.06] rounded-xl text-xs font-mono">
+                        <span className="px-2 text-gray-400 text-[10px] uppercase font-sans font-semibold hidden md:inline">Base:</span>
+                        {['USD', 'INR', 'EUR', 'GBP'].map(curr => (
+                            <button
+                                key={curr}
+                                onClick={() => setBaseCurrency(curr)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                    baseCurrency === curr
+                                        ? 'bg-white dark:bg-[#1E293B] text-violet-600 dark:text-violet-400 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                                }`}
+                                title={`Switch portfolio normalization to ${curr}`}
+                            >
+                                {curr}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* CFO Brief Button */}
+                    <button
+                        onClick={handleGenerateCfoBrief}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md shadow-violet-500/25 transition-all active:scale-[0.98] cursor-pointer"
+                        title="Generate Autonomous CFO Intelligence Brief with Groq AI"
+                    >
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                        <span>CFO Brief</span>
+                    </button>
+
+                    {/* Direct Upload Any Invoice */}
+                    <label className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold ${
+                        isUploadingRandom 
+                            ? 'bg-emerald-700 text-white cursor-wait opacity-80' 
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-sm shadow-emerald-500/20 active:scale-[0.98]'
+                    } transition-all`}>
+                        {isUploadingRandom ? (
+                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <UploadCloud className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isUploadingRandom ? 'Extracting...' : 'Upload Invoice'}</span>
+                        <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            disabled={isUploadingRandom}
+                            onChange={handleDirectUpload}
+                        />
+                    </label>
+
                     <button
                         onClick={() => navigate('/simulate')}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white shadow-sm shadow-violet-500/20 transition-all active:scale-[0.98]"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition"
                     >
-                        <Plus className="w-4 h-4" />
-                        Simulate Incoming Bill
+                        <Plus className="w-3.5 h-3.5 text-violet-500" />
+                        <span className="hidden sm:inline">Presets</span>
                     </button>
+
+                    <button
+                        onClick={handleSyncEmail}
+                        disabled={isSyncingEmail}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition active:scale-[0.98] cursor-pointer"
+                        title="Scan connected Gmail inbox (jaltaasholaa@gmail.com) for new invoice emails"
+                    >
+                        <Mail className={`w-3.5 h-3.5 text-violet-500 ${isSyncingEmail ? 'animate-spin' : ''}`} />
+                        <span className="hidden sm:inline">{isSyncingEmail ? 'Scanning...' : 'Sync Email'}</span>
+                    </button>
+
+                    {stats.total > 0 && (
+                        <button
+                            onClick={() => setIsClearAllModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition"
+                            title="Clear all invoices from database"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Clear DB</span>
+                        </button>
+                    )}
+
                     <button
                         onClick={() => refetch()}
-                        className="p-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-600 dark:text-gray-300 transition"
+                        className="p-2 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-600 dark:text-gray-300 transition"
                         title="Refresh data"
                     >
-                        <RefreshCw className="w-4 h-4" />
+                        <RefreshCw className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </div>
 
-            {/* 4-KPI Metric Strip */}
+            {/* Google Sheets Reconnect / Sync Alert */}
+            {userProfile && !userProfile.hasGoogleConnection && (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                            <AlertTriangle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                Google Sheets Disconnected / OAuth Token Expired
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-normal">
+                                    Action Required
+                                </span>
+                            </p>
+                            <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                                Invoices are successfully parsed & saved in MongoDB, but automatic push to your Google Sheet requires re-authorizing Google OAuth2.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => navigate('/settings')}
+                        className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs shadow-sm transition whitespace-nowrap self-start sm:self-auto cursor-pointer"
+                    >
+                        Connect Google Sheets →
+                    </button>
+                </div>
+            )}
+
+            {/* 4-KPI Metric Strip (Normalized to baseCurrency) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. Total Invoices */}
                 <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm relative overflow-hidden">
@@ -283,21 +545,21 @@ export default function Dashboard() {
                     </p>
                 </div>
 
-                {/* 2. Total Extracted Volume */}
+                {/* 2. Total Normalized Volume */}
                 <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm relative overflow-hidden">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Parsed Volume
+                            Normalized Volume ({baseCurrency})
                         </span>
                         <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
                             <DollarSign className="w-4 h-4" />
                         </div>
                     </div>
                     <div className="mt-3 text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white truncate">
-                        ${stats.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatCurrency(stats.totalAmount, baseCurrency)}
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Structured financial throughput
+                        Multi-currency normalized spend
                     </p>
                 </div>
 
@@ -314,41 +576,39 @@ export default function Dashboard() {
                     <div className="mt-3 text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">
                         {stats.syncRate}%
                     </div>
-                    {/* Mini Progress Bar */}
-                    <div className="mt-2 w-full bg-gray-100 dark:bg-white/[0.08] h-1.5 rounded-full overflow-hidden">
-                        <div 
-                            className="bg-cyan-500 h-full rounded-full transition-all duration-500" 
-                            style={{ width: `${stats.syncRate}%` }} 
-                        />
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        {stats.processed} of {stats.total} zero-touch syncs
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Zero-touch spreadsheet sync
                     </p>
                 </div>
 
-                {/* 4. Action Required */}
+                {/* 4. Review Queue */}
                 <div className="p-5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm relative overflow-hidden">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Needs Review
+                            Review Queue
                         </span>
-                        <div className={`p-2 rounded-xl ${stats.review > 0 ? 'bg-amber-500/15 text-amber-500 animate-pulse' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-400'}`}>
-                            <AlertCircle className="w-4 h-4" />
+                        <div className={`p-2 rounded-xl ${stats.review > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-gray-100 dark:bg-white/[0.04] text-gray-400'}`}>
+                            <Clock className="w-4 h-4" />
                         </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold font-mono tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+                    <div className={`mt-3 text-3xl font-bold font-mono tracking-tight ${stats.review > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-white'}`}>
                         {stats.review}
-                        {stats.review > 0 && (
-                            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-sans">
-                                Action Needed
-                            </span>
-                        )}
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {stats.review === 0 ? 'All caught up · Zero backlog' : 'Awaiting spatial coordinate learning'}
+                        Requires human verification
                     </p>
                 </div>
             </div>
+
+            {/* Forensic Spend Analytics & Engine Intelligence */}
+            <SpendAnalytics invoices={invoices} baseCurrency={baseCurrency} />
+
+            {/* Natural Language AI Omnibar */}
+            <SmartOmnibar 
+                onFilterChange={setNlFilter}
+                activeFilter={nlFilter}
+                onClearFilter={() => setNlFilter(null)}
+            />
 
             {/* Filter, Search & Export Toolbar */}
             <div className="p-4 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm space-y-4">
@@ -434,115 +694,131 @@ export default function Dashboard() {
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs font-medium text-gray-700 dark:text-gray-300 transition"
                                 title="Export to JSON"
                             >
+                                <Download className="w-3.5 h-3.5" />
                                 JSON
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Floating Batch Selection Bar */}
-                <AnimatePresence>
-                    {selectedIds.size > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="pt-2 border-t border-gray-100 dark:border-white/[0.06] flex items-center justify-between"
-                        >
-                            <div className="flex items-center gap-2 text-xs font-medium text-violet-600 dark:text-violet-400">
-                                <span className="w-2 h-2 rounded-full bg-violet-500 animate-ping" />
+                {/* Batch Action Toolbar */}
+                {selectedIds.size > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="pt-3 border-t border-gray-100 dark:border-white/[0.06] flex items-center justify-between text-xs"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-violet-600 dark:text-violet-400">
                                 {selectedIds.size} invoice{selectedIds.size > 1 ? 's' : ''} selected
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleExportFiltered('csv')}
-                                    className="px-3 py-1 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-gray-700 dark:text-gray-300 transition"
-                                >
-                                    Export Selected
-                                </button>
-                                <button
-                                    onClick={handleDeleteBatch}
-                                    className="px-3 py-1 text-xs font-medium rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition"
-                                >
-                                    Delete Selected
-                                </button>
-                                <button
-                                    onClick={() => setSelectedIds(new Set())}
-                                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            </span>
+                            <span className="text-gray-400">|</span>
+                            <button
+                                onClick={() => setSelectedIds(new Set())}
+                                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition underline cursor-pointer"
+                            >
+                                Deselect all
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handleExportFiltered('csv')}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.1] text-gray-700 dark:text-gray-300 font-medium transition cursor-pointer"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                Export Selected
+                            </button>
+                            <button
+                                onClick={handleDeleteBatch}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-medium transition cursor-pointer"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete Selected
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
             </div>
 
-            {/* Invoices Table Container */}
-            <div className="rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm overflow-hidden">
+            {/* Invoices Data Table */}
+            <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] rounded-2xl shadow-sm overflow-hidden">
                 {isLoading ? (
-                    <div className="p-16 flex flex-col items-center justify-center space-y-4">
-                        <div className="w-9 h-9 border-3 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">Syncing invoices from database...</p>
+                    <div className="p-12 text-center">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mb-4" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Loading invoices...</p>
                     </div>
                 ) : processedInvoices.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="text-[11px] uppercase tracking-wider font-semibold bg-gray-50/80 dark:bg-white/[0.02] text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-white/[0.06]">
+                            <thead className="bg-gray-50/75 dark:bg-white/[0.02] border-b border-gray-200 dark:border-white/[0.06] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 <tr>
                                     <th className="px-5 py-3.5 w-10">
                                         <input
                                             type="checkbox"
-                                            checked={selectedIds.size === processedInvoices.length && processedInvoices.length > 0}
+                                            checked={processedInvoices.length > 0 && selectedIds.size === processedInvoices.length}
                                             onChange={toggleSelectAll}
-                                            className="rounded border-gray-300 dark:border-white/[0.2] text-violet-600 focus:ring-violet-500 cursor-pointer"
+                                            className="w-4 h-4 rounded text-violet-600 border-gray-300 focus:ring-violet-500 cursor-pointer"
                                         />
                                     </th>
-                                    <th className="px-5 py-3.5">Vendor / Sender</th>
+                                    <th className="px-5 py-3.5">Vendor & Engine</th>
                                     <th className="px-5 py-3.5">Invoice #</th>
-                                    <th className="px-5 py-3.5">Dates</th>
-                                    <th className="px-5 py-3.5 font-mono">Total Amount</th>
+                                    <th className="px-5 py-3.5">Date / Due</th>
+                                    <th className="px-5 py-3.5">Amount ({baseCurrency})</th>
                                     <th className="px-5 py-3.5">Confidence</th>
                                     <th className="px-5 py-3.5">Status</th>
                                     <th className="px-5 py-3.5 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-white/[0.04]">
-                                {processedInvoices.map((invoice, idx) => {
+                                {processedInvoices.map((invoice) => {
                                     const isSelected = selectedIds.has(invoice._id);
-                                    const confScore = invoice.confidenceScore ?? (invoice.status === 'processed' ? 95 : 45);
+                                    const isProcessed = invoice.status === 'processed';
+                                    const confScore = invoice.confidenceScore ?? (isProcessed ? 95 : 45);
                                     const isHighConf = confScore >= 80;
+                                    const invCurrency = invoice.extractedData?.currency || 'USD';
+                                    const rawTotal = invoice.extractedData?.totalAmount || '0.00';
+                                    const parsedNum = parseFloat(String(rawTotal).replace(/[^0-9.-]/g, '')) || 0;
+                                    const convertedTotal = convertCurrency(parsedNum, invCurrency, baseCurrency);
 
                                     return (
-                                        <tr
+                                        <tr 
                                             key={invoice._id}
                                             onClick={() => setDrawerInvoice(invoice)}
-                                            className={`group cursor-pointer transition-colors ${
-                                                isSelected
-                                                    ? 'bg-violet-50/60 dark:bg-violet-950/20'
-                                                    : 'hover:bg-gray-50/70 dark:hover:bg-white/[0.02]'
+                                            className={`hover:bg-gray-50/60 dark:hover:bg-white/[0.02] cursor-pointer transition-colors group ${
+                                                isSelected ? 'bg-violet-50/40 dark:bg-violet-500/[0.04]' : ''
                                             }`}
                                         >
-                                            {/* Checkbox */}
-                                            <td className="px-5 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+                                            {/* Row Checkbox */}
+                                            <td className="px-5 py-4" onClick={(e) => toggleSelectRow(invoice._id, e)}>
                                                 <input
                                                     type="checkbox"
                                                     checked={isSelected}
-                                                    onChange={(e) => toggleSelectRow(invoice._id, e)}
-                                                    className="rounded border-gray-300 dark:border-white/[0.2] text-violet-600 focus:ring-violet-500 cursor-pointer"
+                                                    onChange={() => {}}
+                                                    className="w-4 h-4 rounded text-violet-600 border-gray-300 focus:ring-violet-500 cursor-pointer"
                                                 />
                                             </td>
 
-                                            {/* Vendor / Email */}
+                                            {/* Vendor Name & Extraction Engine */}
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-indigo-500/20 dark:from-violet-500/30 dark:to-indigo-500/30 text-violet-600 dark:text-violet-300 font-semibold text-xs flex items-center justify-center shrink-0 border border-violet-500/20">
-                                                        {invoice.vendorName?.charAt(0) || 'U'}
+                                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                                                        <FileText className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                                                     </div>
-                                                    <div className="flex flex-col min-w-0">
-                                                        <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                            {invoice.vendorName || 'Unknown Vendor'}
-                                                        </span>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="font-semibold text-gray-900 dark:text-white truncate">
+                                                                {invoice.vendorName || invoice.extractedData?.vendorName || 'Auto-Detected Vendor'}
+                                                            </span>
+                                                            <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded shrink-0 font-medium ${
+                                                                (invoice.extractedData?.engine?.toLowerCase().includes('groq') || invoice.confidenceScore >= 85)
+                                                                    ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20'
+                                                                    : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'
+                                                            }`}>
+                                                                {(invoice.extractedData?.engine?.toLowerCase().includes('groq') || invoice.confidenceScore >= 85) ? 'Groq LPU' : 'Spatial'}
+                                                            </span>
+                                                        </div>
                                                         <span className="text-xs text-gray-400 dark:text-gray-500 truncate flex items-center gap-1">
                                                             <Mail className="w-3 h-3 shrink-0" />
                                                             {invoice.senderEmail || 'No Email'}
@@ -585,11 +861,37 @@ export default function Dashboard() {
                                                 </div>
                                             </td>
 
-                                            {/* Amount */}
+                                            {/* Amount, Multi-Currency Normalization & Math Audit */}
                                             <td className="px-5 py-4">
-                                                <span className="font-mono font-semibold text-gray-900 dark:text-white">
-                                                    ${invoice.extractedData?.totalAmount || '0.00'}
-                                                </span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                                                        {formatCurrency(rawTotal, invCurrency)}
+                                                    </span>
+                                                    {invCurrency.toUpperCase() !== baseCurrency.toUpperCase() && (
+                                                        <span className="text-[10px] text-gray-400 font-mono">
+                                                            ≈ {formatCurrency(convertedTotal, baseCurrency)}
+                                                        </span>
+                                                    )}
+                                                    {invoice.extractedData?.mathAudit && (
+                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-medium ${
+                                                            invoice.extractedData.mathAudit.isValid !== false
+                                                                ? 'text-emerald-500'
+                                                                : 'text-amber-500'
+                                                        }`}>
+                                                            {invoice.extractedData.mathAudit.isValid !== false ? (
+                                                                <>
+                                                                    <ShieldCheck className="w-2.5 h-2.5" />
+                                                                    Math 100%
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <AlertTriangle className="w-2.5 h-2.5" />
+                                                                    Δ {formatCurrency(invoice.extractedData.mathAudit.discrepancy || '0.00', invCurrency)}
+                                                                </>
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
 
                                             {/* Confidence Score Pill */}
@@ -639,15 +941,8 @@ export default function Dashboard() {
                                                         <Eye className="w-4 h-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => navigate(`/review/${invoice._id}`)}
-                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition"
-                                                        title="Open in Visual Coordinate Mapper"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
                                                         onClick={(e) => handleDeleteSingle(invoice._id, e)}
-                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
+                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition"
                                                         title="Delete Invoice"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -662,33 +957,47 @@ export default function Dashboard() {
                     </div>
                 ) : (
                     /* Empty State */
-                    <div className="p-16 flex flex-col items-center justify-center text-center">
-                        <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] flex items-center justify-center mb-4 text-gray-400">
-                            <FileText className="w-7 h-7" />
+                    <div className="py-16 px-4 text-center">
+                        <div className="w-16 h-16 rounded-3xl bg-violet-500/10 text-violet-500 flex items-center justify-center mx-auto mb-4">
+                            <Sparkles className="w-8 h-8" />
                         </div>
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                            {searchQuery || statusFilter !== 'all' ? 'No matching invoices' : 'No invoices in the system yet'}
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                            {nlFilter?.active || searchQuery ? 'No matching invoices found' : 'No invoices in your database'}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mb-6">
-                            {searchQuery || statusFilter !== 'all'
-                                ? 'Try clearing your search query or switching your status filter to see other invoices.'
-                                : 'Simulate an incoming email bill with a sample PDF to see the automatic extraction engine in action.'}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mx-auto mt-1 mb-6">
+                            {nlFilter?.active || searchQuery 
+                                ? 'Try adjusting your AI filter or search terms.' 
+                                : 'Upload a PDF invoice or send an email attachment to populate your command center.'}
                         </p>
-                        {searchQuery || statusFilter !== 'all' ? (
+                        {nlFilter?.active || searchQuery ? (
                             <button
-                                onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
-                                className="px-4 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition"
+                                onClick={() => {
+                                    setNlFilter(null);
+                                    setSearchQuery('');
+                                }}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition cursor-pointer"
                             >
-                                Reset Filters
+                                Clear All Filters
                             </button>
                         ) : (
-                            <button
-                                onClick={() => navigate('/simulate')}
-                                className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white shadow-sm shadow-violet-500/20 transition-all flex items-center gap-2"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Simulate an Invoice Now
-                            </button>
+                            <div className="flex flex-wrap items-center justify-center gap-3">
+                                <button
+                                    onClick={() => navigate('/simulate')}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition cursor-pointer"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Simulate an Invoice
+                                </button>
+                                <button
+                                    onClick={() => handleSyncEmail(true)}
+                                    disabled={isSyncingEmail}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition cursor-pointer"
+                                    title="Re-import historical invoices from jaltaasholaa@gmail.com"
+                                >
+                                    <Mail className={`w-3.5 h-3.5 text-violet-500 ${isSyncingEmail ? 'animate-spin' : ''}`} />
+                                    Re-import Inbox Invoices
+                                </button>
+                            </div>
                         )}
                     </div>
                 )}
@@ -703,6 +1012,16 @@ export default function Dashboard() {
                     handleDeleteSingle(id);
                 }}
                 onApprove={handleApproveFromDrawer}
+            />
+
+            {/* CFO Intelligence Brief Modal */}
+            <CfoBriefModal
+                isOpen={isCfoModalOpen}
+                onClose={() => setIsCfoModalOpen(false)}
+                briefData={cfoBriefData}
+                isLoading={isGeneratingBrief}
+                onRefresh={fetchCfoBrief}
+                baseCurrency={baseCurrency}
             />
 
             {/* Delete Confirmation Modal */}
@@ -721,6 +1040,17 @@ export default function Dashboard() {
                     setIsBatchDelete(false);
                 }}
                 confirmText={isBatchDelete ? "Delete All Selected" : "Delete"}
+                isDanger={true}
+            />
+
+            {/* Clear All Invoices Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isClearAllModalOpen}
+                title="Clear All Invoices from Database?"
+                message="Are you sure you want to delete ALL invoices from MongoDB? This will also reset the IMAP email cache so you can test re-sending and re-ingesting invoices from scratch."
+                onConfirm={handleClearAllInvoices}
+                onCancel={() => setIsClearAllModalOpen(false)}
+                confirmText="Yes, Clear Everything"
                 isDanger={true}
             />
         </div>
