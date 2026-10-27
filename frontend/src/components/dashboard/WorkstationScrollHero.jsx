@@ -33,9 +33,14 @@ export default function WorkstationScrollHero({
   // DOM element refs for direct style manipulation (60-120fps)
   const intakeBadgeRef = useRef(null);
   const docWrapperRef = useRef(null);
+  const docGleamRef = useRef(null);
+  const auditStampRef = useRef(null);
+
+  // Laser Optics & Waveform
   const laserRef = useRef(null);
   const laserBeamRef = useRef(null);
   const laserGridRef = useRef(null);
+  const laserWaveRef = useRef(null);
   const laserCoordRef = useRef(null);
 
   // Document Bounding Boxes
@@ -67,11 +72,29 @@ export default function WorkstationScrollHero({
   const scrollIndicatorRef = useRef(null);
   const progressPercentRef = useRef(null);
   const latencyRef = useRef(null);
+  const downstreamBeamRef = useRef(null);
 
   const [isMinimized, setIsMinimized] = useState(false);
   const reduced = useReducedMotion();
 
-  // 1. Interactive Canvas Background (Particle Constellation & Data Field)
+  // Mouse Parallax Ref for physical glass tilt
+  const mouse = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
+  const sparksRef = useRef([]);
+
+  // 1. Mouse Move Listener for 3D Specular Parallax
+  const handleMouseMove = (e) => {
+    if (!rootRef.current) return;
+    const rect = rootRef.current.getBoundingClientRect();
+    mouse.current.targetX = (e.clientX - rect.left) / rect.width - 0.5;
+    mouse.current.targetY = (e.clientY - rect.top) / rect.height - 0.5;
+  };
+
+  const handleMouseLeave = () => {
+    mouse.current.targetX = 0;
+    mouse.current.targetY = 0;
+  };
+
+  // 2. Interactive Canvas Background (Constellation, Sparks & Photonic Bursts)
   useEffect(() => {
     if (isMinimized) return;
     const canvas = canvasRef.current;
@@ -119,26 +142,22 @@ export default function WorkstationScrollHero({
       ctx.clearRect(0, 0, width, height);
 
       // Draw faint constellation lines between nearby motes
-      const maxDist = 75;
+      const maxDist = 80;
       for (let i = 0; i < motes.length; i++) {
         for (let j = i + 1; j < motes.length; j++) {
           const dx = (motes[i].x - motes[j].x) * width;
           const dy = (motes[i].y - motes[j].y) * height;
           const dist = Math.hypot(dx, dy);
           if (dist < maxDist) {
-            const alpha = (1 - dist / maxDist) * 0.12;
+            const alpha = (1 - dist / maxDist) * 0.14;
             ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
             ctx.lineWidth = 0.75;
             ctx.beginPath();
-            ctx.moveTo(motes[i].x * width, mototes_y(motes[i].y, height));
-            ctx.lineTo(motes[j].x * width, mototes_y(motes[j].y, height));
+            ctx.moveTo(motes[i].x * width, motes[i].y * height);
+            ctx.lineTo(motes[j].x * width, motes[j].y * height);
             ctx.stroke();
           }
         }
-      }
-
-      function mototes_y(val, h) {
-        return val * h;
       }
 
       // Draw motes
@@ -162,6 +181,25 @@ export default function WorkstationScrollHero({
         ctx.fill();
       }
 
+      // Render Dynamic Spark Bursts (from photon terminal impacts)
+      const sparks = sparksRef.current;
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        s.x += s.vx * dt * 60;
+        s.y += s.vy * dt * 60;
+        s.life -= dt * 2.2;
+        if (s.life <= 0) {
+          sparks.splice(i, 1);
+          continue;
+        }
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = Math.max(0, s.life);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
       animId = requestAnimationFrame(render);
     };
 
@@ -173,17 +211,43 @@ export default function WorkstationScrollHero({
     };
   }, [isMinimized, reduced]);
 
-  // 2. High-Precision Scroll Choreography & Data Stream Conduit
+  // Helper to trigger spark explosion on canvas
+  const triggerImpactSparks = (x, y, color) => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const cRect = canvas.getBoundingClientRect();
+    const spawnX = x - cRect.left;
+    const spawnY = y - cRect.top;
+
+    for (let i = 0; i < 14; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.2 + Math.random() * 3.5;
+      sparksRef.current.push({
+        x: spawnX,
+        y: spawnY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: 1.2 + Math.random() * 2,
+        color: color,
+        life: 1.0
+      });
+    }
+  };
+
+  // 3. High-Precision Fluid Momentum Scroll Choreography
   useEffect(() => {
     if (isMinimized) return;
     const root = rootRef.current;
     if (!root) return;
 
     let animId;
-    let lastP = -1;
+    let smoothP = 0;
+    let targetP = 0;
+    let lastSmoothP = -1;
+    let prevKValues = [0, 0, 0, 0];
 
     // Helper to calculate and draw SVG curve between two elements
-    const updateConduit = (pathEl, photonEl, fromEl, toEl, progress, color) => {
+    const updateConduit = (index, pathEl, photonEl, fromEl, toEl, progress, color) => {
       if (!pathEl || !fromEl || !toEl || !svgConduitRef.current) return;
       const svg = svgConduitRef.current;
       const sRect = svg.getBoundingClientRect();
@@ -220,24 +284,33 @@ export default function WorkstationScrollHero({
         photonEl.setAttribute('opacity', '0');
       }
 
+      // Spark burst trigger on impact threshold
+      if (k >= 0.92 && prevKValues[index] < 0.92) {
+        triggerImpactSparks(tRect.left, tRect.top + tRect.height / 2, color);
+      }
+      prevKValues[index] = k;
+
       // Target Line Flash on Impact
-      if (k >= 0.95) {
+      if (k >= 0.92) {
         toEl.style.opacity = '1';
         toEl.style.transform = 'translate3d(0, 0, 0)';
         toEl.style.color = color;
-        toEl.style.textShadow = `0 0 10px ${color}88`;
+        toEl.style.textShadow = `0 0 12px ${color}aa`;
+        toEl.style.backgroundColor = `${color}15`;
       } else if (k > 0.05) {
         toEl.style.opacity = String(0.25 + k * 0.7);
-        toEl.style.transform = `translate3d(${lerp(8, 0, k)}px, 0, 0)`;
+        toEl.style.transform = `translate3d(${lerp(10, 0, k)}px, 0, 0)`;
+        toEl.style.backgroundColor = 'transparent';
       } else {
         toEl.style.opacity = '0.2';
-        toEl.style.transform = 'translate3d(8px, 0, 0)';
+        toEl.style.transform = 'translate3d(10px, 0, 0)';
         toEl.style.color = '';
         toEl.style.textShadow = 'none';
+        toEl.style.backgroundColor = 'transparent';
       }
     };
 
-    const frameLoop = () => {
+    const frameLoop = (time) => {
       const rootEl = rootRef.current;
       if (!rootEl) return;
 
@@ -249,21 +322,31 @@ export default function WorkstationScrollHero({
 
       const relTop = rect.top - containerTop;
       const span = Math.max(1, rect.height - containerHeight);
-      const p = clamp(-relTop / span);
+      targetP = clamp(-relTop / span);
 
-      if (Math.abs(p - lastP) > 0.0002) {
-        lastP = p;
+      // Fluid Momentum Lerp (Organic smoothing on scroll notches)
+      smoothP = lerp(smoothP, targetP, 0.14);
+      if (Math.abs(smoothP - targetP) < 0.0001) smoothP = targetP;
+
+      // Smooth mouse parallax physics
+      mouse.current.x = lerp(mouse.current.x, mouse.current.targetX, 0.08);
+      mouse.current.y = lerp(mouse.current.y, mouse.current.targetY, 0.08);
+
+      const p = smoothP;
+
+      if (Math.abs(p - lastSmoothP) > 0.0001 || Math.abs(mouse.current.x - mouse.current.targetX) > 0.001) {
+        lastSmoothP = p;
 
         // 1. Percentage counter & Telemetry Latency
         if (progressPercentRef.current) {
           progressPercentRef.current.textContent = `${Math.round(p * 100)}%`;
         }
         if (latencyRef.current) {
-          const l = Math.max(120, Math.round(280 - p * 160));
+          const l = Math.max(110, Math.round(280 - p * 170));
           latencyRef.current.textContent = `${l}ms`;
         }
         if (lpuRateRef.current) {
-          const rate = p > 0.25 ? Math.round(720 + p * 80) : 0;
+          const rate = p > 0.22 ? Math.round(740 + p * 80) : 0;
           lpuRateRef.current.textContent = `${rate} T/s`;
         }
 
@@ -277,24 +360,34 @@ export default function WorkstationScrollHero({
           intakeBadgeRef.current.style.opacity = String(badgeOpacity);
         }
 
-        // 3. Document 3D Inflow & Inspection Tilt (p: 0.08 -> 0.35)
+        // 3. Document 3D Inflow & Specular Mouse Parallax
         if (docWrapperRef.current) {
           const unfold = easeOutCubic(range(p, 0.06, 0.32));
-          const rotX = lerp(15, 0, unfold);
-          const rotY = lerp(-12, 0, unfold);
-          const scale = lerp(0.90, 1.0, unfold);
-          const transY = lerp(35, 0, unfold);
+          const rotX = lerp(16, 0, unfold);
+          const rotY = lerp(-14, 0, unfold);
+          const scale = lerp(0.88, 1.0, unfold);
+          const transY = lerp(40, 0, unfold);
 
           const exit = easeOutCubic(range(p, 0.78, 1.0));
           const exitY = -exit * 70;
           const exitScale = lerp(1.0, 0.90, exit);
           const opacity = lerp(1.0, 0.2, exit);
 
-          docWrapperRef.current.style.transform = `perspective(1200px) translate3d(0, ${transY + exitY}px, 0) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale * exitScale})`;
+          const mouseTiltX = -mouse.current.y * 10;
+          const mouseTiltY = mouse.current.x * 12;
+
+          docWrapperRef.current.style.transform = `perspective(1200px) translate3d(0, ${transY + exitY}px, 0) rotateX(${rotX + mouseTiltX}deg) rotateY(${rotY + mouseTiltY}deg) scale(${scale * exitScale})`;
           docWrapperRef.current.style.opacity = String(opacity);
         }
 
-        // 4. Laser Scan Bar, Sweeping Grid, and Coordinates (p: 0.18 -> 0.78)
+        // Dynamic Glass Gleam
+        if (docGleamRef.current) {
+          const gleamX = 50 + mouse.current.x * 90;
+          const gleamY = 50 + mouse.current.y * 90;
+          docGleamRef.current.style.background = `radial-gradient(circle at ${gleamX}% ${gleamY}%, rgba(255,255,255,0.12) 0%, transparent 60%)`;
+        }
+
+        // 4. Laser Scan Bar, Sweeping Grid, Oscilloscope Wave & Coordinates
         if (laserRef.current && laserBeamRef.current) {
           const laserSweep = easeOutCubic(range(p, 0.20, 0.74));
           const laserOpacity = range(p, 0.18, 0.24) * (1 - range(p, 0.75, 0.82));
@@ -314,6 +407,21 @@ export default function WorkstationScrollHero({
             const yCoord = Math.round(laserSweep * 680);
             laserCoordRef.current.textContent = `Y:${yCoord}px · 600DPI`;
           }
+
+          // Oscilloscope Sine Wave along Laser
+          if (laserWaveRef.current) {
+            let waveD = 'M 0 6';
+            const width = 360;
+            const freq = 0.07;
+            const speed = time * 0.008;
+            const scrollDelta = Math.abs(p - lastSmoothP);
+            const amp = 3.5 + Math.min(6, scrollDelta * 180);
+            for (let x = 0; x <= width; x += 18) {
+              const y = 6 + Math.sin(x * freq + speed) * amp;
+              waveD += ` L ${x} ${y.toFixed(1)}`;
+            }
+            laserWaveRef.current.setAttribute('d', waveD);
+          }
         }
 
         // 5. Bounding Box Illuminations & Reticle Snapping
@@ -326,7 +434,7 @@ export default function WorkstationScrollHero({
           if (a > 0.05) {
             el.style.borderColor = activeBorder;
             el.style.backgroundColor = activeBg;
-            el.style.boxShadow = `0 0 ${Math.round(a * 20)}px ${activeBorder}44`;
+            el.style.boxShadow = `0 0 ${Math.round(a * 22)}px ${activeBorder}44`;
           } else {
             el.style.borderColor = 'rgba(255, 255, 255, 0.08)';
             el.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
@@ -353,18 +461,28 @@ export default function WorkstationScrollHero({
 
         // 6. SVG Data Conduit Streams (Box -> JSON line photon transfers)
         const progVendor = range(p, 0.24, 0.40);
-        updateConduit(pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, jsonVendorRef.current, progVendor, '#fcd34d');
+        updateConduit(0, pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, jsonVendorRef.current, progVendor, '#fcd34d');
 
         const progMeta = range(p, 0.38, 0.54);
-        updateConduit(pathMetaRef.current, photonMetaRef.current, boxMetaRef.current, jsonMetaRef.current, progMeta, '#38bdf8');
+        updateConduit(1, pathMetaRef.current, photonMetaRef.current, boxMetaRef.current, jsonMetaRef.current, progMeta, '#38bdf8');
 
         const progItems = range(p, 0.50, 0.66);
-        updateConduit(pathItemsRef.current, photonItemsRef.current, boxItemsRef.current, jsonItemsRef.current, progItems, '#a78bfa');
+        updateConduit(2, pathItemsRef.current, photonItemsRef.current, boxItemsRef.current, jsonItemsRef.current, progItems, '#a78bfa');
 
         const progTotal = range(p, 0.62, 0.78);
-        updateConduit(pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, jsonTotalRef.current, progTotal, '#34d399');
+        updateConduit(3, pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, jsonTotalRef.current, progTotal, '#34d399');
 
-        // 7. Terminal Header & LPU Status Badge
+        // 7. Holographic Audit Stamp (Stamps at p > 0.64)
+        if (auditStampRef.current) {
+          const stampProgress = easeOutCubic(range(p, 0.64, 0.76));
+          const stampOpacity = range(p, 0.63, 0.70);
+          const stampScale = lerp(1.7, 1.0, stampProgress);
+          const stampRot = lerp(-25, -12, stampProgress);
+          auditStampRef.current.style.opacity = String(stampOpacity);
+          auditStampRef.current.style.transform = `scale(${stampScale}) rotate(${stampRot}deg)`;
+        }
+
+        // 8. Terminal Header & LPU Status Badge
         if (terminalBadgeRef.current) {
           if (p < 0.20) {
             terminalBadgeRef.current.textContent = 'STANDBY · AWAITING BUFFER';
@@ -378,8 +496,7 @@ export default function WorkstationScrollHero({
           }
         }
 
-        // 8. Ejection Group (Committed Ledger Row ready to drop into table)
-        // p: 0.72 -> 0.98
+        // 9. Ejection Group (Committed Ledger Row ready to drop into table)
         if (ejectGroupRef.current) {
           const ejProgress = easeOutCubic(range(p, 0.72, 0.94));
           const ejOpacity = range(p, 0.70, 0.78) * (1 - range(p, 0.96, 1.0));
@@ -388,7 +505,13 @@ export default function WorkstationScrollHero({
           ejectGroupRef.current.style.transform = `translate3d(0, ${ejY}px, 0) scale(${lerp(0.96, 1.0, ejProgress)})`;
         }
 
-        // 9. Scroll indicator fade out
+        // 10. Downstream Handover Beam to Table (p > 0.82)
+        if (downstreamBeamRef.current) {
+          const beamOp = range(p, 0.82, 0.92) * (1 - range(p, 0.97, 1.0));
+          downstreamBeamRef.current.style.opacity = String(beamOp);
+        }
+
+        // 11. Scroll indicator fade out
         if (scrollIndicatorRef.current) {
           scrollIndicatorRef.current.style.opacity = String(1 - range(p, 0.72, 0.88));
         }
@@ -438,12 +561,14 @@ export default function WorkstationScrollHero({
   return (
     <div
       ref={rootRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       className="relative w-full mb-2"
       style={{ height: '240vh' }}
     >
       <div className="sticky top-0 w-full h-[540px] sm:h-[580px] lg:h-[620px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#06080F] flex flex-col justify-between select-none">
         
-        {/* Layer 0: Dynamic Canvas Background with drifting constellation particles */}
+        {/* Layer 0: Dynamic Canvas Background with constellation particles and sparks */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 size-full pointer-events-none z-0"
@@ -452,6 +577,15 @@ export default function WorkstationScrollHero({
         {/* Ambient Radial Gradient Glows */}
         <div className="absolute top-1/4 left-1/4 w-[480px] h-[480px] bg-indigo-600/[0.08] rounded-full blur-3xl pointer-events-none z-0" />
         <div className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] bg-cyan-500/[0.08] rounded-full blur-3xl pointer-events-none z-0" />
+
+        {/* Downstream Handover Beam to Invoices Table */}
+        <div
+          ref={downstreamBeamRef}
+          className="absolute bottom-0 inset-x-0 h-8 flex items-center justify-center pointer-events-none z-30 transition-opacity"
+          style={{ opacity: 0 }}
+        >
+          <div className="w-1.5 h-full bg-gradient-to-b from-emerald-400/80 via-emerald-400 to-transparent shadow-[0_0_15px_#34d399] rounded-full animate-pulse" />
+        </div>
 
         {/* Top Control Bar & Telemetry HUD */}
         <div className="relative z-30 p-4 sm:p-5 flex items-center justify-between border-b border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md">
@@ -569,17 +703,24 @@ export default function WorkstationScrollHero({
             <circle ref={photonTotalRef} r="4" fill="#f5d0fe" opacity="0" filter="url(#glow)" />
           </svg>
 
-          {/* LEFT: 3D High-Tech Invoice Document */}
+          {/* LEFT: 3D High-Tech Invoice Document with Specular Gleam */}
           <div className="w-full lg:w-[48%] max-w-md flex items-center justify-center">
             <div
               ref={docWrapperRef}
               className="relative w-full aspect-[1/1.3] bg-white/[0.04] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] will-change-transform overflow-hidden flex flex-col justify-between"
               style={{
-                transform: 'perspective(1200px) rotateX(15deg) rotateY(-12deg) scale(0.90)',
+                transform: 'perspective(1200px) rotateX(16deg) rotateY(-14deg) scale(0.88)',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
               }}
             >
-              {/* Laser Scanning Grid Wash & Bar */}
+              {/* Dynamic Specular Glass Gleam Overlay */}
+              <div
+                ref={docGleamRef}
+                className="absolute inset-0 pointer-events-none z-12 will-change-transform"
+                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 60%)' }}
+              />
+
+              {/* Laser Scanning Grid Wash & Oscilloscope Bar */}
               <div
                 ref={laserGridRef}
                 className="absolute inset-x-0 top-0 bg-[linear-gradient(to_right,rgba(34,211,238,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(34,211,238,0.1)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none will-change-transform z-15"
@@ -598,10 +739,42 @@ export default function WorkstationScrollHero({
                 style={{ top: '0%', opacity: 0 }}
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_#22d3ee] animate-ping" />
-                <span ref={laserCoordRef} className="font-mono text-[8px] text-cyan-200 tracking-wider bg-black/60 px-1 rounded shadow">
-                  Y:0px · 600DPI
-                </span>
+                
+                {/* Oscilloscope Micro-Waveform */}
+                <div className="flex items-center gap-2">
+                  <svg className="w-24 h-3 overflow-visible pointer-events-none hidden sm:block">
+                    <path
+                      ref={laserWaveRef}
+                      d="M 0 6 L 360 6"
+                      fill="none"
+                      stroke="#22d3ee"
+                      strokeWidth="1.5"
+                      opacity="0.8"
+                    />
+                  </svg>
+                  <span ref={laserCoordRef} className="font-mono text-[8px] text-cyan-200 tracking-wider bg-black/60 px-1 rounded shadow">
+                    Y:0px · 600DPI
+                  </span>
+                </div>
+
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#34d399] animate-ping" />
+              </div>
+
+              {/* Holographic Verification Stamp (Stamps when complete) */}
+              <div
+                ref={auditStampRef}
+                className="absolute bottom-3 right-3 pointer-events-none z-22 will-change-transform"
+                style={{ opacity: 0, transform: 'scale(1.7) rotate(-25deg)' }}
+              >
+                <div className="w-14 h-14 rounded-full border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center p-1 bg-emerald-500/15 backdrop-blur-xs shadow-[0_0_15px_rgba(52,211,153,0.35)]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 mb-0.5" />
+                  <span className="font-mono text-[7px] font-black text-emerald-300 tracking-tighter uppercase leading-none">
+                    RFC 2177
+                  </span>
+                  <span className="font-mono text-[6px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5">
+                    AUDITED
+                  </span>
+                </div>
               </div>
 
               {/* DOCUMENT CONTENT */}
@@ -781,12 +954,12 @@ export default function WorkstationScrollHero({
                 </div>
                 
                 {/* Target 1: Vendor */}
-                <div ref={jsonVendorRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                <div ref={jsonVendorRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
                   <span className="text-cyan-400">"vendor"</span>: <span>"Acme Cloud Infrastructure Inc."</span>,
                 </div>
 
                 {/* Target 2: Meta / Invoice Number */}
-                <div ref={jsonMetaRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                <div ref={jsonMetaRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
                   <span className="text-cyan-400">"invoiceNumber"</span>: <span>"INV-2026-9041"</span>,
                 </div>
 
@@ -798,12 +971,12 @@ export default function WorkstationScrollHero({
                 </div>
 
                 {/* Target 4: Total Amount */}
-                <div ref={jsonTotalRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                <div ref={jsonTotalRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
                   <span className="text-cyan-400">"totalAmount"</span>: <span className="font-bold">4850.00</span>,
                 </div>
 
                 {/* Target 3: Line Items */}
-                <div ref={jsonItemsRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform" style={{ opacity: 0.2 }}>
+                <div ref={jsonItemsRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
                   <span className="text-cyan-400">"lineItems"</span>: <span>[3 items parsed & verified]</span>,
                 </div>
 
