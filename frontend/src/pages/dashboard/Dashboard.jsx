@@ -392,7 +392,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 relative pb-16">
+        <div className="w-full space-y-4 relative pb-16">
             <Toaster position="top-center" />
 
             {/* Interactive Multi-Layer Scroll-Driven Workstation */}
