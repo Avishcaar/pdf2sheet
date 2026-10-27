@@ -74,6 +74,30 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
 
         let vendor = conditions.length > 0 ? await VendorMap.findOne(query).lean() : null;
 
+        // If not yet in VendorMap, check prior Invoice records from this user (e.g. earlier uploads or simulations)
+        if (!vendor && conditions.length > 0) {
+            const priorInvoice = await Invoice.findOne({
+                userId: req.user.userId,
+                $or: conditions
+            }).sort({ createdAt: -1 }).lean();
+
+            if (priorInvoice) {
+                console.log(`[Identity] Recognized vendor from prior invoice history: ${priorInvoice.vendorName}`);
+                try {
+                    vendor = await VendorMap.create({
+                        userId: req.user.userId,
+                        vendorName: priorInvoice.vendorName || effectiveVendorName,
+                        senderEmail: priorInvoice.senderEmail || effectiveVendorEmail,
+                        confidenceThreshold: 80,
+                        active: true,
+                        extractionRules: []
+                    });
+                } catch (vErr) {
+                    vendor = await VendorMap.findOne(query).lean();
+                }
+            }
+        }
+
         let extractedData = {};
         let confidence = 0;
         let fullText = "";
@@ -87,10 +111,10 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
             console.warn('[PDF] Failed to extract coordinates/text:', pdfErr.message);
         }
 
-        // 3. High-Speed AI Extraction (Groq Llama 3.3)
+        // 3. High-Speed AI Extraction (Groq LPU / GPT-OSS 120B / Llama 3.3)
         try {
             if (fullText && fullText.trim().length > 0) {
-                console.log(`[AI Engine] Invoking Groq Llama 3.3 extraction on ${fullText.length} characters...`);
+                console.log(`[AI Engine] Invoking Groq extraction on ${fullText.length} characters...`);
                 aiResult = await extractWithAI(fullText, req.file.originalname);
                 console.log(`[AI Engine] Succeeded: Vendor="${aiResult.vendorName}", Total="${aiResult.extractedData.totalAmount}", LineItems=${aiResult.extractedData.lineItems?.length}`);
                 extractedData = aiResult.extractedData;
@@ -106,6 +130,30 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
                 userId: req.user.userId,
                 vendorName: { $regex: new RegExp(`^${aiResult.vendorName.trim()}$`, 'i') }
             }).lean();
+
+            // Check prior invoices if not in VendorMap
+            if (!vendor) {
+                const prior = await Invoice.findOne({
+                    userId: req.user.userId,
+                    vendorName: { $regex: new RegExp(`^${aiResult.vendorName.trim()}$`, 'i') }
+                }).sort({ createdAt: -1 }).lean();
+
+                if (prior) {
+                    console.log(`[Identity] Found matching prior invoice for AI vendor: ${prior.vendorName}`);
+                    try {
+                        vendor = await VendorMap.create({
+                            userId: req.user.userId,
+                            vendorName: prior.vendorName,
+                            senderEmail: prior.senderEmail || effectiveVendorEmail || `${prior.vendorName.toLowerCase().replace(/[^a-z0-9]/g, '')}@billing.auto`,
+                            confidenceThreshold: 80,
+                            active: true,
+                            extractionRules: []
+                        });
+                    } catch (e) {
+                        vendor = await VendorMap.findOne({ userId: req.user.userId, vendorName: { $regex: new RegExp(`^${prior.vendorName}$`, 'i') } }).lean();
+                    }
+                }
+            }
         }
 
         if (vendor) {
@@ -134,7 +182,7 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
         if (!vendor) {
             console.log('Vendor not registered yet. Creating invoice with AI-extracted vendor identity.');
 
-            let finalVendorName = aiResult?.vendorName || vendorName || null;
+            let finalVendorName = aiResult?.vendorName || effectiveVendorName || null;
 
             if (!aiResult) {
                 try {
@@ -152,14 +200,33 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
                 }
             }
 
-            const isHighConfidence = confidence >= 80 && extractedData?.totalAmount;
+            finalVendorName = finalVendorName || 'Unregistered Vendor';
+            const isHighConfidence = (confidence >= 75) && Boolean(extractedData?.totalAmount);
             const invoiceStatus = isHighConfidence ? 'processed' : 'review_needed';
 
             const finalSenderEmail = effectiveVendorEmail || (finalVendorName && finalVendorName !== 'Unregistered Vendor' ? `${finalVendorName.toLowerCase().replace(/[^a-z0-9]/g, '')}@billing.auto` : 'manual-upload@pdf2sheet.local');
 
+            // Auto-register learned vendor for future 1-click matches if high confidence
+            if (isHighConfidence && finalVendorName !== 'Unregistered Vendor') {
+                try {
+                    vendor = await VendorMap.create({
+                        userId: req.user.userId,
+                        vendorName: finalVendorName,
+                        senderEmail: finalSenderEmail,
+                        confidenceThreshold: 80,
+                        active: true,
+                        extractionRules: []
+                    });
+                    console.log(`[Identity] Automatically registered new vendor in VendorMap: ${finalVendorName}`);
+                } catch (regErr) {
+                    // Safe to ignore duplicate key
+                }
+            }
+
             const reviewInvoice = await Invoice.create({
                 userId: req.user.userId,
-                vendorName: finalVendorName || 'Unregistered Vendor',
+                vendorMapId: vendor?._id || null,
+                vendorName: finalVendorName,
                 senderEmail: finalSenderEmail,
                 status: invoiceStatus,
                 originalFileName: req.file ? req.file.originalname : 'unknown_file.pdf',
@@ -182,7 +249,7 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
                         extractedData.subtotal || '',
                         extractedData.taxAmount || '',
                         extractedData.mathAudit?.isValid === true ? 'VERIFIED' : (extractedData.mathAudit?.isValid === false ? 'DISCREPANCY' : 'UNCHECKED'),
-                        extractedData.engine || 'Groq LPU (GPT-OSS 120B)',
+                        extractedData.engine || 'Groq LPU AI',
                         new Date().toISOString()
                     ];
                     await appendToSheet(req.user.userId, rowData);
@@ -191,9 +258,13 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
                 }
             }
 
+            const statusMessage = isHighConfidence
+                ? `Invoice processed with AI for ${finalVendorName}!`
+                : `Invoice from ${finalVendorName} saved for review (${confidence || 60}% confidence).`;
+
             return res.status(201).json({
                 success: true,
-                message: isHighConfidence ? 'Invoice processed with AI!' : 'Vendor not found. Invoice saved for review.',
+                message: statusMessage,
                 _broadcast: broadcastSSE('INVOICE_INGESTED', { invoice: reviewInvoice }),
                 data: {
                     invoiceId: reviewInvoice._id,
@@ -210,10 +281,10 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
             userId: req.user.userId,
             vendorMapId: vendor._id,
             vendorName: vendor.vendorName,
-            senderEmail: vendor.senderEmail || vendorEmail,
+            senderEmail: vendor.senderEmail || effectiveVendorEmail,
             extractedData,
-            confidenceScore: confidence,
-            status: confidence >= 70 ? 'processed' : 'review_needed',
+            confidenceScore: confidence || 95,
+            status: (confidence || 95) >= 70 ? 'processed' : 'review_needed',
             originalFileName: req.file.originalname,
             processedAt: new Date(),
             pdfData: pdfBuffer,
@@ -232,7 +303,7 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
                     extractedData.subtotal || '',
                     extractedData.taxAmount || '',
                     extractedData.mathAudit?.isValid === true ? 'VERIFIED' : (extractedData.mathAudit?.isValid === false ? 'DISCREPANCY' : 'UNCHECKED'),
-                    extractedData.engine || 'Groq LPU (Llama 3.3 70B)',
+                    extractedData.engine || 'Groq LPU AI',
                     new Date().toISOString()
                 ];
 
@@ -245,11 +316,12 @@ router.post('/test-upload', authenticateToken, upload.single('invoice'), async (
 
         res.status(201).json({
             success: true,
-            message: 'Invoice processed successfully with AI',
+            message: `Known vendor recognized: ${vendor.vendorName}. Processed successfully!`,
+            _broadcast: broadcastSSE('INVOICE_INGESTED', { invoice }),
             data: {
                 invoiceId: invoice._id,
                 vendorName: vendor.vendorName,
-                confidence,
+                confidence: invoice.confidenceScore,
                 status: invoice.status,
                 extractedData
             }

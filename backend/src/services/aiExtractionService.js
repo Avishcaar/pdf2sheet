@@ -8,6 +8,7 @@ import { detectCurrency, CURRENCY_MAP } from '../utils/currencyDetector.js';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+const FALLBACK_MODELS = [DEFAULT_MODEL, 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
 
 /**
  * Clean numeric string into a float
@@ -99,30 +100,46 @@ Rules:
 4. Always identify the issuing vendor or company name from the document header or filename.
 5. Return ONLY the raw JSON object without markdown code blocks, backticks, or preamble.`;
 
-    const response = await fetch(GROQ_API_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: DEFAULT_MODEL,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Invoice File: ${originalFileName}\n\nDocument Text:\n${fullText.slice(0, 12000)}` }
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.1,
-            max_tokens: 2500
-        })
-    });
+    let payload = null;
+    let lastError = null;
 
-    if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Groq API error (${response.status}): ${errText}`);
+    for (const modelName of [...new Set(FALLBACK_MODELS)]) {
+        try {
+            const response = await fetch(GROQ_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: `Invoice File: ${originalFileName}\n\nDocument Text:\n${fullText.slice(0, 12000)}` }
+                    ],
+                    response_format: { type: 'json_object' },
+                    temperature: 0.1,
+                    max_tokens: 2500
+                })
+            });
+
+            if (response.ok) {
+                payload = await response.json();
+                break;
+            } else {
+                const errText = await response.text();
+                lastError = new Error(`Groq API (${modelName}) error ${response.status}: ${errText}`);
+                console.warn(`[AI Engine] Model ${modelName} failed, attempting next fallback...`);
+            }
+        } catch (fetchErr) {
+            lastError = fetchErr;
+        }
     }
 
-    const payload = await response.json();
+    if (!payload) {
+        throw lastError || new Error('All Groq AI models failed to complete request');
+    }
+
     const rawContent = payload.choices?.[0]?.message?.content;
     const parsed = JSON.parse(rawContent);
 

@@ -5,14 +5,20 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const basePdfPath = path.join(__dirname, '../uploads/basicapi.pdf');
 
 async function createInrPdf() {
-    const pdfDoc = await PDFDocument.create();
+    const baseBytes = fs.readFileSync(basePdfPath);
+    const pdfDoc = await PDFDocument.load(baseBytes);
+    while (pdfDoc.getPageCount() > 1) pdfDoc.removePage(1);
+    const page = pdfDoc.getPages()[0];
+    const { width, height } = page.getSize();
+
+    // Clear background
+    page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 1, 1) });
+
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const page = pdfDoc.addPage([600, 750]);
-
-    const { width, height } = page.getSize();
 
     // Header
     page.drawText('Apollo Hospitals Enterprises Ltd', { x: 50, y: height - 60, size: 18, font: fontBold, color: rgb(0.1, 0.2, 0.4) });
@@ -73,12 +79,17 @@ async function createInrPdf() {
 }
 
 async function createEurPdf() {
-    const pdfDoc = await PDFDocument.create();
+    const baseBytes = fs.readFileSync(basePdfPath);
+    const pdfDoc = await PDFDocument.load(baseBytes);
+    while (pdfDoc.getPageCount() > 1) pdfDoc.removePage(1);
+    const page = pdfDoc.getPages()[0];
+    const { width, height } = page.getSize();
+
+    // Clear background
+    page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 1, 1) });
+
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const page = pdfDoc.addPage([600, 750]);
-
-    const { width, height } = page.getSize();
 
     // Header
     page.drawText('SAP Deutschland SE & Co. KG', { x: 50, y: height - 60, size: 18, font: fontBold, color: rgb(0.1, 0.2, 0.5) });
@@ -148,4 +159,7 @@ async function main() {
     }
 }
 
-main().catch(console.error);
+main().catch(err => {
+    console.error('Failed to generate multi-currency samples:', err);
+    process.exit(1);
+});

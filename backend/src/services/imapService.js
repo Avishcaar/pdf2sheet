@@ -11,6 +11,7 @@ let client = null;
 let currentBox = null;
 let isConnected = false;
 let isScanning = false;
+let scanStartTime = 0;
 let initialScanCompleted = false;
 let reconnectTimer = null;
 let periodicScanTimer = null;
@@ -197,6 +198,9 @@ const processEmailBuffer = async (rawBuffer, emailUid = null, defaultUser, force
  */
 const scanRecentMessages = (imapInstance, box, count = 1) => {
     return new Promise((resolve) => {
+        if (!box || !box.messages || typeof box.messages.total !== 'number') {
+            return resolve([]);
+        }
         const total = box.messages.total;
         if (total === 0) {
             return resolve([]);
@@ -207,40 +211,66 @@ const scanRecentMessages = (imapInstance, box, count = 1) => {
 
         console.log(`[IMAP Ingest] Fetching sequence range ${startSeq}:${endSeq} (${Math.min(total, count)} message(s))...`);
 
-        const fetchStream = imapInstance.seq.fetch(`${startSeq}:${endSeq}`, {
-            bodies: '',
-            struct: true
-        });
-
         const messages = [];
+        let completed = false;
 
-        fetchStream.on('message', (msg, seqno) => {
-            let uid = null;
-            let fullBody = '';
+        const timer = setTimeout(() => {
+            if (!completed) {
+                completed = true;
+                console.warn('[IMAP Ingest] Stream fetch timeout (12s), returning gathered messages');
+                resolve(messages);
+            }
+        }, 12000);
 
-            msg.on('attributes', (attrs) => {
-                uid = attrs.uid;
+        try {
+            const fetchStream = imapInstance.seq.fetch(`${startSeq}:${endSeq}`, {
+                bodies: '',
+                struct: true
             });
 
-            msg.on('body', (stream) => {
-                stream.on('data', (chunk) => {
-                    fullBody += chunk.toString('binary');
+            fetchStream.on('message', (msg, seqno) => {
+                let uid = null;
+                let fullBody = '';
+
+                msg.on('attributes', (attrs) => {
+                    uid = attrs.uid;
+                });
+
+                msg.on('body', (stream) => {
+                    stream.on('data', (chunk) => {
+                        fullBody += chunk.toString('binary');
+                    });
+                });
+
+                msg.once('end', () => {
+                    messages.push({ seqno, uid, buffer: Buffer.from(fullBody, 'binary') });
                 });
             });
 
-            msg.once('end', () => {
-                messages.push({ seqno, uid, buffer: Buffer.from(fullBody, 'binary') });
+            fetchStream.once('error', (err) => {
+                clearTimeout(timer);
+                if (!completed) {
+                    completed = true;
+                    console.warn('[IMAP Ingest] Seq fetch error:', err.message);
+                    resolve(messages);
+                }
             });
-        });
 
-        fetchStream.once('error', (err) => {
-            console.warn('[IMAP Ingest] Seq fetch error:', err.message);
-            resolve(messages);
-        });
-
-        fetchStream.once('end', () => {
-            resolve(messages);
-        });
+            fetchStream.once('end', () => {
+                clearTimeout(timer);
+                if (!completed) {
+                    completed = true;
+                    resolve(messages);
+                }
+            });
+        } catch (fetchErr) {
+            clearTimeout(timer);
+            if (!completed) {
+                completed = true;
+                console.warn('[IMAP Ingest] Seq fetch invocation error:', fetchErr.message);
+                resolve(messages);
+            }
+        }
     });
 };
 
@@ -262,30 +292,35 @@ export const fetchNewEmails = async ({ count = 5, force = false } = {}) => {
     }
 
     if (isScanning) {
-        console.log('[IMAP Ingest] Scan already in progress. Skipping duplicate.');
-        return {
-            success: true,
-            inProgress: true,
-            message: 'Scan already in progress.',
-            stats: lastSyncReport
-        };
+        if (Date.now() - scanStartTime > 25000) {
+            console.warn('[IMAP Ingest] Stale scan lock detected (>25s). Auto-recovering lock.');
+            isScanning = false;
+        } else {
+            console.log('[IMAP Ingest] Scan already in progress. Skipping duplicate.');
+            return {
+                success: true,
+                inProgress: true,
+                message: 'Scan already in progress.',
+                stats: lastSyncReport
+            };
+        }
     }
 
     isScanning = true;
-    const defaultUser = await User.findOne({}).sort({ createdAt: 1 });
-    if (!defaultUser) {
-        isScanning = false;
-        return { success: false, message: 'No registered user found in database.' };
-    }
+    scanStartTime = Date.now();
 
     try {
+        const defaultUser = await User.findOne({}).sort({ createdAt: 1 });
+        if (!defaultUser) {
+            return { success: false, message: 'No registered user found in database.' };
+        }
+
         if (!client || !isConnected) {
             console.log('[IMAP Ingest] Client not currently connected. Connecting on demand...');
             await initClient();
         }
 
         if (!client || !isConnected) {
-            isScanning = false;
             return { success: false, message: 'Could not connect to Gmail IMAP.' };
         }
 
@@ -317,7 +352,6 @@ export const fetchNewEmails = async ({ count = 5, force = false } = {}) => {
         };
 
         console.log(`[IMAP Ingest] ${summary}`);
-        isScanning = false;
 
         return {
             success: true,
@@ -330,11 +364,12 @@ export const fetchNewEmails = async ({ count = 5, force = false } = {}) => {
 
     } catch (err) {
         console.error('[IMAP Ingest] Scan error:', err.message);
-        isScanning = false;
         return {
             success: false,
             message: `Scan error: ${err.message}`
         };
+    } finally {
+        isScanning = false;
     }
 };
 

@@ -225,48 +225,101 @@ export const findCoordinates = (textItems, targetValue, fieldKey = '') => {
     return null;
 };
 
-export const extractTextWithCoordinates = (buffer) => {
-    return new Promise((resolve, reject) => {
-        const pdfParser = new PDFParser();
-        const timeout = setTimeout(() => reject(new Error('PDF Parse Timeout')), 5000);
+export const extractTextWithCoordinates = async (buffer) => {
+    // 1. Primary Engine: PDFParser (pdf2json) for precise spatial coordinates
+    try {
+        const result = await new Promise((resolve, reject) => {
+            const pdfParser = new PDFParser();
+            const timeout = setTimeout(() => reject(new Error('pdf2json Parse Timeout')), 4000);
 
-        pdfParser.on("pdfParser_dataError", errData => {
-            clearTimeout(timeout);
-            reject(errData.parserError);
-        });
-
-        pdfParser.on("pdfParser_dataReady", pdfData => {
-            clearTimeout(timeout);
-            let fullText = '';
-            const textItems = [];
-
-            pdfData.Pages.forEach((page, pageIndex) => {
-                page.Texts.forEach(textBlock => {
-                    textBlock.R.forEach(run => {
-                        let str = '';
-                        try { str = decodeURIComponent(run.T); } catch (e) { str = run.T; }
-                        if (!str || str.trim().length === 0) return;
-
-                        textItems.push({
-                            str: str,
-                            x: textBlock.x,
-                            y: textBlock.y,
-                            width: textBlock.w,
-                            height: 1,
-                            pageIndex: pageIndex
-                        });
-                    });
-                });
+            pdfParser.on("pdfParser_dataError", errData => {
+                clearTimeout(timeout);
+                reject(errData?.parserError || new Error('pdf2json parser error'));
             });
 
-            const lines = assembleLines(textItems);
-            fullText = lines.map(l => l.str).join('\n');
+            pdfParser.on("pdfParser_dataReady", pdfData => {
+                clearTimeout(timeout);
+                let fullText = '';
+                const textItems = [];
 
-            resolve({ fullText, textItems, pageCount: pdfData.Pages.length });
+                if (pdfData && pdfData.Pages) {
+                    pdfData.Pages.forEach((page, pageIndex) => {
+                        if (page.Texts) {
+                            page.Texts.forEach(textBlock => {
+                                if (textBlock.R) {
+                                    textBlock.R.forEach(run => {
+                                        let str = '';
+                                        try { str = decodeURIComponent(run.T); } catch (e) { str = run.T; }
+                                        if (!str || str.trim().length === 0) return;
+
+                                        textItems.push({
+                                            str: str,
+                                            x: textBlock.x,
+                                            y: textBlock.y,
+                                            width: textBlock.w,
+                                            height: 1,
+                                            pageIndex: pageIndex
+                                        });
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+
+                const lines = assembleLines(textItems);
+                fullText = lines.map(l => l.str).join('\n');
+
+                resolve({ fullText, textItems, pageCount: pdfData?.Pages?.length || 1 });
+            });
+
+            pdfParser.parseBuffer(buffer);
         });
 
-        pdfParser.parseBuffer(buffer);
-    });
+        if (result && result.fullText && result.fullText.trim().length > 0) {
+            return result;
+        }
+    } catch (primaryErr) {
+        console.warn(`[PDF Engine] Primary parser notice (${primaryErr.message || primaryErr}). Falling back to modern PDF engine...`);
+    }
+
+    // 2. Resilient Fallback Engine: Mozilla PDF.js via PDFParse (handles all modern PDF 1.7 / xref streams)
+    try {
+        const { PDFParse } = await import('pdf-parse');
+        const uint8 = new Uint8Array(buffer);
+        const parser = new PDFParse(uint8);
+        const textData = await parser.getText();
+
+        let fullText = '';
+        if (textData && textData.pages && textData.pages.length > 0) {
+            fullText = textData.pages.map(p => p.text).join('\n');
+        } else if (typeof textData === 'string') {
+            fullText = textData;
+        }
+
+        const textItems = [];
+        const lines = fullText.split('\n').filter(l => l.trim().length > 0);
+        lines.forEach((line, idx) => {
+            textItems.push({
+                str: line.trim(),
+                x: 10,
+                y: 10 + (idx * 2),
+                width: line.length,
+                height: 1,
+                pageIndex: 0
+            });
+        });
+
+        console.log(`[PDF Engine] Modern parser fallback succeeded: ${fullText.length} characters parsed.`);
+        return {
+            fullText,
+            textItems,
+            pageCount: textData?.pages?.length || 1
+        };
+    } catch (fallbackErr) {
+        console.error('[PDF Engine] All PDF extractors failed:', fallbackErr.message);
+        return { fullText: '', textItems: [], pageCount: 0 };
+    }
 };
 
 export const extractData = async (buffer, rules) => {
