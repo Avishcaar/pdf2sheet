@@ -120,15 +120,15 @@ export default function WorkstationScrollHero({
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    // Initialize 70 floating motes
+    // Initialize 80 floating motes
     let seed = 89;
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const motes = Array.from({ length: 70 }, () => ({
+    const motes = Array.from({ length: 80 }, () => ({
       x: rand(),
       y: rand(),
       vx: (rand() - 0.5) * 0.0003,
       vy: -0.0002 - rand() * 0.0004,
-      r: 0.9 + rand() * 1.6,
+      r: 1.0 + rand() * 1.8,
       alpha: 0.2 + rand() * 0.6,
       hue: rand() > 0.6 ? 217 : rand() > 0.3 ? 160 : 270 // Cyan, Emerald, Purple
     }));
@@ -142,7 +142,7 @@ export default function WorkstationScrollHero({
       ctx.clearRect(0, 0, width, height);
 
       // Draw faint constellation lines between nearby motes
-      const maxDist = 80;
+      const maxDist = 90;
       for (let i = 0; i < motes.length; i++) {
         for (let j = i + 1; j < motes.length; j++) {
           const dx = (motes[i].x - motes[j].x) * width;
@@ -151,7 +151,7 @@ export default function WorkstationScrollHero({
           if (dist < maxDist) {
             const alpha = (1 - dist / maxDist) * 0.14;
             ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
-            ctx.lineWidth = 0.75;
+            ctx.lineWidth = 0.8;
             ctx.beginPath();
             ctx.moveTo(motes[i].x * width, motes[i].y * height);
             ctx.lineTo(motes[j].x * width, motes[j].y * height);
@@ -219,15 +219,15 @@ export default function WorkstationScrollHero({
     const spawnX = x - cRect.left;
     const spawnY = y - cRect.top;
 
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 16; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 1.2 + Math.random() * 3.5;
+      const speed = 1.4 + Math.random() * 4.0;
       sparksRef.current.push({
         x: spawnX,
         y: spawnY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        r: 1.2 + Math.random() * 2,
+        r: 1.4 + Math.random() * 2.2,
         color: color,
         life: 1.0
       });
@@ -262,11 +262,11 @@ export default function WorkstationScrollHero({
       const x2 = tRect.left - sRect.left;
       const y2 = tRect.top + tRect.height / 2 - sRect.top;
 
-      const dx = Math.max(40, (x2 - x1) * 0.5);
+      const dx = Math.max(45, (x2 - x1) * 0.5);
       const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
       pathEl.setAttribute('d', d);
 
-      const len = pathEl.getTotalLength ? pathEl.getTotalLength() : 300;
+      const len = pathEl.getTotalLength ? pathEl.getTotalLength() : 320;
       pathEl.style.strokeDasharray = `${len}`;
 
       // Inking progress (0 to 1)
@@ -295,15 +295,15 @@ export default function WorkstationScrollHero({
         toEl.style.opacity = '1';
         toEl.style.transform = 'translate3d(0, 0, 0)';
         toEl.style.color = color;
-        toEl.style.textShadow = `0 0 12px ${color}aa`;
-        toEl.style.backgroundColor = `${color}15`;
+        toEl.style.textShadow = `0 0 14px ${color}aa`;
+        toEl.style.backgroundColor = `${color}18`;
       } else if (k > 0.05) {
         toEl.style.opacity = String(0.25 + k * 0.7);
-        toEl.style.transform = `translate3d(${lerp(10, 0, k)}px, 0, 0)`;
+        toEl.style.transform = `translate3d(${lerp(12, 0, k)}px, 0, 0)`;
         toEl.style.backgroundColor = 'transparent';
       } else {
         toEl.style.opacity = '0.2';
-        toEl.style.transform = 'translate3d(10px, 0, 0)';
+        toEl.style.transform = 'translate3d(12px, 0, 0)';
         toEl.style.color = '';
         toEl.style.textShadow = 'none';
         toEl.style.backgroundColor = 'transparent';
@@ -324,7 +324,7 @@ export default function WorkstationScrollHero({
       const span = Math.max(1, rect.height - containerHeight);
       targetP = clamp(-relTop / span);
 
-      // Fluid Momentum Lerp (Organic smoothing on scroll notches)
+      // Fluid Momentum Lerp
       smoothP = lerp(smoothP, targetP, 0.14);
       if (Math.abs(smoothP - targetP) < 0.0001) smoothP = targetP;
 
@@ -354,7 +354,7 @@ export default function WorkstationScrollHero({
         if (intakeBadgeRef.current) {
           const inProgress = easeOutCubic(range(p, 0.0, 0.16));
           const outProgress = range(p, 0.16, 0.26);
-          const badgeY = lerp(-15, 0, inProgress) + outProgress * 25;
+          const badgeY = lerp(-18, 0, inProgress) + outProgress * 25;
           const badgeOpacity = (1 - outProgress);
           intakeBadgeRef.current.style.transform = `translate3d(0, ${badgeY}px, 0) scale(${lerp(0.96, 1.0, inProgress)})`;
           intakeBadgeRef.current.style.opacity = String(badgeOpacity);
@@ -404,20 +404,20 @@ export default function WorkstationScrollHero({
           }
 
           if (laserCoordRef.current) {
-            const yCoord = Math.round(laserSweep * 680);
+            const yCoord = Math.round(laserSweep * 560);
             laserCoordRef.current.textContent = `Y:${yCoord}px · 600DPI`;
           }
 
           // Oscilloscope Sine Wave along Laser
           if (laserWaveRef.current) {
-            let waveD = 'M 0 6';
-            const width = 360;
-            const freq = 0.07;
+            let waveD = 'M 0 7';
+            const width = 440;
+            const freq = 0.06;
             const speed = time * 0.008;
             const scrollDelta = Math.abs(p - lastSmoothP);
-            const amp = 3.5 + Math.min(6, scrollDelta * 180);
+            const amp = 4.0 + Math.min(7, scrollDelta * 180);
             for (let x = 0; x <= width; x += 18) {
-              const y = 6 + Math.sin(x * freq + speed) * amp;
+              const y = 7 + Math.sin(x * freq + speed) * amp;
               waveD += ` L ${x} ${y.toFixed(1)}`;
             }
             laserWaveRef.current.setAttribute('d', waveD);
@@ -434,7 +434,7 @@ export default function WorkstationScrollHero({
           if (a > 0.05) {
             el.style.borderColor = activeBorder;
             el.style.backgroundColor = activeBg;
-            el.style.boxShadow = `0 0 ${Math.round(a * 22)}px ${activeBorder}44`;
+            el.style.boxShadow = `0 0 ${Math.round(a * 24)}px ${activeBorder}44`;
           } else {
             el.style.borderColor = 'rgba(255, 255, 255, 0.08)';
             el.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
@@ -442,7 +442,7 @@ export default function WorkstationScrollHero({
           }
           if (tag) {
             tag.style.opacity = String(a);
-            tag.style.transform = `scale(${lerp(0.8, 1.0, a)})`;
+            tag.style.transform = `scale(${lerp(0.85, 1.0, a)})`;
           }
           reticles.forEach((r) => {
             r.style.opacity = String(a);
@@ -476,7 +476,7 @@ export default function WorkstationScrollHero({
         if (auditStampRef.current) {
           const stampProgress = easeOutCubic(range(p, 0.64, 0.76));
           const stampOpacity = range(p, 0.63, 0.70);
-          const stampScale = lerp(1.7, 1.0, stampProgress);
+          const stampScale = lerp(1.6, 1.0, stampProgress);
           const stampRot = lerp(-25, -12, stampProgress);
           auditStampRef.current.style.opacity = String(stampOpacity);
           auditStampRef.current.style.transform = `scale(${stampScale}) rotate(${stampRot}deg)`;
@@ -486,13 +486,13 @@ export default function WorkstationScrollHero({
         if (terminalBadgeRef.current) {
           if (p < 0.20) {
             terminalBadgeRef.current.textContent = 'STANDBY · AWAITING BUFFER';
-            terminalBadgeRef.current.className = 'font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
+            terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700';
           } else if (p < 0.68) {
             terminalBadgeRef.current.textContent = 'GROQ LPU · 750 T/s PARSING';
-            terminalBadgeRef.current.className = 'font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 animate-pulse';
+            terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/35 animate-pulse';
           } else {
             terminalBadgeRef.current.textContent = 'RECONCILED · LEDGER COMMITTED';
-            terminalBadgeRef.current.className = 'font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30';
+            terminalBadgeRef.current.className = 'font-mono text-xs px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/35';
           }
         }
 
@@ -536,23 +536,23 @@ export default function WorkstationScrollHero({
 
   if (isMinimized) {
     return (
-      <div className="w-full mb-3 p-3.5 rounded-2xl bg-[#0B0F19] border border-white/[0.08] flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-            <Sparkles className="w-4 h-4" />
+      <div className="w-full mb-4 p-4 rounded-3xl bg-[#0B0F19] border border-white/[0.08] flex items-center justify-between shadow-xl">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-white">Digital OCR Pipeline Minimized</p>
-            <p className="text-[11px] font-mono text-slate-400">RFC 2177 Push Active · Dual Groq LPU Engine Ready</p>
+            <p className="text-sm font-bold text-white">Autonomous OCR Pipeline Minimized</p>
+            <p className="text-xs font-mono text-slate-400">RFC 2177 Push Active · Dual Groq LPU Engine Online</p>
           </div>
         </div>
 
         <button
           onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
         >
           <span>Expand Pipeline</span>
-          <ChevronDown className="w-3.5 h-3.5" />
+          <ChevronDown className="w-4 h-4" />
         </button>
       </div>
     );
@@ -563,10 +563,10 @@ export default function WorkstationScrollHero({
       ref={rootRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full mb-3"
-      style={{ height: '260vh' }}
+      className="relative w-full mb-4"
+      style={{ height: '280vh' }}
     >
-      <div className="sticky top-0 w-full min-h-[660px] h-[680px] sm:h-[720px] lg:h-[760px] xl:h-[780px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#06080F] flex flex-col justify-between select-none">
+      <div className="sticky top-0 w-full min-h-[760px] h-[820px] sm:h-[860px] lg:h-[880px] xl:h-[900px] rounded-3xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#06080F] flex flex-col justify-between select-none">
         
         {/* Layer 0: Dynamic Canvas Background with constellation particles and sparks */}
         <canvas
@@ -575,99 +575,99 @@ export default function WorkstationScrollHero({
         />
 
         {/* Ambient Radial Gradient Glows */}
-        <div className="absolute top-1/4 left-1/4 w-[480px] h-[480px] bg-indigo-600/[0.08] rounded-full blur-3xl pointer-events-none z-0" />
-        <div className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] bg-cyan-500/[0.08] rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute top-1/4 left-1/4 w-[560px] h-[560px] bg-indigo-600/[0.09] rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-cyan-500/[0.09] rounded-full blur-3xl pointer-events-none z-0" />
 
         {/* Downstream Handover Beam to Invoices Table */}
         <div
           ref={downstreamBeamRef}
-          className="absolute bottom-0 inset-x-0 h-8 flex items-center justify-center pointer-events-none z-30 transition-opacity"
+          className="absolute bottom-0 inset-x-0 h-10 flex items-center justify-center pointer-events-none z-30 transition-opacity"
           style={{ opacity: 0 }}
         >
-          <div className="w-1.5 h-full bg-gradient-to-b from-emerald-400/80 via-emerald-400 to-transparent shadow-[0_0_15px_#34d399] rounded-full animate-pulse" />
+          <div className="w-2 h-full bg-gradient-to-b from-emerald-400/80 via-emerald-400 to-transparent shadow-[0_0_20px_#34d399] rounded-full animate-pulse" />
         </div>
 
         {/* Top Control Bar & Telemetry HUD */}
-        <div className="relative z-30 p-4 sm:p-5 flex items-center justify-between border-b border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-inner">
-              <Scan className="w-4 h-4 animate-pulse" />
+        <div className="relative z-30 p-5 sm:p-6 flex items-center justify-between border-b border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-inner">
+              <Scan className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-bold text-white tracking-tight">
+              <div className="flex items-center gap-2.5">
+                <span className="text-sm sm:text-base font-extrabold text-white tracking-tight">
                   Autonomous OCR Pipeline
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono font-medium text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-xs font-mono font-semibold text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   RFC 2177 ACTIVE
                 </span>
               </div>
-              <p className="text-[11px] font-mono text-slate-400 hidden sm:block">
-                Optical Document Intelligence · Groq LPU Inference · Live Google Sheets Ledger
+              <p className="text-xs font-mono text-slate-400 hidden sm:block mt-0.5">
+                Optical Document Intelligence · Dual Groq LPU Engine · Live Google Sheets Ledger
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <button
               onClick={onUploadClick}
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all cursor-pointer"
+              className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition-all cursor-pointer hover:scale-[1.02]"
             >
-              <UploadCloud className="w-3.5 h-3.5" />
+              <UploadCloud className="w-4 h-4" />
               <span>Upload PDF</span>
             </button>
 
             <button
               onClick={onSyncEmailClick}
               disabled={isSyncingEmail}
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all cursor-pointer disabled:opacity-50"
+              className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all cursor-pointer disabled:opacity-50"
             >
-              <Mail className={`w-3.5 h-3.5 text-indigo-400 ${isSyncingEmail ? 'animate-spin' : ''}`} />
+              <Mail className={`w-4 h-4 text-indigo-400 ${isSyncingEmail ? 'animate-spin' : ''}`} />
               <span>{isSyncingEmail ? 'Syncing...' : 'Sync Email'}</span>
             </button>
 
             <Link
               to="/simulate"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all"
             >
-              <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+              <Terminal className="w-4 h-4 text-emerald-400" />
               <span>Simulator</span>
             </Link>
 
             <button
               onClick={scrollToTable}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs sm:text-sm font-medium"
               title="Jump straight to invoices table"
             >
               <span>Skip</span>
-              <ChevronDown className="w-3.5 h-3.5 text-indigo-400" />
+              <ChevronDown className="w-4 h-4 text-indigo-400" />
             </button>
 
             <button
               onClick={() => setIsMinimized(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs"
               title="Minimize pipeline hero"
             >
-              <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronUp className="w-4 h-4 text-slate-400" />
             </button>
           </div>
         </div>
 
         {/* Center Stage: Split Screen with SVG Neural Data Conduits */}
-        <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 lg:px-8 py-3 sm:py-5 gap-6 sm:gap-8 z-10">
+        <div className="relative flex-1 flex flex-col lg:flex-row items-center justify-center px-6 sm:px-8 lg:px-12 py-4 sm:py-6 gap-8 sm:gap-10 lg:gap-12 z-10">
           
           {/* Incoming Email Intake Hologram Badge (Appears at start, drops invoice into scanner) */}
           <div
             ref={intakeBadgeRef}
-            className="absolute top-1 sm:top-2 z-40 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/40 backdrop-blur-md shadow-lg flex items-center gap-2 pointer-events-none will-change-transform"
+            className="absolute top-2 sm:top-3 z-40 px-4 py-2 rounded-full bg-indigo-950/85 border border-indigo-500/40 backdrop-blur-md shadow-xl flex items-center gap-2.5 pointer-events-none will-change-transform"
             style={{ opacity: 0 }}
           >
-            <Mail className="w-3.5 h-3.5 text-indigo-400 animate-bounce" />
-            <span className="font-mono text-[11px] text-white">
-              INCOMING RFC 2177 ATTACHMENT: <span className="text-cyan-300 font-semibold">invoice_acme_9041.pdf</span>
+            <Mail className="w-4 h-4 text-indigo-400 animate-bounce" />
+            <span className="font-mono text-xs sm:text-sm text-white">
+              INCOMING RFC 2177 ATTACHMENT: <span className="text-cyan-300 font-bold">invoice_acme_9041.pdf</span>
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           </div>
 
           {/* SVG DATA CONDUITS (Beams firing data from Document to JSON Terminal) */}
@@ -678,7 +678,7 @@ export default function WorkstationScrollHero({
           >
             <defs>
               <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
@@ -687,43 +687,43 @@ export default function WorkstationScrollHero({
             </defs>
 
             {/* Path 1: Vendor */}
-            <path ref={pathVendorRef} fill="none" stroke="#34d399" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
-            <circle ref={photonVendorRef} r="4" fill="#6ee7b7" opacity="0" filter="url(#glow)" />
+            <path ref={pathVendorRef} fill="none" stroke="#34d399" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
+            <circle ref={photonVendorRef} r="5" fill="#6ee7b7" opacity="0" filter="url(#glow)" />
 
             {/* Path 2: Meta */}
-            <path ref={pathMetaRef} fill="none" stroke="#22d3ee" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
-            <circle ref={photonMetaRef} r="4" fill="#a5f3fc" opacity="0" filter="url(#glow)" />
+            <path ref={pathMetaRef} fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
+            <circle ref={photonMetaRef} r="5" fill="#a5f3fc" opacity="0" filter="url(#glow)" />
 
             {/* Path 3: Line Items */}
-            <path ref={pathItemsRef} fill="none" stroke="#818cf8" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
-            <circle ref={photonItemsRef} r="4" fill="#c7d2fe" opacity="0" filter="url(#glow)" />
+            <path ref={pathItemsRef} fill="none" stroke="#818cf8" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
+            <circle ref={photonItemsRef} r="5" fill="#c7d2fe" opacity="0" filter="url(#glow)" />
 
             {/* Path 4: Total */}
-            <path ref={pathTotalRef} fill="none" stroke="#c084fc" strokeWidth="2" strokeDasharray="300" strokeDashoffset="300" opacity="0" filter="url(#glow)" />
-            <circle ref={photonTotalRef} r="4" fill="#f5d0fe" opacity="0" filter="url(#glow)" />
+            <path ref={pathTotalRef} fill="none" stroke="#c084fc" strokeWidth="2.5" strokeDasharray="320" strokeDashoffset="320" opacity="0" filter="url(#glow)" />
+            <circle ref={photonTotalRef} r="5" fill="#f5d0fe" opacity="0" filter="url(#glow)" />
           </svg>
 
           {/* LEFT: 3D High-Tech Invoice Document with Specular Gleam */}
-          <div className="w-full lg:w-[48%] max-w-[410px] flex items-center justify-center">
+          <div className="w-full lg:w-[48%] max-w-[480px] lg:max-w-[500px] flex items-center justify-center">
             <div
               ref={docWrapperRef}
-              className="relative w-full bg-white/[0.04] backdrop-blur-xl border border-white/[0.12] rounded-2xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] will-change-transform overflow-hidden flex flex-col justify-between"
+              className="relative w-full bg-white/[0.04] backdrop-blur-xl border border-white/[0.14] rounded-3xl p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.85)] will-change-transform overflow-hidden flex flex-col justify-between"
               style={{
                 transform: 'perspective(1200px) rotateX(14deg) rotateY(-12deg) scale(0.92)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+                boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.25)'
               }}
             >
               {/* Dynamic Specular Glass Gleam Overlay */}
               <div
                 ref={docGleamRef}
                 className="absolute inset-0 pointer-events-none z-12 will-change-transform"
-                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 60%)' }}
+                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 60%)' }}
               />
 
               {/* Laser Scanning Grid Wash & Oscilloscope Bar */}
               <div
                 ref={laserGridRef}
-                className="absolute inset-x-0 top-0 bg-[linear-gradient(to_right,rgba(34,211,238,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(34,211,238,0.1)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none will-change-transform z-15"
+                className="absolute inset-x-0 top-0 bg-[linear-gradient(to_right,rgba(34,211,238,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(34,211,238,0.1)_1px,transparent_1px)] bg-[size:18px_18px] pointer-events-none will-change-transform z-15"
                 style={{ height: '0%', opacity: 0 }}
               />
 
@@ -735,63 +735,63 @@ export default function WorkstationScrollHero({
 
               <div
                 ref={laserRef}
-                className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_20px_#22d3ee,0_0_40px_#38bdf8] pointer-events-none will-change-transform z-30 flex items-center justify-between px-3"
+                className="absolute inset-x-0 h-[3px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_25px_#22d3ee,0_0_50px_#38bdf8] pointer-events-none will-change-transform z-30 flex items-center justify-between px-3"
                 style={{ top: '0%', opacity: 0 }}
               >
-                <div className="w-2.5 h-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_#22d3ee] animate-ping" />
+                <div className="w-3 h-3 rounded-full bg-cyan-300 shadow-[0_0_14px_#22d3ee] animate-ping" />
                 
                 {/* Oscilloscope Micro-Waveform */}
                 <div className="flex items-center gap-2">
-                  <svg className="w-24 h-3 overflow-visible pointer-events-none hidden sm:block">
+                  <svg className="w-28 h-3.5 overflow-visible pointer-events-none hidden sm:block">
                     <path
                       ref={laserWaveRef}
-                      d="M 0 6 L 360 6"
+                      d="M 0 7 L 440 7"
                       fill="none"
                       stroke="#22d3ee"
-                      strokeWidth="1.5"
-                      opacity="0.8"
+                      strokeWidth="1.8"
+                      opacity="0.85"
                     />
                   </svg>
-                  <span ref={laserCoordRef} className="font-mono text-[8px] text-cyan-200 tracking-wider bg-black/60 px-1 rounded shadow">
+                  <span ref={laserCoordRef} className="font-mono text-[9px] text-cyan-200 tracking-wider bg-black/60 px-1.5 py-0.5 rounded shadow">
                     Y:0px · 600DPI
                   </span>
                 </div>
 
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#34d399] animate-ping" />
+                <div className="w-3 h-3 rounded-full bg-emerald-300 shadow-[0_0_14px_#34d399] animate-ping" />
               </div>
 
               {/* Holographic Verification Stamp (Stamps when complete) */}
               <div
                 ref={auditStampRef}
-                className="absolute bottom-3 right-3 pointer-events-none z-22 will-change-transform"
-                style={{ opacity: 0, transform: 'scale(1.7) rotate(-25deg)' }}
+                className="absolute bottom-4 right-4 pointer-events-none z-22 will-change-transform"
+                style={{ opacity: 0, transform: 'scale(1.6) rotate(-25deg)' }}
               >
-                <div className="w-14 h-14 rounded-full border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center p-1 bg-emerald-500/15 backdrop-blur-xs shadow-[0_0_15px_rgba(52,211,153,0.35)]">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 mb-0.5" />
-                  <span className="font-mono text-[7px] font-black text-emerald-300 tracking-tighter uppercase leading-none">
+                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center p-1.5 bg-emerald-500/15 backdrop-blur-xs shadow-[0_0_20px_rgba(52,211,153,0.4)]">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400 mb-0.5" />
+                  <span className="font-mono text-[8px] sm:text-[9px] font-black text-emerald-300 tracking-tighter uppercase leading-none">
                     RFC 2177
                   </span>
-                  <span className="font-mono text-[6px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5">
+                  <span className="font-mono text-[7px] sm:text-[8px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5">
                     AUDITED
                   </span>
                 </div>
               </div>
 
               {/* DOCUMENT CONTENT */}
-              <div className="space-y-3.5 relative z-10">
+              <div className="space-y-4 relative z-10">
                 {/* 1. Document Header / Vendor */}
                 <div
                   ref={boxVendorRef}
-                  className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
+                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
                 >
                   {/* AI Vision Reticle Target Marks */}
-                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
 
                   <div 
-                    className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-emerald-500 text-black font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
+                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-emerald-500 text-black font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     VENDOR · 99.8%
@@ -799,10 +799,10 @@ export default function WorkstationScrollHero({
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight">Acme Cloud Infrastructure Inc.</h3>
-                      <p className="text-[9px] sm:text-[10px] text-slate-300 font-mono">billing@acmecloud.io · San Francisco, CA</p>
+                      <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">Acme Cloud Infrastructure Inc.</h3>
+                      <p className="text-xs sm:text-sm text-slate-300 font-mono mt-0.5">billing@acmecloud.io · San Francisco, CA</p>
                     </div>
-                    <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-mono text-[11px] font-bold">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-mono text-xs sm:text-sm font-bold shadow-inner">
                       AC
                     </div>
                   </div>
@@ -811,32 +811,32 @@ export default function WorkstationScrollHero({
                 {/* 2. Metadata: Invoice # & Dates */}
                 <div
                   ref={boxMetaRef}
-                  className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
+                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
                 >
-                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
 
                   <div 
-                    className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-cyan-500 text-black font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
+                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-cyan-500 text-black font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     META · 99.4%
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 font-mono text-[9px] sm:text-[10px]">
+                  <div className="grid grid-cols-3 gap-3 font-mono text-xs sm:text-sm">
                     <div>
-                      <span className="text-slate-400 block text-[8px] sm:text-[9px]">INVOICE NO</span>
-                      <span className="text-white font-semibold">INV-2026-9041</span>
+                      <span className="text-slate-400 block text-[10px] sm:text-[11px]">INVOICE NO</span>
+                      <span className="text-white font-bold">INV-2026-9041</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[8px] sm:text-[9px]">ISSUE DATE</span>
-                      <span className="text-white font-semibold">2026-10-27</span>
+                      <span className="text-slate-400 block text-[10px] sm:text-[11px]">ISSUE DATE</span>
+                      <span className="text-white font-bold">2026-10-27</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[8px] sm:text-[9px]">TERMS</span>
-                      <span className="text-emerald-400 font-semibold">NET 30</span>
+                      <span className="text-slate-400 block text-[10px] sm:text-[11px]">TERMS</span>
+                      <span className="text-emerald-400 font-bold">NET 30</span>
                     </div>
                   </div>
                 </div>
@@ -844,50 +844,50 @@ export default function WorkstationScrollHero({
                 {/* 3. Line Items Table */}
                 <div
                   ref={boxItemsRef}
-                  className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform space-y-1.5"
+                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform space-y-2"
                 >
-                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
 
                   <div 
-                    className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-indigo-500 text-white font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
+                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-indigo-500 text-white font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     3 ITEMS · 99.1%
                   </div>
 
-                  <div className="flex justify-between text-[8px] sm:text-[9px] font-mono text-slate-400 border-b border-white/10 pb-1">
+                  <div className="flex justify-between text-[10px] sm:text-[11px] font-mono text-slate-400 border-b border-white/10 pb-1.5">
                     <span>DESCRIPTION</span>
                     <span>AMOUNT</span>
                   </div>
-                  <div className="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-200">
+                  <div className="flex justify-between text-xs sm:text-sm font-mono text-slate-200">
                     <span className="truncate pr-2">Enterprise GPU Cluster (L40S)</span>
-                    <span className="text-white font-medium">$3,400.00</span>
+                    <span className="text-white font-bold">$3,400.00</span>
                   </div>
-                  <div className="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-200">
+                  <div className="flex justify-between text-xs sm:text-sm font-mono text-slate-200">
                     <span className="truncate pr-2">Global Edge CDN Bandwidth</span>
-                    <span className="text-white font-medium">$950.00</span>
+                    <span className="text-white font-bold">$950.00</span>
                   </div>
-                  <div className="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-200">
+                  <div className="flex justify-between text-xs sm:text-sm font-mono text-slate-200">
                     <span className="truncate pr-2">Encrypted Storage Bucket</span>
-                    <span className="text-white font-medium">$500.00</span>
+                    <span className="text-white font-bold">$500.00</span>
                   </div>
                 </div>
 
                 {/* 4. Total Amount & Currency */}
                 <div
                   ref={boxTotalRef}
-                  className="relative p-2.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
+                  className="relative p-3.5 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] transition-colors will-change-transform"
                 >
-                  <span className="reticle-corner absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 opacity-0 transition-opacity" />
-                  <span className="reticle-corner absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 opacity-0 transition-opacity" />
+                  <span className="reticle-corner absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 opacity-0 transition-opacity" />
 
                   <div 
-                    className="box-tag absolute -top-2.5 right-2 px-1.5 py-0.5 rounded bg-purple-500 text-white font-mono text-[9px] font-bold tracking-wider shadow pointer-events-none will-change-transform"
+                    className="box-tag absolute -top-3 right-3 px-2 py-0.5 rounded-md bg-purple-500 text-white font-mono text-[10px] sm:text-[11px] font-extrabold tracking-wider shadow pointer-events-none will-change-transform"
                     style={{ opacity: 0 }}
                   >
                     TOTAL · 100%
@@ -895,11 +895,11 @@ export default function WorkstationScrollHero({
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[9px] sm:text-[10px] font-mono text-purple-200 block">TOTAL PAYABLE (USD)</span>
-                      <span className="text-lg sm:text-xl font-bold font-mono text-white tracking-tight">$4,850.00</span>
+                      <span className="text-[11px] sm:text-xs font-mono text-purple-200 block font-medium">TOTAL PAYABLE (USD)</span>
+                      <span className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-mono text-white tracking-tight mt-0.5 block">$4,850.00</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[9px] sm:text-[10px] font-mono font-medium">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-mono font-bold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                       <span>Ledger Verified</span>
                     </div>
                   </div>
@@ -907,98 +907,98 @@ export default function WorkstationScrollHero({
               </div>
 
               {/* Watermark & Verification Footer */}
-              <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between text-[8px] sm:text-[9px] font-mono text-slate-400">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-[10px] sm:text-xs font-mono text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   Groq LPU Llama-3-Vision Verified
                 </span>
-                <span>AUTHENTIC RFC 2177</span>
+                <span className="font-semibold text-slate-300">AUTHENTIC RFC 2177</span>
               </div>
             </div>
           </div>
 
           {/* RIGHT: Live Telemetry Terminal & Target Inspector */}
-          <div className="w-full lg:w-[48%] max-w-md flex flex-col justify-center space-y-3">
+          <div className="w-full lg:w-[48%] max-w-[520px] lg:max-w-[560px] flex flex-col justify-center space-y-4">
             {/* Terminal Window Header */}
-            <div className="rounded-xl border border-white/[0.1] bg-[#0A0D18]/90 backdrop-blur-md shadow-2xl p-4 font-mono text-xs overflow-hidden">
-              <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-white/[0.08]">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
+            <div className="rounded-2xl border border-white/[0.1] bg-[#0A0D18]/92 backdrop-blur-md shadow-2xl p-5 sm:p-6 font-mono text-xs sm:text-sm overflow-hidden">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block shadow-sm" />
+                    <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block shadow-sm" />
+                    <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block shadow-sm" />
                   </div>
-                  <span className="text-[11px] font-semibold text-slate-300">
+                  <span className="text-xs sm:text-sm font-bold text-slate-200">
                     extraction_stream.json
                   </span>
                 </div>
 
                 {/* Hardware Pulse Equalizer & Status */}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-end gap-0.5 h-3">
-                    <span className="w-0.5 h-2 bg-indigo-400 animate-pulse" />
-                    <span className="w-0.5 h-3 bg-cyan-400 animate-pulse" style={{ animationDelay: '0.15s' }} />
-                    <span className="w-0.5 h-1.5 bg-emerald-400 animate-pulse" style={{ animationDelay: '0.3s' }} />
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-end gap-1 h-3.5">
+                    <span className="w-1 h-2.5 bg-indigo-400 animate-pulse rounded-full" />
+                    <span className="w-1 h-3.5 bg-cyan-400 animate-pulse rounded-full" style={{ animationDelay: '0.15s' }} />
+                    <span className="w-1 h-2 bg-emerald-400 animate-pulse rounded-full" style={{ animationDelay: '0.3s' }} />
                   </div>
-                  <span ref={terminalBadgeRef} className="font-mono text-[9px] sm:text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  <span ref={terminalBadgeRef} className="font-mono text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700 font-semibold">
                     STANDBY · AWAITING BUFFER
                   </span>
                 </div>
               </div>
 
               {/* JSON Lines Stream (Directly targets of SVG fiber conduits) */}
-              <div className="space-y-1 text-[11px] leading-relaxed select-text">
-                <div className="text-slate-400 font-mono">&#123;</div>
-                <div className="pl-4 font-mono">
-                  <span className="text-cyan-400">"status"</span>: <span className="text-emerald-300">"RECONCILED"</span>,
+              <div className="space-y-1.5 text-xs sm:text-sm leading-relaxed select-text">
+                <div className="text-slate-400 font-mono font-bold">&#123;</div>
+                <div className="pl-5 font-mono">
+                  <span className="text-cyan-400 font-medium">"status"</span>: <span className="text-emerald-300 font-bold">"RECONCILED"</span>,
                 </div>
                 
                 {/* Target 1: Vendor */}
-                <div ref={jsonVendorRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400">"vendor"</span>: <span>"Acme Cloud Infrastructure Inc."</span>,
+                <div ref={jsonVendorRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400 font-medium">"vendor"</span>: <span>"Acme Cloud Infrastructure Inc."</span>,
                 </div>
 
                 {/* Target 2: Meta / Invoice Number */}
-                <div ref={jsonMetaRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400">"invoiceNumber"</span>: <span>"INV-2026-9041"</span>,
+                <div ref={jsonMetaRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400 font-medium">"invoiceNumber"</span>: <span>"INV-2026-9041"</span>,
                 </div>
 
-                <div className="pl-4 font-mono">
-                  <span className="text-cyan-400">"date"</span>: <span className="text-slate-200">"2026-10-27"</span>,
+                <div className="pl-5 font-mono">
+                  <span className="text-cyan-400 font-medium">"date"</span>: <span className="text-slate-200">"2026-10-27"</span>,
                 </div>
-                <div className="pl-4 font-mono">
-                  <span className="text-cyan-400">"currency"</span>: <span className="text-purple-300">"USD"</span>,
+                <div className="pl-5 font-mono">
+                  <span className="text-cyan-400 font-medium">"currency"</span>: <span className="text-purple-300 font-semibold">"USD"</span>,
                 </div>
 
                 {/* Target 4: Total Amount */}
-                <div ref={jsonTotalRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400">"totalAmount"</span>: <span className="font-bold">4850.00</span>,
+                <div ref={jsonTotalRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400 font-medium">"totalAmount"</span>: <span className="font-extrabold text-white">4850.00</span>,
                 </div>
 
                 {/* Target 3: Line Items */}
-                <div ref={jsonItemsRef} className="pl-4 font-mono transition-transform duration-150 will-change-transform rounded px-1 -mx-1" style={{ opacity: 0.2 }}>
-                  <span className="text-cyan-400">"lineItems"</span>: <span>[3 items parsed & verified]</span>,
+                <div ref={jsonItemsRef} className="pl-5 font-mono transition-transform duration-150 will-change-transform rounded px-1.5 -mx-1.5 py-0.5" style={{ opacity: 0.2 }}>
+                  <span className="text-cyan-400 font-medium">"lineItems"</span>: <span>[3 items parsed & verified]</span>,
                 </div>
 
-                <div className="pl-4 font-mono">
-                  <span className="text-cyan-400">"syncLedger"</span>: <span className="text-emerald-300">"Google Sheets (Active)"</span>
+                <div className="pl-5 font-mono">
+                  <span className="text-cyan-400 font-medium">"syncLedger"</span>: <span className="text-emerald-300 font-bold">"Google Sheets (Active)"</span>
                 </div>
-                <div className="text-slate-400 font-mono">&#125;</div>
+                <div className="text-slate-400 font-mono font-bold">&#125;</div>
               </div>
 
               {/* Hardware & Pipeline Telemetry Stats Bar */}
-              <div className="mt-3.5 pt-2.5 border-t border-white/[0.08] grid grid-cols-3 gap-2 text-[10px]">
-                <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[8px] sm:text-[9px]">LPU INFERENCE</span>
-                  <span ref={latencyRef} className="text-cyan-300 font-bold tabular-nums">240ms</span>
+              <div className="mt-4 pt-3 border-t border-white/[0.08] grid grid-cols-3 gap-2.5 text-xs">
+                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <span className="text-slate-400 block text-[10px] sm:text-[11px] font-mono">LPU INFERENCE</span>
+                  <span ref={latencyRef} className="text-cyan-300 font-extrabold text-sm sm:text-base tabular-nums">240ms</span>
                 </div>
-                <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[8px] sm:text-[9px]">THROUGHPUT</span>
-                  <span ref={lpuRateRef} className="text-emerald-400 font-bold">750 T/s</span>
+                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <span className="text-slate-400 block text-[10px] sm:text-[11px] font-mono">THROUGHPUT</span>
+                  <span ref={lpuRateRef} className="text-emerald-400 font-extrabold text-sm sm:text-base">750 T/s</span>
                 </div>
-                <div className="p-1.5 rounded bg-white/[0.03] border border-white/[0.06]">
-                  <span className="text-slate-400 block text-[8px] sm:text-[9px]">TOTAL INVOICES</span>
-                  <span className="text-white font-bold">{invoicesCount} Docs</span>
+                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <span className="text-slate-400 block text-[10px] sm:text-[11px] font-mono">TOTAL INVOICES</span>
+                  <span className="text-white font-extrabold text-sm sm:text-base">{invoicesCount} Docs</span>
                 </div>
               </div>
             </div>
@@ -1006,52 +1006,52 @@ export default function WorkstationScrollHero({
             {/* Ejected Data Flight Capsule (Ready to drop into table at p > 0.72) */}
             <div
               ref={ejectGroupRef}
-              className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/15 via-cyan-500/10 to-indigo-500/15 border border-emerald-500/40 backdrop-blur-md shadow-2xl transition-all will-change-transform flex items-center justify-between"
+              className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-cyan-500/10 to-indigo-500/15 border border-emerald-500/40 backdrop-blur-md shadow-2xl transition-all will-change-transform flex items-center justify-between"
               style={{ opacity: 0 }}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-inner">
-                  <Database className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-inner">
+                  <Database className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold text-white">Record Ready for Google Sheets</p>
-                  <p className="text-[10px] font-mono text-emerald-300">INV-2026-9041 · $4,850.00 USD (Reconciled)</p>
+                  <p className="text-xs sm:text-sm font-bold text-white">Record Ready for Google Sheets</p>
+                  <p className="text-xs font-mono text-emerald-300 mt-0.5">INV-2026-9041 · $4,850.00 USD (Reconciled)</p>
                 </div>
               </div>
               <button
                 onClick={scrollToTable}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-bold transition-all cursor-pointer shadow-lg active:scale-95"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold transition-all cursor-pointer shadow-lg active:scale-95"
               >
                 <span>Commit to Row</span>
-                <ArrowDown className="w-3 h-3 animate-bounce" />
+                <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Bottom Status Ribbon & Interactive Scroll Prompt */}
-        <div className="relative z-30 p-3 sm:p-4 border-t border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-white font-medium">Pipeline Telemetry Online</span>
+        <div className="relative z-30 p-4 sm:p-5 border-t border-white/[0.06] bg-[#06080F]/70 backdrop-blur-md flex items-center justify-between text-xs sm:text-sm font-mono text-slate-400">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+            <span className="text-white font-semibold">Pipeline Telemetry Online</span>
             <span className="hidden sm:inline text-slate-500">|</span>
             <span className="hidden sm:inline text-slate-400">Llama-3-Vision & DeepSeek OCR Core</span>
           </div>
 
           <div
             ref={scrollIndicatorRef}
-            className="flex items-center gap-2.5"
+            className="flex items-center gap-3"
           >
-            <span className="hidden sm:inline text-slate-400">Scroll to sweep OCR:</span>
+            <span className="hidden sm:inline text-slate-400 text-xs sm:text-sm">Scroll to sweep OCR:</span>
             <button
               onClick={scrollToTable}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600/90 hover:bg-indigo-600 text-white font-semibold shadow-lg transition-all cursor-pointer text-xs"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold shadow-lg transition-all cursor-pointer text-xs sm:text-sm"
             >
               <span>Scan Progress</span>
-              <span ref={progressPercentRef} className="font-mono text-indigo-200 tabular-nums font-bold">
+              <span ref={progressPercentRef} className="font-mono text-indigo-200 tabular-nums font-extrabold">
                 0%
               </span>
-              <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+              <ArrowDown className="w-4 h-4 animate-bounce" />
             </button>
           </div>
         </div>
