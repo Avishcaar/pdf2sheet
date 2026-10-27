@@ -1,5 +1,5 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Store, Settings, FlaskConical, LogOut, FileText } from 'lucide-react';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Store, Settings, FlaskConical, LogOut, FileText, Sparkles } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Sidebar() {
@@ -7,6 +7,7 @@ export default function Sidebar() {
     const navigate = useNavigate();
 
     const navItems = [
+        { path: '/', label: 'Landing Page', icon: Sparkles },
         { path: '/dashboard', label: 'Overview', icon: LayoutDashboard },
         { path: '/vendors', label: 'Vendors', icon: Store },
         { path: '/simulate', label: 'Simulator', icon: FlaskConical },
@@ -23,15 +24,15 @@ export default function Sidebar() {
         <aside className="w-64 shrink-0 bg-white dark:bg-[#0B0F19] border-r border-gray-200 dark:border-white/[0.06] flex flex-col h-screen transition-colors duration-150">
             {/* Section 1 — Logo */}
             <div className="px-6 h-16 flex items-center border-b border-gray-200 dark:border-white/[0.06]">
-                <div>
+                <Link to="/" className="group block" title="Go to Landing Page">
                     <div className="flex items-center leading-none">
-                        <span className="font-bold text-lg text-gray-900 dark:text-white">PDF2</span>
+                        <span className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-violet-400 transition-colors">PDF2</span>
                         <span className="font-bold text-lg text-violet-500">Sheet</span>
                     </div>
                     <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 tracking-wider uppercase mt-1">
                         Invoice Automation
                     </p>
-                </div>
+                </Link>
             </div>
 
             {/* Section 2 — Navigation */}

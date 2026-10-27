@@ -26,9 +26,16 @@ export default function DataflowTrajectory() {
 
   useEffect(() => {
     let lastP = -1;
-    let pathLength = 0;
+    let pathLength = 1200;
     if (pathRef.current) {
-      pathLength = pathRef.current.getTotalLength();
+      try {
+        const len = pathRef.current.getTotalLength();
+        if (len && !isNaN(len) && len > 0) {
+          pathLength = len;
+        }
+      } catch (e) {
+        // fallback
+      }
       pathRef.current.style.strokeDasharray = `${pathLength} ${pathLength}`;
       pathRef.current.style.strokeDashoffset = `${pathLength}`;
     }
