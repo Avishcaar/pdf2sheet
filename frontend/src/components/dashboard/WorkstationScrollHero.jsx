@@ -340,29 +340,29 @@ export default function WorkstationScrollHero({
           holoBeamRef.current.style.opacity = String(beamActive * 0.55);
         }
 
-        // 3. Illustration 2: Hand presenting Raw Invoice (card_doc_2)
-        // Floats in from the left on scroll start (p in 0.04 to 0.45)
+        // 3. Top-Left Illustration: Hand presenting Raw Invoice (card_doc_2)
+        // Floats in from the top-left on scroll start (p in 0.04 to 0.45)
         if (cardHandRef.current) {
-          const handInflow = easeOutCubic(range(p, 0.04, 0.36));
-          const handX = lerp(-80, 0, handInflow) + mouse.current.x * 24;
-          const handY = lerp(-30, 0, handInflow) + Math.sin(time * 0.002) * 6 + exitY * 0.8;
-          const handRot = lerp(-14, -4, handInflow) + mouse.current.x * 8;
-          const handScale = lerp(0.86, 1.0, handInflow);
-          const handOpacity = range(p, 0.03, 0.16) * (1 - range(p, 0.78, 0.94));
+          const handInflow = easeOutCubic(range(p, 0.04, 0.32));
+          const handX = lerp(-60, 0, handInflow) + mouse.current.x * 16;
+          const handY = lerp(-30, 0, handInflow) + Math.sin(time * 0.002) * 5 + exitY * 0.7;
+          const handRot = lerp(-12, -4, handInflow) + mouse.current.x * 6;
+          const handScale = lerp(0.88, 1.0, handInflow);
+          const handOpacity = range(p, 0.03, 0.15) * (1 - range(p, 0.82, 0.96));
 
           cardHandRef.current.style.transform = `perspective(1000px) translate3d(${handX}px, ${handY}px, 0) rotate(${handRot}deg) scale(${handScale})`;
           cardHandRef.current.style.opacity = String(handOpacity);
         }
 
-        // 4. Illustration 1: Invoice with Dollar Coin & Optical Laser Scan (card_doc_1)
-        // Floats into center-left directly in path of monitor beam (p in 0.16 to 0.70)
+        // 4. Lower-Left Card: Invoice with Dollar Coin & Optical Laser Scan (card_doc_1)
+        // Floats into lower-left directly in path of monitor beam (p in 0.16 to 0.70)
         if (cardScanRef.current) {
-          const scanInflow = easeOutCubic(range(p, 0.16, 0.42));
+          const scanInflow = easeOutCubic(range(p, 0.16, 0.40));
           const scanX = lerp(-50, 0, scanInflow) + mouse.current.x * 18;
-          const scanY = lerp(25, 0, scanInflow) + Math.sin(time * 0.0022 + 1.0) * 5 + exitY * 0.82;
-          const scanRot = lerp(12, 3, scanInflow) - mouse.current.y * 8;
-          const scanScale = lerp(0.88, 1.0, scanInflow);
-          const scanOpacity = range(p, 0.12, 0.24) * (1 - range(p, 0.82, 0.96));
+          const scanY = lerp(35, 0, scanInflow) + Math.sin(time * 0.0022 + 1.0) * 5 + exitY * 0.8;
+          const scanRot = lerp(8, 2, scanInflow) - mouse.current.y * 6;
+          const scanScale = lerp(0.90, 1.0, scanInflow);
+          const scanOpacity = range(p, 0.12, 0.22) * (1 - range(p, 0.84, 0.96));
 
           cardScanRef.current.style.transform = `perspective(1000px) translate3d(${scanX}px, ${scanY}px, 0) rotateX(${scanRot}deg) scale(${scanScale})`;
           cardScanRef.current.style.opacity = String(scanOpacity);
@@ -370,8 +370,8 @@ export default function WorkstationScrollHero({
 
         // Laser Scan Bar on cardScanRef
         if (laserRef.current && laserBeamRef.current) {
-          const laserSweep = easeOutCubic(range(p, 0.26, 0.66));
-          const laserOpacity = range(p, 0.24, 0.30) * (1 - range(p, 0.66, 0.74));
+          const laserSweep = easeOutCubic(range(p, 0.24, 0.64));
+          const laserOpacity = range(p, 0.22, 0.28) * (1 - range(p, 0.64, 0.72));
 
           laserRef.current.style.top = `${laserSweep * 100}%`;
           laserRef.current.style.opacity = String(laserOpacity);
@@ -382,33 +382,33 @@ export default function WorkstationScrollHero({
 
         // Bounding Boxes on cardScanRef
         if (boxVendorRef.current) {
-          const vA = easeOutCubic(range(p, 0.28, 0.44));
+          const vA = easeOutCubic(range(p, 0.26, 0.42));
           boxVendorRef.current.style.borderColor = vA > 0.1 ? '#34d399' : 'rgba(255, 255, 255, 0.1)';
           boxVendorRef.current.style.backgroundColor = vA > 0.1 ? 'rgba(52, 211, 153, 0.12)' : 'transparent';
         }
         if (boxTotalRef.current) {
-          const tA = easeOutCubic(range(p, 0.48, 0.64));
+          const tA = easeOutCubic(range(p, 0.46, 0.62));
           boxTotalRef.current.style.borderColor = tA > 0.1 ? '#c084fc' : 'rgba(255, 255, 255, 0.1)';
           boxTotalRef.current.style.backgroundColor = tA > 0.1 ? 'rgba(192, 132, 252, 0.14)' : 'transparent';
         }
 
         // SVG Data Conduits (cardScanRef -> Monitor Screen)
-        const progVendor = range(p, 0.30, 0.52);
+        const progVendor = range(p, 0.28, 0.50);
         updateConduit(pathVendorRef.current, photonVendorRef.current, boxVendorRef.current, monitorScreenRef.current, progVendor, '#34d399');
 
-        const progTotal = range(p, 0.50, 0.70);
+        const progTotal = range(p, 0.48, 0.68);
         updateConduit(pathTotalRef.current, photonTotalRef.current, boxTotalRef.current, monitorScreenRef.current, progTotal, '#c084fc');
 
-        // 5. Illustration 3: Verified Invoice with Green Checkmark (card_doc_3)
+        // 5. Top-Right Illustration: Verified Invoice with Green Checkmark (card_doc_3)
         // Floats into top-right on reconciliation (p in 0.44 to 0.90)
         if (cardVerifiedRef.current) {
           const verInflow = easeOutCubic(range(p, 0.44, 0.68));
           const verBounce = Math.sin(verInflow * Math.PI) * 6;
-          const verX = lerp(70, 0, verInflow) + mouse.current.x * 16;
-          const verY = lerp(-25, 0, verInflow) + verBounce + Math.sin(time * 0.0025 + 1.8) * 5 + exitY * 0.85;
-          const verRot = lerp(14, 5, verInflow) - mouse.current.x * 6;
-          const verScale = lerp(0.85, 1.0, verInflow);
-          const verOpacity = range(p, 0.40, 0.52) * (1 - range(p, 0.84, 0.98));
+          const verX = lerp(60, 0, verInflow) + mouse.current.x * 16;
+          const verY = lerp(-25, 0, verInflow) + verBounce + Math.sin(time * 0.0025 + 1.8) * 5 + exitY * 0.7;
+          const verRot = lerp(12, 4, verInflow) - mouse.current.x * 6;
+          const verScale = lerp(0.88, 1.0, verInflow);
+          const verOpacity = range(p, 0.40, 0.50) * (1 - range(p, 0.85, 0.98));
 
           cardVerifiedRef.current.style.transform = `perspective(1000px) translate3d(${verX}px, ${verY}px, 0) rotate(${verRot}deg) scale(${verScale})`;
           cardVerifiedRef.current.style.opacity = String(verOpacity);
@@ -422,12 +422,13 @@ export default function WorkstationScrollHero({
           }
         }
 
-        // 6. Holographic HUD Telemetry Window (Right Side)
+        // 6. Lower-Right Terminal: Holographic HUD Telemetry Window
+        // Sits docked on the lower right (p in 0.16 to 0.96)
         if (hudTerminalRef.current) {
-          const hudIn = easeOutCubic(range(p, 0.16, 0.42));
+          const hudIn = easeOutCubic(range(p, 0.16, 0.40));
           const hudX = lerp(50, 0, hudIn) - mouse.current.x * 10;
-          const hudY = lerp(20, 0, hudIn) + exitY * 0.7;
-          const hudOpacity = range(p, 0.14, 0.28) * (1 - range(p, 0.82, 0.96));
+          const hudY = lerp(25, 0, hudIn) + exitY * 0.75;
+          const hudOpacity = range(p, 0.14, 0.26) * (1 - range(p, 0.84, 0.96));
 
           hudTerminalRef.current.style.transform = `translate3d(${hudX}px, ${hudY}px, 0)`;
           hudTerminalRef.current.style.opacity = String(hudOpacity);
@@ -620,7 +621,7 @@ export default function WorkstationScrollHero({
               {/* Volumetric Hologram Light Cone projecting from monitor to floating scan invoice */}
               <polygon
                 ref={holoBeamRef}
-                points="450,290 200,210 200,510 450,380"
+                points="450,330 140,430 140,640 450,390"
                 fill="url(#holoConeGrad)"
                 style={{ opacity: 0 }}
               />
@@ -708,10 +709,10 @@ export default function WorkstationScrollHero({
               </div>
             </div>
 
-            {/* LAYER 3 (ILLUSTRATION 2): Hand Presenting Incoming Invoice (card_doc_2) */}
+            {/* LAYER 3 (ILLUSTRATION 2): Top-Left Hand Presenting Incoming Invoice (card_doc_2) */}
             <div
               ref={cardHandRef}
-              className="absolute left-[3%] sm:left-[5%] top-[12%] sm:top-[14%] w-36 sm:w-44 lg:w-52 z-26 pointer-events-none will-change-transform"
+              className="absolute left-[2%] sm:left-[3%] top-[3%] sm:top-[4%] w-32 sm:w-36 lg:w-42 z-26 pointer-events-none will-change-transform"
               style={{ opacity: 0 }}
             >
               <div className="relative group">
@@ -731,15 +732,15 @@ export default function WorkstationScrollHero({
               </div>
             </div>
 
-            {/* LAYER 4 (ILLUSTRATION 1): Active Optical Scanning & Valuation (card_doc_1) */}
+            {/* LAYER 4 (ILLUSTRATION 1): Lower-Left Optical Scanning & Valuation (card_doc_1) */}
             <div
               ref={cardScanRef}
-              className="absolute left-[14%] sm:left-[17%] top-[26%] sm:top-[28%] w-48 sm:w-56 lg:w-64 z-28 pointer-events-none will-change-transform"
+              className="absolute left-[2%] sm:left-[3%] bottom-[5%] sm:bottom-[7%] w-44 sm:w-50 lg:w-56 z-28 pointer-events-none will-change-transform"
               style={{ opacity: 0 }}
             >
-              <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-white/20 p-3 sm:p-4 shadow-[0_25px_60px_rgba(0,0,0,0.85)] overflow-hidden">
+              <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-white/20 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)] overflow-hidden">
                 {/* Illustration 1 Graphic with Laser Scan */}
-                <div className="relative w-full h-24 sm:h-28 mb-2 flex items-center justify-center overflow-hidden rounded-xl bg-black/40">
+                <div className="relative w-full h-20 sm:h-24 mb-1.5 flex items-center justify-center overflow-hidden rounded-xl bg-black/40">
                   <picture className="h-full drop-shadow-md">
                     <source srcSet="/landing/card_doc_1.webp" type="image/webp" />
                     <img
@@ -767,7 +768,7 @@ export default function WorkstationScrollHero({
                 </div>
 
                 {/* Bounding Boxes on Illustration 1 */}
-                <div className="space-y-1.5 font-mono text-[10px] sm:text-[11px]">
+                <div className="space-y-1 font-mono text-[9px] sm:text-[10px]">
                   <div
                     ref={boxVendorRef}
                     className="p-1 rounded border border-dashed border-white/10 transition-colors flex justify-between items-center"
@@ -784,23 +785,23 @@ export default function WorkstationScrollHero({
                   </div>
                 </div>
 
-                <div className="mt-2 pt-1 border-t border-white/10 flex justify-between items-center text-[8px] sm:text-[9px] font-mono text-cyan-300">
+                <div className="mt-1.5 pt-1 border-t border-white/10 flex justify-between items-center text-[8px] sm:text-[9px] font-mono text-cyan-300">
                   <span>02 · GROQ LPU SCAN</span>
                   <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-200">240ms</span>
                 </div>
               </div>
             </div>
 
-            {/* LAYER 5 (ILLUSTRATION 3): Reconciled Invoice with Green Checkmark (card_doc_3) */}
+            {/* LAYER 5 (ILLUSTRATION 3): Top-Right Reconciled Invoice with Green Checkmark (card_doc_3) */}
             <div
               ref={cardVerifiedRef}
-              className="absolute right-[8%] sm:right-[12%] top-[14%] sm:top-[16%] w-40 sm:w-48 lg:w-52 z-27 pointer-events-none will-change-transform"
+              className="absolute right-[2%] sm:right-[3%] top-[3%] sm:top-[4%] w-32 sm:w-38 lg:w-44 z-27 pointer-events-none will-change-transform"
               style={{ opacity: 0 }}
             >
               <div className="relative group">
                 <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/25 to-teal-500/20 rounded-full blur-xl opacity-75 animate-pulse" />
-                <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-emerald-500/40 p-3 sm:p-4 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
-                  <picture className="block w-full h-24 sm:h-28 mb-2 flex items-center justify-center drop-shadow-[0_15px_25px_rgba(52,211,153,0.35)]">
+                <div className="relative rounded-2xl bg-[#0C101D]/92 backdrop-blur-xl border border-emerald-500/40 p-2.5 sm:p-3 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
+                  <picture className="block w-full h-20 sm:h-24 mb-1.5 flex items-center justify-center drop-shadow-[0_15px_25px_rgba(52,211,153,0.35)]">
                     <source srcSet="/landing/card_doc_3.webp" type="image/webp" />
                     <img
                       src="/landing/card_doc_3.png"
@@ -811,7 +812,7 @@ export default function WorkstationScrollHero({
                   </picture>
                   <div className="flex items-center justify-between font-mono text-[9px] sm:text-[10px]">
                     <span className="text-emerald-400 font-bold">03 · RECONCILED</span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/40">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/40 text-[8px] sm:text-[9px]">
                       100% MATCH
                     </span>
                   </div>
@@ -819,10 +820,10 @@ export default function WorkstationScrollHero({
               </div>
             </div>
 
-            {/* LAYER 6: Holographic Extraction HUD Terminal (Right-Center) */}
+            {/* LAYER 6: Lower-Right Holographic Extraction HUD Terminal */}
             <div
               ref={hudTerminalRef}
-              className="absolute right-2 sm:right-6 bottom-[10%] sm:bottom-[12%] w-68 sm:w-76 lg:w-84 z-30 pointer-events-none will-change-transform"
+              className="absolute right-[2%] sm:right-[3%] bottom-[5%] sm:bottom-[7%] w-56 sm:w-64 lg:w-72 z-29 pointer-events-none will-change-transform"
               style={{ opacity: 0 }}
             >
               <div className="rounded-2xl border border-white/[0.12] bg-[#0A0D18]/95 backdrop-blur-xl shadow-2xl p-3.5 sm:p-4 font-mono text-xs">
