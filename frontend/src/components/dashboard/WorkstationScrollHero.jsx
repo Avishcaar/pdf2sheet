@@ -78,7 +78,8 @@ export default function WorkstationScrollHero({
   // 1. Mouse Move Listener for Multi-plane Parallax
   const handleMouseMove = (e) => {
     if (!rootRef.current) return;
-    const rect = rootRef.current.getBoundingClientRect();
+    const cardEl = rootRef.current.querySelector('.sticky') || rootRef.current;
+    const rect = cardEl.getBoundingClientRect();
     mouse.current.targetX = (e.clientX - rect.left) / rect.width - 0.5;
     mouse.current.targetY = (e.clientY - rect.top) / rect.height - 0.5;
   };
@@ -289,7 +290,7 @@ export default function WorkstationScrollHero({
       targetP = clamp(-relTop / span);
 
       // Fluid Momentum Lerp
-      smoothP = lerp(smoothP, targetP, 0.14);
+      smoothP = lerp(smoothP, targetP, 0.10);
       if (Math.abs(smoothP - targetP) < 0.0001) smoothP = targetP;
 
       // Mouse Parallax Physics
@@ -525,10 +526,11 @@ export default function WorkstationScrollHero({
       ref={rootRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full min-h-[760px] h-[820px] sm:h-[860px] lg:h-[880px] xl:h-[900px] mb-8 select-none"
+      className="relative w-full mb-8 select-none"
+      style={{ height: '240vh' }}
     >
       {/* 3D PARALLAX CONTAINER */}
-      <div className="sticky top-4 w-full h-full rounded-3xl overflow-hidden bg-[#070A13]/95 border border-indigo-500/20 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.85)] flex flex-col justify-between">
+      <div className="sticky top-2 sm:top-4 w-full h-[calc(100vh-2.5rem)] min-h-[640px] max-h-[860px] rounded-3xl overflow-hidden bg-[#070A13]/95 border border-indigo-500/20 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.85)] flex flex-col justify-between">
         
         {/* Dynamic Starfield Canvas Background (Layer 0) */}
         <canvas
