@@ -23,13 +23,10 @@ export default function WorkstationScrollHero({
   syncRate = 100 
 }) {
   const rootRef = useRef(null);
-  const backRef = useRef(null);
-  const personRef = useRef(null);
+  const bgRef = useRef(null);
+  const manRef = useRef(null);
   const titleRef = useRef(null);
   const hudRef = useRef(null);
-  const invMemoRef = useRef(null);
-  const invCheckRef = useRef(null);
-  const invBadgeRef = useRef(null);
   const scanDataRef = useRef(null);
   const progressPercentRef = useRef(null);
   const latencyRef = useRef(null);
@@ -63,79 +60,44 @@ export default function WorkstationScrollHero({
       // Tight, responsive transitions (120vh scroll track)
       const exit = range(p, 0.65, 0.95);
       const settle = easeOutCubic(range(p, 0, 0.35));
-      const rise = easeOutCubic(range(p, 0.02, 0.32));
+      const rollIn = easeOutCubic(range(p, 0, 0.38));
 
-      // 1. Background workstation depth
-      if (backRef.current) {
-        const bgScale = lerp(1.04, 1.0, settle);
+      // 1. Desktop Background: subtle zoom and parallax
+      if (bgRef.current) {
+        const bgScale = lerp(1.03, 1.0, settle);
         const bgY = lerp(0, -3, p) - exit * 12;
-        backRef.current.style.transform = `translate3d(0, ${bgY}vh, 0) scale(${bgScale})`;
+        bgRef.current.style.transform = `translate3d(0, ${bgY}vh, 0) scale(${bgScale})`;
       }
 
-      // 2. Operator Foreground Layer (person sitting at the desk)
-      // Rises from below as user scrolls down into the dashboard
-      if (personRef.current) {
-        const personY = lerp(15, 0, rise) - exit * 35;
-        const personOpacity = clamp(range(p, 0.02, 0.22) * 1.5);
-        personRef.current.style.transform = `translate3d(0, ${personY}vh, 0) scale(${lerp(1.02, 1.0, rise)})`;
-        personRef.current.style.opacity = String(personOpacity);
+      // 2. Man in Rolling Chair (svg1): rolls into position at the desk
+      // Rolls forward horizontally from left (-8vw to 0) and settles at the desk
+      if (manRef.current) {
+        const manX = lerp(-8, 0, rollIn);
+        const manY = lerp(4, 0, rollIn) - exit * 25;
+        const manOpacity = lerp(0.85, 1.0, rollIn);
+        const manScale = lerp(1.02, 1.0, rollIn);
+        manRef.current.style.transform = `translate3d(${manX}vw, ${manY}vh, 0) scale(${manScale})`;
+        manRef.current.style.opacity = String(manOpacity);
       }
 
-      // 3. Title & Subtitle: visible at load (p=0), yields gracefully as invoices converge
+      // 3. Title & Subtitle: visible at load (p=0), yields as user scrolls
       if (titleRef.current) {
-        const tOut = range(p, 0.22, 0.40);
+        const tOut = range(p, 0.20, 0.38);
         const titleY = -p * 10;
         titleRef.current.style.opacity = String(1 - tOut);
         titleRef.current.style.transform = `translate3d(0, ${titleY}vh, 0)`;
       }
 
-      // 4. Floating Invoices Stream (swift drift into monitor)
-      // Invoice 1: Memo card with dollar icon
-      if (invMemoRef.current) {
-        const mProgress = easeOutCubic(range(p, 0.08, 0.48));
-        const mX = lerp(-25, -2, mProgress);
-        const mY = lerp(-28, 5, mProgress) - exit * 20;
-        const mScale = lerp(1.25, 0.85, mProgress);
-        const mRotate = lerp(-14, -3, mProgress);
-        const mOpacity = range(p, 0.06, 0.18) * (1 - range(p, 0.55, 0.70));
-        invMemoRef.current.style.transform = `translate3d(${mX}vw, ${mY}vh, 0) scale(${mScale}) rotate(${mRotate}deg)`;
-        invMemoRef.current.style.opacity = String(mOpacity);
-      }
-
-      // Invoice 2: Checkmark verified document floating in from right
-      if (invCheckRef.current) {
-        const cProgress = easeOutCubic(range(p, 0.12, 0.52));
-        const cX = lerp(25, 8, cProgress);
-        const cY = lerp(-18, 8, cProgress) - exit * 22;
-        const cScale = lerp(1.2, 0.88, cProgress);
-        const cRotate = lerp(14, 4, cProgress);
-        const cOpacity = range(p, 0.10, 0.22) * (1 - range(p, 0.58, 0.72));
-        invCheckRef.current.style.transform = `translate3d(${cX}vw, ${cY}vh, 0) scale(${cScale}) rotate(${cRotate}deg)`;
-        invCheckRef.current.style.opacity = String(cOpacity);
-      }
-
-      // Invoice 3: Hand delivery circular badge
-      if (invBadgeRef.current) {
-        const bProgress = easeOutCubic(range(p, 0.16, 0.56));
-        const bX = lerp(20, 2, bProgress);
-        const bY = lerp(24, 12, bProgress) - exit * 24;
-        const bScale = lerp(1.1, 0.78, bProgress);
-        const bRotate = lerp(18, 5, bProgress);
-        const bOpacity = range(p, 0.14, 0.26) * (1 - range(p, 0.60, 0.75));
-        invBadgeRef.current.style.transform = `translate3d(${bX}vw, ${bY}vh, 0) scale(${bScale}) rotate(${bRotate}deg)`;
-        invBadgeRef.current.style.opacity = String(bOpacity);
-      }
-
-      // 5. Holographic Extraction HUD Pill that locks onto the monitor
+      // 4. Holographic Extraction HUD Pill that locks above the monitor
       if (scanDataRef.current) {
-        const sProgress = easeOutCubic(range(p, 0.30, 0.60));
-        const sOpacity = range(p, 0.28, 0.38) * (1 - range(p, 0.68, 0.82));
-        const sY = lerp(8, 0, sProgress) - exit * 16;
+        const sProgress = easeOutCubic(range(p, 0.28, 0.58));
+        const sOpacity = range(p, 0.26, 0.36) * (1 - range(p, 0.68, 0.82));
+        const sY = lerp(6, 0, sProgress) - exit * 15;
         scanDataRef.current.style.transform = `translate3d(0, ${sY}vh, 0) scale(${lerp(0.94, 1.0, sProgress)})`;
         scanDataRef.current.style.opacity = String(sOpacity);
       }
 
-      // 6. Corner Telemetry HUD: visible from start
+      // 5. Corner Telemetry HUD: visible from start
       if (hudRef.current) {
         const hudOpacity = 1 - range(p, 0.75, 0.90);
         hudRef.current.style.opacity = String(hudOpacity);
@@ -197,50 +159,68 @@ export default function WorkstationScrollHero({
   return (
     <div
       ref={rootRef}
-      className="relative w-full mb-3"
+      className="relative w-full mb-2"
       style={{ height: '120vh' }}
     >
-      <div className="sticky top-0 w-full h-[440px] sm:h-[480px] lg:h-[510px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#0B0F19]">
-        {/* Layer 0: Workstation Background Room (Loads as page loads) */}
+      <div className="sticky top-0 w-full h-[450px] sm:h-[500px] lg:h-[520px] rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#0B0F19] flex items-center justify-center">
+        
+        {/* Layer 0: svg2 - Desktop Room Background (Loads as page loads) */}
         <div
-          ref={backRef}
+          ref={bgRef}
           className="absolute inset-0 size-full will-change-transform flex items-center justify-center pointer-events-none"
         >
-          <picture className="w-full h-full">
-            <source srcSet="/landing/workstation_back.webp" type="image/webp" />
+          <picture className="w-full h-full flex items-center justify-center">
+            <source srcSet="/landing/desktop_bg.webp" type="image/webp" />
             <img
-              src="/landing/workstation_back.jpg"
-              alt="Autonomous Invoice Workstation"
-              className="w-full h-full object-cover object-center"
+              src="/landing/desktop_bg.png"
+              alt="Desktop Workspace"
+              className="h-full w-full object-contain object-center"
               loading="eager"
             />
           </picture>
           {/* Subtle gradient vignette to blend into dark obsidian frame */}
-          <div className="absolute inset-0 bg-radial from-transparent via-[#0B0F19]/25 to-[#0B0F19]/80 pointer-events-none" />
+          <div className="absolute inset-0 bg-radial from-transparent via-[#0B0F19]/15 to-[#0B0F19]/70 pointer-events-none" />
         </div>
 
-        {/* Layer 1: Pinned Center Title & Quick Action Bar (Visible at load) */}
+        {/* Layer 1: svg1 - Man Sitting on Chair (Rolls forward into the desk on scroll) */}
+        <div
+          ref={manRef}
+          className="absolute inset-0 size-full will-change-transform flex items-center justify-center pointer-events-none z-20"
+          style={{ transform: 'translate3d(-8vw, 4vh, 0)', opacity: 0.85 }}
+        >
+          <picture className="w-full h-full flex items-center justify-center">
+            <source srcSet="/landing/man_chair.webp" type="image/webp" />
+            <img
+              src="/landing/man_chair.png"
+              alt="Operator at Desktop"
+              className="h-full w-full object-contain object-center"
+              loading="eager"
+            />
+          </picture>
+        </div>
+
+        {/* Layer 2: Pinned Center Title & Quick Action Bar (Visible at load) */}
         <div
           ref={titleRef}
-          className="absolute inset-x-4 top-[8%] sm:top-[10%] max-w-3xl mx-auto text-center z-10 will-change-transform"
+          className="absolute inset-x-4 top-[6%] sm:top-[8%] max-w-2xl mx-auto text-center z-30 will-change-transform"
           style={{ opacity: 1 }}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.08] border border-white/[0.15] text-[11px] font-mono font-medium text-indigo-300 mb-2.5 backdrop-blur-md shadow-md">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0B0F19]/80 border border-white/[0.15] text-[11px] font-mono font-medium text-indigo-300 mb-2 backdrop-blur-md shadow-md">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             RFC 2177 IMAP PUSH · DUAL-ENGINE GROQ LPU
           </div>
 
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight drop-shadow-lg">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight drop-shadow-lg">
             Autonomous Document Workstation
           </h2>
 
-          <p className="mt-2 text-xs sm:text-sm text-slate-200 max-w-xl mx-auto leading-relaxed drop-shadow">
+          <p className="mt-1.5 text-xs sm:text-sm text-slate-200 max-w-lg mx-auto leading-relaxed drop-shadow">
             Catches incoming bill attachments from email inboxes in real-time, reconciles
             multi-currency line items with Groq LPU, and syncs directly to Google Sheets.
           </p>
 
           {/* Quick Action Buttons directly in the Hero */}
-          <div className="mt-4 flex items-center justify-center gap-2.5 flex-wrap">
+          <div className="mt-3.5 flex items-center justify-center gap-2.5 flex-wrap">
             <button
               onClick={onUploadClick}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] cursor-pointer"
@@ -252,7 +232,7 @@ export default function WorkstationScrollHero({
             <button
               onClick={onSyncEmailClick}
               disabled={isSyncingEmail}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-black/50 hover:bg-black/70 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
             >
               <Mail className={`w-3.5 h-3.5 text-indigo-400 ${isSyncingEmail ? 'animate-spin' : ''}`} />
               <span>{isSyncingEmail ? 'Syncing...' : 'Sync Email'}</span>
@@ -260,7 +240,7 @@ export default function WorkstationScrollHero({
 
             <Link
               to="/simulate"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-black/50 hover:bg-black/70 text-white border border-white/20 backdrop-blur-md transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all"
             >
               <Terminal className="w-3.5 h-3.5 text-emerald-400" />
               <span>Simulator</span>
@@ -268,70 +248,10 @@ export default function WorkstationScrollHero({
           </div>
         </div>
 
-        {/* Layer 2: Floating Invoices Stream (Drifts in as user scrolls) */}
-        {/* Memo Card with Dollar Coin */}
-        <div
-          ref={invMemoRef}
-          className="absolute z-20 pointer-events-none will-change-transform w-28 sm:w-40 md:w-48 drop-shadow-2xl"
-          style={{ opacity: 0 }}
-        >
-          <img
-            src="/landing/invoice_memo.webp"
-            alt="Invoice Memo"
-            className="w-full h-auto"
-            loading="lazy"
-          />
-        </div>
-
-        {/* Verified Invoice Document with Checkmark */}
-        <div
-          ref={invCheckRef}
-          className="absolute z-20 pointer-events-none will-change-transform w-28 sm:w-36 md:w-44 drop-shadow-2xl"
-          style={{ opacity: 0 }}
-        >
-          <img
-            src="/landing/invoice_check.webp"
-            alt="Verified Invoice"
-            className="w-full h-auto"
-            loading="lazy"
-          />
-        </div>
-
-        {/* Handheld Invoice Badge */}
-        <div
-          ref={invBadgeRef}
-          className="absolute z-20 pointer-events-none will-change-transform w-24 sm:w-32 md:w-36 drop-shadow-2xl"
-          style={{ opacity: 0 }}
-        >
-          <img
-            src="/landing/invoice_badge.webp"
-            alt="Invoice Token"
-            className="w-full h-auto"
-            loading="lazy"
-          />
-        </div>
-
-        {/* Layer 3: Foreground Operator Layer (Rises into position on scroll) */}
-        <div
-          ref={personRef}
-          className="absolute inset-0 size-full will-change-transform flex items-center justify-center pointer-events-none z-25"
-          style={{ opacity: 0, transform: 'translate3d(0, 15vh, 0)' }}
-        >
-          <picture className="w-full h-full">
-            <source srcSet="/landing/person_layer.webp" type="image/webp" />
-            <img
-              src="/landing/person_layer.png"
-              alt="Operator Layer"
-              className="w-full h-full object-cover object-center"
-              loading="lazy"
-            />
-          </picture>
-        </div>
-
-        {/* Layer 4: Holographic Extraction HUD Pill (locks onto monitor) */}
+        {/* Layer 3: Holographic Extraction HUD Pill (locks above desktop monitor) */}
         <div
           ref={scanDataRef}
-          className="absolute z-30 pointer-events-none will-change-transform bottom-[24%] sm:bottom-[26%] w-11/12 max-w-sm mx-auto"
+          className="absolute z-30 pointer-events-none will-change-transform top-[20%] sm:top-[22%] right-[10%] sm:right-[15%] w-72 sm:w-80"
           style={{ opacity: 0 }}
         >
           <div className="p-3 rounded-xl bg-[#0B0F19]/95 border border-indigo-500/50 shadow-2xl backdrop-blur-md">
@@ -372,7 +292,7 @@ export default function WorkstationScrollHero({
           </div>
         </div>
 
-        {/* Layer 5: Corner Telemetry HUD & Scroll Prompt */}
+        {/* Layer 4: Corner Telemetry HUD & Scroll Prompt */}
         <div
           ref={hudRef}
           aria-hidden="true"
@@ -433,6 +353,7 @@ export default function WorkstationScrollHero({
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
