@@ -31,7 +31,20 @@ export const authenticateToken = async (req, res, next) => {
 
         // 2. Guest / Demo Mode (no token, guest-demo-token, or x-guest-mode header)
         // Bind strictly to the isolated guest user (guest@pdf2sheet.com)
-        const guestUser = await User.findOne({ email: 'guest@pdf2sheet.com' });
+        let guestUser = await User.findOne({ email: 'guest@pdf2sheet.com' });
+        if (!guestUser) {
+            try {
+                guestUser = await User.create({
+                    name: 'Guest Reviewer',
+                    email: 'guest@pdf2sheet.com',
+                    password: 'guest-hashed-placeholder',
+                    googleId: 'guest-demo-mode-static'
+                });
+            } catch (createErr) {
+                guestUser = await User.findOne({ email: 'guest@pdf2sheet.com' });
+            }
+        }
+
         if (guestUser) {
             req.user = {
                 userId: guestUser._id,
