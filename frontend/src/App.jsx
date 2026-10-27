@@ -8,6 +8,7 @@ import Dashboard from './pages/dashboard/Dashboard';
 import Vendors from './pages/vendors/Vendors';
 import Settings from './pages/settings/Settings';
 import SimulatePage from './pages/devtools/SimulatePage';
+import LandingPage from './pages/landing/LandingPage';
 
 import VisualMapper from './components/Review/VisualMapper';
 
@@ -15,7 +16,7 @@ function App() {
   return (
     <div className="min-h-screen">
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
