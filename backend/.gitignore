@@ -29,3 +29,10 @@ tmp/
 temp/
 uploads/
 *.pdf
+
+# Agent Skills & Python scripts
+.agents/
+skills/
+*.py
+AGENTS.md
+

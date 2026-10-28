@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables & secrets (CRITICAL)
+.env
+.env.*
+*.env
+*.env.*
+atlas-credentials.env
+
+# Agent Skills, Scripts, & Prompts
+.agents/
+skills/
+AGENTS.md
+*.py
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Testing & Coverage
+coverage/
+*.lcov
+
+# Production build outputs
+dist/
+dist-ssr/
+build/
+
+# Logs & Temp files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+uploads/
+tmp/
+temp/
+*.pdf
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
