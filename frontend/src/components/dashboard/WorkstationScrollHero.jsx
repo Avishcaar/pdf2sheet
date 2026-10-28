@@ -8,7 +8,6 @@ import {
   ArrowDown, 
   ChevronDown, 
   ChevronUp, 
-  Sparkles, 
   Scan, 
   Cpu, 
   Database, 
@@ -518,7 +517,7 @@ export default function WorkstationScrollHero({
       <div className="w-full mb-4 p-4 rounded-3xl bg-[#0B0F19] border border-white/[0.08] flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-            <Sparkles className="w-5 h-5" />
+            <Layers className="w-5 h-5" />
           </div>
           <div>
             <p className="text-sm font-bold text-white">Parallax Workstation Minimized</p>
@@ -559,51 +558,24 @@ export default function WorkstationScrollHero({
         <div className="absolute -top-32 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
 
         {/* Top Control Bar */}
-        <div className="relative z-30 px-6 py-4 border-b border-white/[0.08] bg-[#070A13]/80 backdrop-blur-md flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-2.5 w-2.5">
+        <div className="relative z-30 px-6 py-3.5 border-b border-white/[0.08] bg-[#070A13]/80 backdrop-blur-md flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <div>
-              <span className="font-mono text-xs sm:text-sm font-bold text-white tracking-wide">
-                AUTOMATED WORKSTATION PIPELINE
-              </span>
-              <span className="hidden md:inline-block ml-2 text-[10px] font-mono text-emerald-400/80 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-                LPU_PARALLAX_ONLINE
-              </span>
-            </div>
+            <span className="text-xs sm:text-sm font-semibold text-white tracking-wide">
+              Live Optical Extraction Pipeline
+            </span>
+            <span className="hidden sm:inline-block text-xs font-mono text-cyan-300/80 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+              Groq LPU · 240ms
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onSyncEmailClick}
-              disabled={isSyncingEmail}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs font-mono text-slate-300 transition-all cursor-pointer disabled:opacity-50"
-              title="Poll IMAP Inbox"
-            >
-              <Mail className="w-3.5 h-3.5 text-indigo-400" />
-              <span>{isSyncingEmail ? 'Scanning...' : 'Sync Email'}</span>
-            </button>
-
-            <button
-              onClick={() => onIngestSampleClick && onIngestSampleClick('aws', 'aws-invoice.pdf', 'AWS Cloud')}
-              disabled={isIngestingSample}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-mono text-amber-300 font-bold transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
-              title="1-Click Demo Ingestion (AWS Cloud)"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-              <span>{isIngestingSample ? 'Analyzing...' : 'Sample Ingest'}</span>
-            </button>
-
-            <button
-              onClick={onUploadClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-xs font-mono text-indigo-300 font-bold transition-all cursor-pointer shadow-sm active:scale-95"
-            >
-              <UploadCloud className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="hidden sm:inline">Direct Ingest</span>
-            </button>
-
+          <div className="flex items-center gap-3">
+            <span className="hidden md:inline text-xs text-slate-400 font-mono">
+              Scroll down to inspect stages ↓
+            </span>
             <button
               onClick={() => setIsMinimized(true)}
               className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer"
@@ -752,12 +724,12 @@ export default function WorkstationScrollHero({
 
                   {/* Header Row */}
                   <div className="relative z-10 flex items-center justify-between pb-1">
-                    <span className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono font-bold text-blue-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
+                    <span className="flex items-center gap-1.5 text-xs font-mono font-bold text-blue-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                       01 · INTAKE
                     </span>
-                    <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                      IMAP PUSH
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                      PDF Push
                     </span>
                   </div>
 
@@ -774,19 +746,9 @@ export default function WorkstationScrollHero({
                     </picture>
                   </div>
 
-                  <div className="relative z-10 flex items-center justify-between text-[9px] font-mono text-slate-300 pt-1">
+                  <div className="relative z-10 flex items-center justify-between text-xs font-mono text-slate-300 pt-1 border-t border-white/[0.06]">
                     <span className="text-white font-bold truncate">Acme Inv #9041</span>
                     <span className="text-cyan-300 font-bold">$4,850.00</span>
-                  </div>
-                </div>
-
-                {/* Recessed Days-Section Dock Strip */}
-                <div className="flex items-center justify-between w-full bg-[#070C18] p-1 gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-blue-300">
-                    <span>RFC 2177</span>
-                  </div>
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-slate-400">
-                    <span>PDF RAW</span>
                   </div>
                 </div>
               </div>
@@ -848,34 +810,21 @@ export default function WorkstationScrollHero({
                   </div>
 
                   {/* Bounding Boxes on Illustration 1 */}
-                  <div className="relative z-10 space-y-1 font-mono text-[9px] sm:text-[10px]">
+                  <div className="relative z-10 space-y-1.5 font-mono text-xs">
                     <div
                       ref={boxVendorRef}
-                      className="p-1 rounded-lg border border-dashed border-white/15 bg-white/[0.03] transition-all duration-200 flex justify-between items-center"
+                      className="p-1.5 rounded-lg border border-dashed border-white/20 bg-white/[0.04] transition-all duration-200 flex justify-between items-center"
                     >
-                      <span className="text-slate-400 text-[8px] sm:text-[9px]">VENDOR</span>
-                      <span className="font-bold text-white text-[9px] sm:text-[10px] truncate">Acme Cloud Infra</span>
+                      <span className="text-slate-400 text-[10px]">VENDOR</span>
+                      <span className="font-bold text-white text-xs truncate">Acme Cloud Infra</span>
                     </div>
                     <div
                       ref={boxTotalRef}
-                      className="p-1 rounded-lg border border-dashed border-white/15 bg-white/[0.03] transition-all duration-200 flex justify-between items-center"
+                      className="p-1.5 rounded-lg border border-dashed border-white/20 bg-white/[0.04] transition-all duration-200 flex justify-between items-center"
                     >
-                      <span className="text-slate-400 text-[8px] sm:text-[9px]">TOTAL</span>
+                      <span className="text-slate-400 text-[10px]">TOTAL</span>
                       <span className="font-extrabold text-emerald-400 text-xs sm:text-sm">$4,850.00 USD</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Recessed Days-Section Dock Strip */}
-                <div className="flex items-center justify-between w-full bg-[#040E1A] p-1 gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-cyan-300">
-                    <span>750 T/s</span>
-                  </div>
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-slate-400">
-                    <span>COORDINATES</span>
-                  </div>
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-emerald-300">
-                    <span>CONF: 99%</span>
                   </div>
                 </div>
               </div>
@@ -899,12 +848,12 @@ export default function WorkstationScrollHero({
 
                   {/* Header Row */}
                   <div className="relative z-10 flex items-center justify-between pb-1">
-                    <span className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono font-bold text-emerald-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       03 · RECONCILED
                     </span>
-                    <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold">
-                      100% MATCH
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 font-bold">
+                      Verified
                     </span>
                   </div>
 
@@ -921,19 +870,9 @@ export default function WorkstationScrollHero({
                     </picture>
                   </div>
 
-                  <div className="relative z-10 flex items-center justify-between text-[9px] font-mono text-slate-300 pt-1">
+                  <div className="relative z-10 flex items-center justify-between text-xs font-mono text-slate-300 pt-1 border-t border-white/[0.06]">
                     <span className="text-white font-bold truncate">Google Sheet v4</span>
                     <span className="text-emerald-300 font-bold">DISPATCHED</span>
-                  </div>
-                </div>
-
-                {/* Recessed Days-Section Dock Strip */}
-                <div className="flex items-center justify-between w-full bg-[#04120D] p-1 gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-emerald-300">
-                    <span>MATH AUDIT: OK</span>
-                  </div>
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-slate-400">
-                    <span>DISPATCHED</span>
                   </div>
                 </div>
               </div>
@@ -1002,19 +941,6 @@ export default function WorkstationScrollHero({
                       <span className="text-slate-400 block text-[9px]">DOCS</span>
                       <span className="text-white font-extrabold text-xs">{invoicesCount} Docs</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Recessed Days-Section Dock Strip */}
-                <div className="flex items-center justify-between w-full bg-[#060814] p-1.5 gap-1.5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-cyan-300">
-                    <span>240ms LPU</span>
-                  </div>
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-emerald-300">
-                    <span>750 T/s</span>
-                  </div>
-                  <div className="flex-1 py-1 px-1.5 rounded-lg text-[8px] font-mono font-bold flex items-center justify-center gap-1 bg-white/[0.04] text-purple-300">
-                    <span>RFC 2177</span>
                   </div>
                 </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Sparkles, X, ArrowRight, CornerDownLeft } from 'lucide-react';
+import { Search, Filter, X, ArrowRight, CornerDownLeft } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -8,11 +8,11 @@ export default function SmartOmnibar({ onFilterChange, activeFilter, onClearFilt
     const [isLoading, setIsLoading] = useState(false);
 
     const quickChips = [
-        { label: '💵 > $1,000', query: 'invoices with amount greater than 1000' },
-        { label: '⚠️ Math Discrepancies', query: 'show invoices with math discrepancies' },
-        { label: '🇮🇳 INR Invoices', query: 'show all invoices in INR currency' },
-        { label: '🏢 Stripe Invoices', query: 'invoices from Stripe' },
-        { label: '⏳ Review Needed', query: 'invoices needing manual review' }
+        { label: '> $1,000', query: 'invoices with amount greater than 1000' },
+        { label: 'Math Discrepancies', query: 'show invoices with math discrepancies' },
+        { label: 'INR Invoices', query: 'show all invoices in INR currency' },
+        { label: 'Stripe Invoices', query: 'invoices from Stripe' },
+        { label: 'Review Needed', query: 'invoices needing manual review' }
     ];
 
     const handleSubmit = async (searchQuery) => {
@@ -49,7 +49,7 @@ export default function SmartOmnibar({ onFilterChange, activeFilter, onClearFilt
             {/* Search Input Bar */}
             <div className="relative flex items-center">
                 <div className="absolute left-3.5 flex items-center gap-1 text-violet-500 pointer-events-none">
-                    <Sparkles className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    <Search className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 </div>
 
                 <input
@@ -110,7 +110,7 @@ export default function SmartOmnibar({ onFilterChange, activeFilter, onClearFilt
                 {/* Active AI Filter Indicator */}
                 {activeFilter?.active && (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-violet-500/10 border border-violet-500/25 text-violet-700 dark:text-violet-300 text-[11px] font-medium animate-fadeIn">
-                        <Sparkles className="w-3 h-3 shrink-0" />
+                        <Filter className="w-3 h-3 shrink-0" />
                         <span className="truncate max-w-[280px]">
                             {activeFilter.explanation || 'AI Filter Active'}
                         </span>

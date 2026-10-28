@@ -14,7 +14,6 @@ import {
     ZoomOut, 
     Maximize2, 
     RotateCcw, 
-    Sparkles, 
     CheckCircle, 
     Clock, 
     Calendar, 
@@ -175,7 +174,7 @@ export default function VisualMapper() {
             }
 
             const fieldLabel = FIELD_CONFIGS.find(f => f.key === selectedField)?.label || selectedField;
-            toast.success(`Mapped "${text}" to ${fieldLabel}`, { icon: '🎯' });
+            toast.success(`Mapped "${text}" to ${fieldLabel}`);
 
             selection.removeAllRanges();
 
@@ -211,9 +210,9 @@ export default function VisualMapper() {
                             {response.data.message?.split('Failed: ')[1] || 'Check your Google Sheet ID in settings.'}
                         </span>
                     </div>
-                ), { icon: '⚠️', duration: 5000 });
+                ), { duration: 5000 });
             } else {
-                toast.success('Rules Learned & Synced to Google Sheet!', { icon: '🚀' });
+                toast.success('Rules Learned & Synced to Google Sheet!');
             }
 
             queryClient.invalidateQueries(['invoices']);
@@ -394,7 +393,7 @@ export default function VisualMapper() {
                         <div className="flex items-center justify-between mb-2">
                             <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                 Field Mapping Inspector
-                                <Sparkles className="w-4 h-4 text-violet-500" />
+                                <Crosshair className="w-4 h-4 text-violet-500" />
                             </h2>
                             <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                                 {invoice?.status === 'processed' ? 'Verified' : 'Human Review'}

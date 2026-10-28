@@ -11,6 +11,8 @@ import WorkstationScrollHero from '../../components/dashboard/WorkstationScrollH
 import RecruiterGuideBanner from '../../components/dashboard/RecruiterGuideBanner';
 import CfoBriefModal from '../../components/dashboard/CfoBriefModal';
 import SmartOmnibar from '../../components/dashboard/SmartOmnibar';
+import GuidedTourWizard from '../../components/dashboard/GuidedTourWizard';
+import Loader from '../../components/common/Loader';
 import { exportToCsv, exportToJson } from '../../utils/exportUtils';
 import { convertCurrency, formatCurrency } from '../../utils/currencyUtils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +32,6 @@ import {
     Eye, 
     Copy, 
     Check, 
-    Sparkles, 
     ArrowUpDown, 
     RefreshCw,
     X,
@@ -38,7 +39,8 @@ import {
     ShieldCheck,
     AlertTriangle,
     UploadCloud,
-    Globe
+    Globe,
+    Compass
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -83,6 +85,7 @@ export default function Dashboard() {
     const [isUploadingRandom, setIsUploadingRandom] = useState(false);
     const [isSyncingEmail, setIsSyncingEmail] = useState(false);
     const [isIngestingSample, setIsIngestingSample] = useState(false);
+    const [isSheetsBannerDismissed, setIsSheetsBannerDismissed] = useState(false);
 
     // KPI Metrics (Normalized to baseCurrency)
     const stats = useMemo(() => {
@@ -374,7 +377,7 @@ export default function Dashboard() {
 
             const invoiceData = uploadRes.data?.data;
             toast.success(
-                `🎉 Ingested: ${invoiceData?.vendorName || displayVendor} (${formatCurrency(invoiceData?.extractedData?.totalAmount || '0.00', invoiceData?.extractedData?.currency || 'USD')})`,
+                `Ingested: ${invoiceData?.vendorName || displayVendor} (${formatCurrency(invoiceData?.extractedData?.totalAmount || '0.00', invoiceData?.extractedData?.currency || 'USD')})`,
                 { id: toastId, duration: 5000 }
             );
             refetch();
@@ -395,7 +398,7 @@ export default function Dashboard() {
             const data = res.data;
             if (data?.newInvoicesCount > 0) {
                 const names = data.ingestedInvoices?.map(i => `${i.vendorName} (${i.currency} ${i.totalAmount})`).join(', ');
-                toast.success(`🎉 Ingested ${data.newInvoicesCount} new invoice(s): ${names}!`, { id: toastId, duration: 5000 });
+                toast.success(`Ingested ${data.newInvoicesCount} new invoice(s): ${names}`, { id: toastId, duration: 5000 });
             } else {
                 toast.success(data?.message || 'Inbox checked. All invoices are up to date.', { id: toastId });
             }
@@ -427,450 +430,417 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-6 relative pb-20">
+        <div className="w-full max-w-7xl mx-auto space-y-10 sm:space-y-14 relative pb-24">
             <Toaster position="top-center" />
 
-            {/* Recruiter & Interviewer Welcome / Quick Action Guide */}
-            <RecruiterGuideBanner 
-                onIngestSample={handleIngestSample}
-                isIngesting={isIngestingSample}
-                onOpenCfoBrief={handleGenerateCfoBrief}
-            />
-
-            {/* Interactive Multi-Layer Scroll-Driven Workstation */}
-            <WorkstationScrollHero
-                onUploadClick={() => document.getElementById('direct-upload-input')?.click()}
-                onSyncEmailClick={() => handleSyncEmail(false)}
-                isSyncingEmail={isSyncingEmail}
-                onIngestSampleClick={handleIngestSample}
-                isIngestingSample={isIngestingSample}
-                invoicesCount={invoices?.length || 0}
-                syncRate={stats.syncRate}
-            />
-
-            {/* Page Header */}
-            <div id="invoices-table-section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                        Invoices
-                    </h1>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Centralized document extraction and live Google Sheets ledger sync.
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* Base Currency Selector */}
-                    <div className="flex items-center p-0.5 bg-gray-100 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-lg text-xs font-mono">
-                        {['USD', 'EUR', 'INR', 'GBP'].map(curr => (
-                            <button
-                                key={curr}
-                                onClick={() => setBaseCurrency(curr)}
-                                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
-                                    baseCurrency === curr
-                                        ? 'bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-xs'
-                                        : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-                                }`}
-                                title={`Portfolio normalization: ${curr}`}
-                            >
-                                {curr}
-                            </button>
-                        ))}
+            {/* ═════════════════════════════════════════════════════════════════
+                SECTION 1: EXTRACTION PIPELINE (3D Diorama & Live Presets)
+               ═════════════════════════════════════════════════════════════════ */}
+            <section id="section-pipeline" className="rounded-3xl border border-gray-200/80 dark:border-white/[0.07] bg-white/60 dark:bg-[#0B0F1F]/60 backdrop-blur-xl p-5 sm:p-7 shadow-xs space-y-6">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-white/[0.06]">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                                01 · PIPELINE
+                            </span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-xs font-mono text-emerald-400 font-bold hidden sm:inline">AI Engine Online</span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                            Autonomous Ingestion & Optical Scanning
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
+                            Watch incoming document attachments pass through fast AI character recognition to verified spreadsheet dispatch.
+                        </p>
                     </div>
-
-                    {/* Quick Demo Ingest Button for Reviewers */}
-                    <button
-                        onClick={() => handleIngestSample('/samples/aws-invoice.pdf', 'aws-invoice.pdf', 'AWS Cloud')}
-                        disabled={isIngestingSample}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
-                        title="1-Click Demo Ingestion (AWS Cloud)"
-                    >
-                        <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                        <span>{isIngestingSample ? 'Ingesting...' : '⚡ Ingest Sample'}</span>
-                    </button>
-
-                    {/* Direct Upload Any Invoice */}
-                    <label className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium ${
-                        isUploadingRandom 
-                            ? 'bg-violet-700 text-white cursor-wait opacity-80' 
-                            : 'bg-violet-600 hover:bg-violet-500 text-white cursor-pointer shadow-xs active:scale-[0.98]'
-                    } transition-all`}>
-                        {isUploadingRandom ? (
-                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <UploadCloud className="w-3.5 h-3.5" />
-                        )}
-                        <span>{isUploadingRandom ? 'Extracting...' : 'Upload Invoice'}</span>
-                        <input
-                            id="direct-upload-input"
-                            type="file"
-                            accept="application/pdf"
-                            className="hidden"
-                            disabled={isUploadingRandom}
-                            onChange={handleDirectUpload}
-                        />
-                    </label>
-
-                    {/* Sync Email */}
-                    <button
-                        onClick={() => handleSyncEmail(false)}
-                        disabled={isSyncingEmail}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition active:scale-[0.98] cursor-pointer"
-                        title="Scan connected Gmail inbox (jaltaasholaa@gmail.com)"
-                    >
-                        <Mail className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 ${isSyncingEmail ? 'animate-spin' : ''}`} />
-                        <span>{isSyncingEmail ? 'Scanning...' : 'Sync Email'}</span>
-                    </button>
-
-                    {/* Financial Brief */}
-                    <button
-                        onClick={handleGenerateCfoBrief}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition cursor-pointer"
-                        title="Generate financial summary report"
-                    >
-                        <FileText className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                        <span>Financial Brief</span>
-                    </button>
-
-                    {/* Simulator Presets */}
-                    <button
-                        onClick={() => navigate('/simulate')}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition cursor-pointer"
-                        title="Open simulation runner"
-                    >
-                        <span>Simulator</span>
-                    </button>
-
-                    {stats.total > 0 && (
-                        <button
-                            onClick={() => setIsClearAllModalOpen(true)}
-                            className="p-2 rounded-lg border border-gray-200 dark:border-white/[0.08] text-gray-400 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer"
-                            title="Clear all invoices"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                    )}
-
-                    <button
-                        onClick={() => refetch()}
-                        className="p-2 rounded-lg border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-500 dark:text-gray-400 transition cursor-pointer"
-                        title="Refresh data"
-                    >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                    </button>
                 </div>
-            </div>
 
-            {/* Google Sheets Reconnect / Sync Alert */}
-            {userProfile && !userProfile.hasGoogleConnection && (
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-                            <AlertTriangle className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                                Google Sheets Disconnected
-                            </p>
-                            <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
-                                Invoices are parsed and saved in database, but automatic push to Google Sheets requires connecting your Google account.
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => navigate('/settings')}
-                        className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs shadow-xs transition whitespace-nowrap self-start sm:self-auto cursor-pointer"
-                    >
-                        Connect Google Sheets
-                    </button>
+                {/* Recruiter & Interviewer Welcome / Quick Action Guide */}
+                <div id="recruiter-guide-section">
+                    <RecruiterGuideBanner 
+                        onIngestSample={handleIngestSample}
+                        isIngesting={isIngestingSample}
+                        onOpenCfoBrief={handleGenerateCfoBrief}
+                    />
                 </div>
-            )}
 
-            {/* 4-KPI Metric Strip (Styled with Uiverse Concentric Solar & Dual-Zone Architecture) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Total Invoices (Indigo / Royal Violet) */}
-                <div className="rounded-[25px] overflow-hidden border border-indigo-500/30 bg-[#0F1426] shadow-[0_12px_30px_rgba(15,20,38,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:shadow-indigo-500/20 group">
-                    {/* Upper Info Section with Concentric Circles */}
-                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#1E2548] to-[#141A35]">
-                        {/* Background Design: 3 Concentric Solar/Orbital Circles */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute -top-[75%] -right-[40%] w-[280px] h-[280px] rounded-full bg-indigo-500/30 blur-[0.5px]" />
-                            <div className="absolute -top-[60%] -right-[25%] w-[190px] h-[190px] rounded-full bg-blue-400/30" />
-                            <div className="absolute -top-[30%] -right-[5%] w-[95px] h-[95px] rounded-full bg-cyan-400/80 shadow-[0_0_25px_rgba(34,211,238,0.7)]" />
-                        </div>
+                {/* Interactive Multi-Layer Scroll-Driven Workstation */}
+                <div id="workstation-hero-section">
+                    <WorkstationScrollHero
+                        onUploadClick={() => document.getElementById('direct-upload-input')?.click()}
+                        onSyncEmailClick={() => handleSyncEmail(false)}
+                        isSyncingEmail={isSyncingEmail}
+                        onIngestSampleClick={handleIngestSample}
+                        isIngestingSample={isIngestingSample}
+                        invoicesCount={invoices?.length || 0}
+                        syncRate={stats.syncRate}
+                    />
+                </div>
+            </section>
 
-                        {/* Top Metadata Row */}
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
-                                    <FileText className="w-3.5 h-3.5" />
-                                </div>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">
-                                    Total Invoices
-                                </span>
-                            </div>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
-                                RFC 2177
+            {/* ═════════════════════════════════════════════════════════════════
+                SECTION 2: SYSTEM TELEMETRY (Operational Health & SLAs)
+               ═════════════════════════════════════════════════════════════════ */}
+            <section id="section-telemetry" className="rounded-3xl border border-gray-200/80 dark:border-white/[0.07] bg-white/60 dark:bg-[#0B0F1F]/60 backdrop-blur-xl p-5 sm:p-7 shadow-xs space-y-6">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-white/[0.06]">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                02 · OVERVIEW
                             </span>
                         </div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                            Operational Health & Overview
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
+                            Key metrics across ledger volume, automated sync accuracy, and items requiring review.
+                        </p>
+                    </div>
 
-                        {/* Bottom Metric & Sub-Range Row */}
-                        <div className="relative z-10 flex items-end justify-between mt-3">
-                            <div>
+                    <div className="flex items-center gap-2 font-mono text-xs">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            All Engines Operational
+                        </span>
+                    </div>
+                </div>
+
+                {/* 4-KPI Metric Cards (Clean, Decluttered Uiverse Solar Circles Aesthetic) */}
+                <div id="kpi-metrics-section" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* 1. Total Invoices */}
+                    <div 
+                        onClick={() => setStatusFilter('all')}
+                        className="rounded-2xl overflow-hidden border border-indigo-500/30 bg-[#0F1426] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-indigo-500/50 hover:shadow-indigo-500/20 cursor-pointer group"
+                    >
+                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#1E2548] to-[#141A35]">
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                <div className="absolute -top-[75%] -right-[40%] w-[260px] h-[260px] rounded-full bg-indigo-500/20 blur-[0.5px]" />
+                                <div className="absolute -top-[60%] -right-[25%] w-[180px] h-[180px] rounded-full bg-blue-400/20" />
+                                <div className="absolute -top-[30%] -right-[5%] w-[90px] h-[90px] rounded-full bg-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.5)]" />
+                            </div>
+
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
+                                        <FileText className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">
+                                        Total Invoices
+                                    </span>
+                                </div>
+                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
+                                    {stats.total} Total
+                                </span>
+                            </div>
+
+                            <div className="relative z-10 mt-4">
                                 <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
                                     {stats.total}
                                 </div>
-                                <div className="text-[11px] text-indigo-200/80 font-mono mt-0.5">
+                                <div className="text-xs text-indigo-200/80 font-mono mt-1">
                                     {stats.processed} Synced · {stats.review} In Review
                                 </div>
                             </div>
-                            <div className="text-right text-[11px] font-mono text-slate-300">
-                                <div className="text-xs text-white font-bold">100% Ingest</div>
-                                <div className="text-[10px] text-indigo-300">Zero Loss</div>
+                        </div>
+                    </div>
+
+                    {/* 2. Total Normalized Volume */}
+                    <div className="rounded-2xl overflow-hidden border border-emerald-500/30 bg-[#0B1E19] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-emerald-500/20 group">
+                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#123E33] to-[#0A261F]">
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                <div className="absolute -top-[75%] -right-[40%] w-[260px] h-[260px] rounded-full bg-emerald-500/20 blur-[0.5px]" />
+                                <div className="absolute -top-[60%] -right-[25%] w-[180px] h-[180px] rounded-full bg-teal-400/20" />
+                                <div className="absolute -top-[30%] -right-[5%] w-[90px] h-[90px] rounded-full bg-amber-400/70 shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Recessed Days-Section Dock Strip */}
-                    <div className="flex items-center justify-between w-full bg-[#0B0E1B] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                        <button
-                            onClick={() => setStatusFilter('all')}
-                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
-                                statusFilter === 'all'
-                                    ? 'bg-indigo-600 text-white shadow-sm'
-                                    : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
-                            }`}
-                        >
-                            <span>ALL ({stats.total})</span>
-                        </button>
-                        <button
-                            onClick={() => setStatusFilter('processed')}
-                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
-                                statusFilter === 'processed'
-                                    ? 'bg-indigo-600 text-white shadow-sm'
-                                    : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
-                            }`}
-                        >
-                            <span>SYNCED ({stats.processed})</span>
-                        </button>
-                        <button
-                            onClick={() => setStatusFilter('review_needed')}
-                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
-                                statusFilter === 'review_needed'
-                                    ? 'bg-amber-600 text-white shadow-sm'
-                                    : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
-                            }`}
-                        >
-                            <span>REVIEW ({stats.review})</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* 2. Total Normalized Volume (Emerald / Forest Mint) */}
-                <div className="rounded-[25px] overflow-hidden border border-emerald-500/30 bg-[#0B1E19] shadow-[0_12px_30px_rgba(11,30,25,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-emerald-500/20 group">
-                    {/* Upper Info Section with Concentric Circles */}
-                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#123E33] to-[#0A261F]">
-                        {/* Background Design: 3 Concentric Solar/Orbital Circles */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute -top-[75%] -right-[40%] w-[280px] h-[280px] rounded-full bg-emerald-500/30 blur-[0.5px]" />
-                            <div className="absolute -top-[60%] -right-[25%] w-[190px] h-[190px] rounded-full bg-teal-400/30" />
-                            <div className="absolute -top-[30%] -right-[5%] w-[95px] h-[95px] rounded-full bg-amber-400/80 shadow-[0_0_25px_rgba(251,191,36,0.7)]" />
-                        </div>
-
-                        {/* Top Metadata Row */}
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-xl bg-white/10 backdrop-blur-md text-emerald-300 border border-white/10">
-                                    <DollarSign className="w-3.5 h-3.5" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-emerald-300 border border-white/10">
+                                        <DollarSign className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">
+                                        Total Volume
+                                    </span>
                                 </div>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200">
-                                    Normalized Volume
+                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 font-bold">
+                                    {baseCurrency}
                                 </span>
                             </div>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 font-bold">
-                                {baseCurrency} BASE
-                            </span>
-                        </div>
 
-                        {/* Bottom Metric & Sub-Range Row */}
-                        <div className="relative z-10 flex items-end justify-between mt-3">
-                            <div className="min-w-0 pr-2">
+                            <div className="relative z-10 mt-4">
                                 <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm truncate">
                                     {formatCurrency(stats.totalAmount, baseCurrency)}
                                 </div>
-                                <div className="text-[11px] text-emerald-200/80 font-mono mt-0.5 truncate">
-                                    Consolidated Supplier Volume
+                                <div className="text-xs text-emerald-200/80 font-mono mt-1 truncate">
+                                    Consolidated Supplier Spend
                                 </div>
-                            </div>
-                            <div className="text-right text-[11px] font-mono text-slate-300 shrink-0">
-                                <div className="text-xs text-amber-300 font-bold">{invoices?.length || 0} Bills</div>
-                                <div className="text-[10px] text-emerald-300">Multi-Curr</div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Recessed Days-Section Dock Strip */}
-                    <div className="flex items-center justify-between w-full bg-[#061411] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                        {['USD', 'EUR', 'INR'].map((curr) => (
-                            <button
-                                key={curr}
-                                onClick={() => setBaseCurrency(curr)}
-                                className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
-                                    baseCurrency === curr
-                                        ? 'bg-emerald-600 text-white shadow-sm'
-                                        : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08]'
-                                }`}
-                            >
-                                <span>{curr} {curr === 'USD' ? '$' : curr === 'EUR' ? '€' : '₹'}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                    {/* 3. Automation Rate */}
+                    <div className="rounded-2xl overflow-hidden border border-cyan-500/30 bg-[#0A1A2A] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-cyan-500/50 hover:shadow-cyan-500/20 group">
+                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#0F3554] to-[#0A2238]">
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                <div className="absolute -top-[75%] -right-[40%] w-[260px] h-[260px] rounded-full bg-cyan-500/20 blur-[0.5px]" />
+                                <div className="absolute -top-[60%] -right-[25%] w-[180px] h-[180px] rounded-full bg-sky-400/20" />
+                                <div className="absolute -top-[30%] -right-[5%] w-[90px] h-[90px] rounded-full bg-indigo-400/70 shadow-[0_0_20px_rgba(129,140,248,0.5)]" />
+                            </div>
 
-                {/* 3. Automation Rate (Cyan / Cyber Blue) */}
-                <div className="rounded-[25px] overflow-hidden border border-cyan-500/30 bg-[#0A1A2A] shadow-[0_12px_30px_rgba(10,26,42,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/50 hover:shadow-cyan-500/20 group">
-                    {/* Upper Info Section with Concentric Circles */}
-                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#0F3554] to-[#0A2238]">
-                        {/* Background Design: 3 Concentric Solar/Orbital Circles */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute -top-[75%] -right-[40%] w-[280px] h-[280px] rounded-full bg-cyan-500/30 blur-[0.5px]" />
-                            <div className="absolute -top-[60%] -right-[25%] w-[190px] h-[190px] rounded-full bg-sky-400/30" />
-                            <div className="absolute -top-[30%] -right-[5%] w-[95px] h-[95px] rounded-full bg-indigo-400/80 shadow-[0_0_25px_rgba(129,140,248,0.7)]" />
-                        </div>
-
-                        {/* Top Metadata Row */}
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
-                                    <Zap className="w-3.5 h-3.5 text-cyan-300 fill-cyan-300" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
+                                        <Zap className="w-4 h-4 text-cyan-300 fill-cyan-300" />
+                                    </div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-200">
+                                        Automation Rate
+                                    </span>
                                 </div>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-200">
-                                    Automation Rate
+                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
+                                    AI Verified
                                 </span>
                             </div>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
-                                GROQ LPU AI
-                            </span>
-                        </div>
 
-                        {/* Bottom Metric & Sub-Range Row */}
-                        <div className="relative z-10 flex items-end justify-between mt-3">
-                            <div>
+                            <div className="relative z-10 mt-4">
                                 <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
                                     {stats.syncRate}%
                                 </div>
-                                <div className="text-[11px] text-cyan-200/80 font-mono mt-0.5">
+                                <div className="text-xs text-cyan-200/80 font-mono mt-1">
                                     Automated Spreadsheet Sync
                                 </div>
                             </div>
-                            <div className="text-right text-[11px] font-mono text-slate-300">
-                                <div className="text-xs text-cyan-300 font-bold">&lt;280ms</div>
-                                <div className="text-[10px] text-slate-400">Avg Latency</div>
+                        </div>
+                    </div>
+
+                    {/* 4. Review Queue */}
+                    <div 
+                        onClick={() => setStatusFilter('review_needed')}
+                        className="rounded-2xl overflow-hidden border border-amber-500/30 bg-[#281318] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-amber-500/20 cursor-pointer group"
+                    >
+                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#EC7263] via-[#CA5861] to-[#974859]">
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                <div className="absolute -top-[80%] -right-[50%] w-[280px] h-[280px] rounded-full bg-[#EFC745] opacity-30 blur-[0.5px]" />
+                                <div className="absolute -top-[70%] -right-[30%] w-[200px] h-[200px] rounded-full bg-[#EFC745] opacity-30" />
+                                <div className="absolute -top-[35%] -right-[8%] w-[90px] h-[90px] rounded-full bg-[#EFC745] opacity-90 shadow-[0_0_20px_rgba(239,199,69,0.7)]" />
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Recessed Days-Section Dock Strip */}
-                    <div className="flex items-center justify-between w-full bg-[#050E17] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                        <button
-                            onClick={() => handleSyncEmail(false)}
-                            disabled={isSyncingEmail}
-                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08]"
-                        >
-                            <span>{isSyncingEmail ? 'SYNCING...' : 'SYNC IMAP'}</span>
-                        </button>
-                        <button
-                            onClick={() => handleIngestSample('aws', 'aws-invoice.pdf', 'AWS Cloud')}
-                            disabled={isIngestingSample}
-                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-cyan-500/20 text-cyan-200 border border-cyan-500/30"
-                        >
-                            <span>INGEST AWS</span>
-                        </button>
-                        <button
-                            onClick={handleGenerateCfoBrief}
-                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08]"
-                        >
-                            <span>CFO BRIEF</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* 4. Review Queue (Warm Sunset Coral / Gold - Exact Uiverse Reference Aesthetic) */}
-                <div className="rounded-[25px] overflow-hidden border border-amber-500/30 bg-[#281318] shadow-[0_12px_30px_rgba(40,19,24,0.6)] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-amber-500/20 group">
-                    {/* Upper Info Section with Concentric Circles */}
-                    <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[148px] bg-gradient-to-br from-[#EC7263] via-[#CA5861] to-[#974859]">
-                        {/* Background Design: 3 Concentric Solar/Orbital Circles (Exact Uiverse geometry) */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute -top-[80%] -right-[50%] w-[300px] h-[300px] rounded-full bg-[#EFC745] opacity-40 blur-[0.5px]" />
-                            <div className="absolute -top-[70%] -right-[30%] w-[210px] h-[210px] rounded-full bg-[#EFC745] opacity-40" />
-                            <div className="absolute -top-[35%] -right-[8%] w-[100px] h-[100px] rounded-full bg-[#EFC745] opacity-100 shadow-[0_0_25px_rgba(239,199,69,0.8)]" />
-                        </div>
-
-                        {/* Top Metadata Row */}
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-xl bg-black/20 backdrop-blur-md text-amber-200 border border-white/20">
-                                    <Clock className="w-3.5 h-3.5" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 rounded-xl bg-black/20 backdrop-blur-md text-amber-200 border border-white/20">
+                                        <Clock className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-white">
+                                        Review Queue
+                                    </span>
                                 </div>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-white">
-                                    Review Queue
+                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-black/25 text-white border border-white/25 font-bold">
+                                    {stats.review === 0 ? 'Clear' : `${stats.review} Pending`}
                                 </span>
                             </div>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/25 text-white border border-white/25 font-bold">
-                                FORENSIC AUDIT
-                            </span>
-                        </div>
 
-                        {/* Bottom Metric & Sub-Range Row */}
-                        <div className="relative z-10 flex items-end justify-between mt-3">
-                            <div>
+                            <div className="relative z-10 mt-4">
                                 <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
                                     {stats.review}
                                 </div>
-                                <div className="text-[11px] text-white/90 font-mono mt-0.5">
-                                    Requires Human Verification
+                                <div className="text-xs text-white/90 font-mono mt-1">
+                                    {stats.review === 0 ? 'All Invoices Verified' : 'Requires Verification'}
                                 </div>
-                            </div>
-                            <div className="text-right text-[11px] font-mono text-white/95">
-                                <div className="text-xs text-[#EFC745] font-extrabold">{stats.review === 0 ? 'ALL VERIFIED' : 'ACTION REQ'}</div>
-                                <div className="text-[10px] text-white/80">Sum Integrity</div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    {/* Recessed Days-Section Dock Strip (Exact Uiverse #974859 / #a75265) */}
-                    <div className="flex items-center justify-between w-full bg-[#974859] p-1.5 gap-1.5 shadow-[inset_0_2px_5px_#753644] border-t border-black/15">
+            {/* ═════════════════════════════════════════════════════════════════
+                SECTION 3: FINANCIAL INTELLIGENCE (Spend & Supplier Analytics)
+               ═════════════════════════════════════════════════════════════════ */}
+            <section id="section-intelligence" className="rounded-3xl border border-gray-200/80 dark:border-white/[0.07] bg-white/60 dark:bg-[#0B0F1F]/60 backdrop-blur-xl p-5 sm:p-7 shadow-xs space-y-6">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-white/[0.06]">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                                03 · FINANCIALS
+                            </span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                            Spend Analytics & Supplier Breakdown
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
+                            Supplier expense distribution normalized across global currencies with arithmetic verification.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        {/* Currency Selector */}
+                        <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-white/[0.04] p-1 rounded-xl border border-gray-200 dark:border-white/[0.08]">
+                            <span className="text-xs font-mono text-slate-400 uppercase font-bold px-2">Base:</span>
+                            {['USD', 'EUR', 'INR', 'GBP'].map(curr => (
+                                <button
+                                    key={curr}
+                                    onClick={() => setBaseCurrency(curr)}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition cursor-pointer ${
+                                        baseCurrency === curr
+                                            ? 'bg-white dark:bg-[#1E293B] text-gray-900 dark:text-cyan-300 shadow-xs border border-cyan-500/30'
+                                            : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+                                    }`}
+                                >
+                                    {curr}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Financial Brief */}
                         <button
-                            onClick={() => setStatusFilter('review_needed')}
-                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-[#a75265] text-white shadow-[inset_0_1px_3px_#974859]"
+                            onClick={handleGenerateCfoBrief}
+                            className="inline-flex items-center px-3 py-2 rounded-xl text-xs font-mono font-bold border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition cursor-pointer shadow-xs active:scale-95"
+                            title="Generate CFO financial summary report"
                         >
-                            <span>SHOW QUEUE</span>
-                        </button>
-                        <button
-                            onClick={() => setNlFilter(prev => ({ ...prev, active: true, mathDiscrepancyOnly: !prev.mathDiscrepancyOnly }))}
-                            className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 ${
-                                nlFilter?.mathDiscrepancyOnly
-                                    ? 'bg-[#EFC745] text-slate-900 shadow-md font-extrabold'
-                                    : 'bg-[#a75265] text-white shadow-[inset_0_1px_3px_#974859]'
-                            }`}
-                        >
-                            <span>MATH AUDIT</span>
-                        </button>
-                        <button
-                            onClick={() => { setStatusFilter('all'); setNlFilter({ active: false }); }}
-                            className="flex-1 py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer hover:scale-95 bg-[#a75265] text-white shadow-[inset_0_1px_3px_#974859]"
-                        >
-                            <span>RESET</span>
+                            <span>CFO Brief</span>
                         </button>
                     </div>
                 </div>
-            </div>
 
-            {/* Spend & Supplier Analytics */}
-            <SpendAnalytics invoices={invoices} baseCurrency={baseCurrency} />
+                {/* Spend & Supplier Analytics */}
+                <div id="spend-analytics-section">
+                    <SpendAnalytics invoices={invoices} baseCurrency={baseCurrency} />
+                </div>
+            </section>
+
+            {/* ═════════════════════════════════════════════════════════════════
+                SECTION 4: PRODUCTION LEDGER (Invoices Database & Sync)
+               ═════════════════════════════════════════════════════════════════ */}
+            <section id="invoices-table-section" className="rounded-3xl border border-gray-200/80 dark:border-white/[0.07] bg-white/60 dark:bg-[#0B0F1F]/60 backdrop-blur-xl p-5 sm:p-7 shadow-xs space-y-6">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-white/[0.06]">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                                04 · INVOICES
+                            </span>
+                            {userProfile?.hasGoogleConnection ? (
+                                <span className="text-xs font-mono text-emerald-500 dark:text-emerald-400 font-bold hidden sm:inline">Sheets Sync Active</span>
+                            ) : (
+                                <span className="text-xs font-mono text-amber-600 dark:text-amber-400 font-bold hidden sm:inline">Sheets Sync Pending</span>
+                            )}
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                            Invoices Ledger
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
+                            Audit trail of parsed invoices. Click any row to inspect bounding boxes and confidence scores.
+                        </p>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* 1-Click Demo Ingestion */}
+                        <button
+                            id="tour-sample-ingest-btn"
+                            onClick={() => handleIngestSample('/samples/aws-invoice.pdf', 'aws-invoice.pdf', 'AWS Cloud')}
+                            disabled={isIngestingSample}
+                            className="inline-flex items-center px-3 py-2 rounded-xl text-xs font-mono font-bold border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-sm"
+                            title="1-Click Demo Ingestion (AWS Cloud)"
+                        >
+                            <span>{isIngestingSample ? 'Ingesting...' : 'Ingest Sample'}</span>
+                        </button>
+
+                        {/* Direct Upload Any Invoice */}
+                        <label className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold ${
+                            isUploadingRandom 
+                                ? 'bg-orange-700 text-white cursor-wait opacity-80' 
+                                : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white cursor-pointer shadow-md active:scale-[0.98]'
+                        } transition-all`}>
+                            {isUploadingRandom ? (
+                                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <UploadCloud className="w-3.5 h-3.5" />
+                            )}
+                            <span>{isUploadingRandom ? 'Extracting...' : 'Upload Invoice'}</span>
+                            <input
+                                id="direct-upload-input"
+                                type="file"
+                                accept="application/pdf"
+                                className="hidden"
+                                disabled={isUploadingRandom}
+                                onChange={handleDirectUpload}
+                            />
+                        </label>
+
+                        {/* Sync Email */}
+                        <button
+                            onClick={() => handleSyncEmail(false)}
+                            disabled={isSyncingEmail}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono font-bold border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition active:scale-[0.98] cursor-pointer shadow-xs"
+                            title="Scan connected Gmail inbox"
+                        >
+                            <Mail className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 ${isSyncingEmail ? 'animate-spin' : ''}`} />
+                            <span>{isSyncingEmail ? 'Scanning...' : 'Sync Email'}</span>
+                        </button>
+
+                        {/* Simulator */}
+                        <button
+                            onClick={() => navigate('/simulate')}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono font-bold border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-700 dark:text-gray-300 transition cursor-pointer shadow-xs"
+                            title="Open simulation runner"
+                        >
+                            <span>Simulator</span>
+                        </button>
+
+                        {stats.total > 0 && (
+                            <button
+                                onClick={() => setIsClearAllModalOpen(true)}
+                                className="p-2 rounded-xl border border-gray-200 dark:border-white/[0.08] text-gray-400 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer shadow-xs"
+                                title="Clear all invoices"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+
+                        <button
+                            onClick={() => refetch()}
+                            className="p-2 rounded-xl border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.05] text-gray-500 dark:text-gray-400 transition cursor-pointer shadow-xs"
+                            title="Refresh data"
+                        >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Google Sheets Integration Status Notice */}
+                {userProfile && !userProfile.hasGoogleConnection && !isSheetsBannerDismissed && (
+                    <div className="p-3 sm:p-3.5 rounded-2xl bg-amber-500/[0.07] border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                            <span className="font-semibold text-gray-900 dark:text-white shrink-0">
+                                Google Sheets Disconnected
+                            </span>
+                            <span className="text-gray-400 dark:text-slate-500 hidden sm:inline">·</span>
+                            <span className="text-gray-600 dark:text-slate-400 truncate">
+                                Connect your account in Settings to enable automated spreadsheet dispatch.
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={() => navigate('/settings')}
+                                className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition cursor-pointer active:scale-95 shadow-xs"
+                            >
+                                Connect Sheets
+                            </button>
+
+                            <button
+                                onClick={() => setIsSheetsBannerDismissed(true)}
+                                className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white transition cursor-pointer ml-1"
+                                title="Dismiss notice"
+                                aria-label="Dismiss notice"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
             {/* Unified Filter, Search & Export Toolbar */}
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs space-y-3">
+            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-xs space-y-3">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     {/* Status Tabs */}
                     <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/[0.06] self-start">
@@ -884,14 +854,14 @@ export default function Dashboard() {
                                 onClick={() => setStatusFilter(tab.id)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
                                     statusFilter === tab.id
-                                        ? 'bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-xs'
+                                        ? 'bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-xs font-semibold'
                                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                                 }`}
                             >
                                 {tab.label}
-                                <span className={`px-1.5 py-0.2 rounded-md text-[10px] ${
+                                <span className={`px-1.5 py-0.5 rounded-md text-xs ${
                                     statusFilter === tab.id
-                                        ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400 font-mono'
+                                        ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400 font-mono font-bold'
                                         : 'bg-gray-200/60 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400 font-mono'
                                 }`}>
                                     {tab.count}
@@ -903,13 +873,13 @@ export default function Dashboard() {
                     {/* Right Toolbar Controls: Integrated Search, Sort & Export */}
                     <div className="flex flex-wrap items-center gap-2.5 flex-1 lg:justify-end">
                         {/* Unified Search Input */}
-                        <div className="relative flex-1 sm:w-80 sm:flex-none">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <div className="relative flex-1 sm:w-72 sm:flex-none">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search vendor, invoice #, amount..."
+                                placeholder="Search vendor, invoice #..."
                                 className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-violet-500 transition"
                             />
                             {searchQuery && (
@@ -960,36 +930,11 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Quick Filter Chips & Active Filter Indicator */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-white/[0.04] text-xs">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mr-1">Quick Filters:</span>
-                        {[
-                            { label: '> $1,000', filter: { active: true, minAmount: 1000, explanation: 'Amount > $1,000' } },
-                            { label: 'Math Discrepancy', filter: { active: true, mathDiscrepancyOnly: true, explanation: 'Math Discrepancies' } },
-                            { label: 'INR (₹)', filter: { active: true, currency: 'INR', explanation: 'Currency: INR' } },
-                            { label: 'EUR (€)', filter: { active: true, currency: 'EUR', explanation: 'Currency: EUR' } },
-                        ].map((chip, idx) => {
-                            const isCurrent = nlFilter?.explanation === chip.filter.explanation;
-                            return (
-                                <button
-                                    key={idx}
-                                    onClick={() => setNlFilter(isCurrent ? null : chip.filter)}
-                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
-                                        isCurrent
-                                            ? 'bg-violet-600 text-white'
-                                            : 'bg-gray-100 dark:bg-white/[0.04] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                                    }`}
-                                >
-                                    {chip.label}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {nlFilter?.active && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[11px] font-medium">
-                            <span>Filter: {nlFilter.explanation}</span>
+                {/* Active Filter Indicator (if any filter is active) */}
+                {nlFilter?.active && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/[0.04] text-xs">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 font-medium">
+                            <span>Active Filter: {nlFilter.explanation}</span>
                             <button
                                 onClick={() => setNlFilter(null)}
                                 className="p-0.5 hover:text-violet-800 dark:hover:text-violet-200 cursor-pointer"
@@ -998,8 +943,8 @@ export default function Dashboard() {
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* Batch Action Toolbar */}
                 {selectedIds.size > 0 && (
@@ -1045,9 +990,8 @@ export default function Dashboard() {
             {/* Invoices Data Table */}
             <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] rounded-2xl shadow-sm overflow-hidden">
                 {isLoading ? (
-                    <div className="p-12 text-center">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mb-4" />
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Loading invoices...</p>
+                    <div className="py-16 px-4 text-center flex flex-col items-center justify-center">
+                        <Loader size="28px" subtitle="Syncing invoices ledger..." />
                     </div>
                 ) : processedInvoices.length > 0 ? (
                     <div className="overflow-x-auto">
@@ -1249,7 +1193,7 @@ export default function Dashboard() {
                     /* Empty State */
                     <div className="py-16 px-4 text-center">
                         <div className="w-16 h-16 rounded-3xl bg-violet-500/10 text-violet-500 flex items-center justify-center mx-auto mb-4">
-                            <Sparkles className="w-8 h-8" />
+                            <FileText className="w-8 h-8" />
                         </div>
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                             {nlFilter?.active || searchQuery ? 'No matching invoices found' : 'No invoices in your database'}
@@ -1273,7 +1217,7 @@ export default function Dashboard() {
                             <div className="flex flex-wrap items-center justify-center gap-3">
                                 <button
                                     onClick={() => navigate('/simulate')}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition cursor-pointer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-orange-600 hover:bg-orange-500 text-white transition cursor-pointer"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Simulate an Invoice
@@ -1284,7 +1228,7 @@ export default function Dashboard() {
                                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300 transition cursor-pointer"
                                     title="Re-import historical invoices from jaltaasholaa@gmail.com"
                                 >
-                                    <Mail className={`w-3.5 h-3.5 text-violet-500 ${isSyncingEmail ? 'animate-spin' : ''}`} />
+                                    <Mail className={`w-3.5 h-3.5 text-orange-500 ${isSyncingEmail ? 'animate-spin' : ''}`} />
                                     Re-import Inbox Invoices
                                 </button>
                             </div>
@@ -1292,6 +1236,7 @@ export default function Dashboard() {
                     </div>
                 )}
             </div>
+            </section>
 
             {/* Slide-Over Quick View Drawer */}
             <InvoiceDrawer
@@ -1342,6 +1287,14 @@ export default function Dashboard() {
                 onCancel={() => setIsClearAllModalOpen(false)}
                 confirmText="Yes, Clear Everything"
                 isDanger={true}
+            />
+
+            {/* Guest Guided Tour Wizard */}
+            <GuidedTourWizard
+                onIngestSample={handleIngestSample}
+                isIngestingSample={isIngestingSample}
+                onOpenCfoBrief={handleGenerateCfoBrief}
+                onFilterStatus={(status) => setStatusFilter(status)}
             />
         </div>
     );

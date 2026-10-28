@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
     FlaskConical, 
     UploadCloud, 
-    Sparkles, 
     ArrowRight, 
     CheckCircle, 
     Clock, 
@@ -144,7 +143,7 @@ export default function SimulatePage() {
 
             setExecutionResult(res.data);
             queryClient.invalidateQueries(['invoices']);
-            toast.success(res.data.message || 'Invoice processed successfully!', { icon: '🚀' });
+            toast.success(res.data.message || 'Invoice processed successfully!');
         } catch (err) {
             console.error('Simulation error:', err);
             setPipelineStage(0);

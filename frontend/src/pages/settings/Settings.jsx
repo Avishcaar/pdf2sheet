@@ -4,6 +4,7 @@ import ProfileSection from '../../components/settings/ProfileSection';
 import GoogleSheetsSection from '../../components/settings/GoogleSheetsSection';
 import toast, { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
+import Loader from '../../components/common/Loader';
 
 export default function Settings() {
     const { data: user, isLoading, error, refetch } = useUserProfile();
@@ -35,11 +36,8 @@ export default function Settings() {
 
     if (isLoading) {
         return (
-            <div className="max-w-4xl mx-auto">
-                <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500 mb-4"></div>
-                    <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Loading settings...</p>
-                </div>
+            <div className="max-w-4xl mx-auto py-24 flex items-center justify-center">
+                <Loader size="32px" subtitle="Loading settings..." />
             </div>
         );
     }

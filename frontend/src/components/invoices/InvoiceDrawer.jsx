@@ -13,7 +13,6 @@ import {
     Trash2, 
     Copy, 
     Check, 
-    Sparkles,
     Send,
     Bot,
     Calculator,

@@ -34,9 +34,8 @@ export default function useInvoices() {
                     const amount = inv?.extractedData?.totalAmount || inv?.totalAmount || '';
                     const currency = inv?.extractedData?.currency || inv?.currency || '$';
 
-                    toast.success(`⚡ Live Ingestion: Ingested invoice from "${vendor}" (${currency} ${amount})!`, {
-                        duration: 5000,
-                        icon: '🚀'
+                    toast.success(`Live Ingestion: Ingested invoice from "${vendor}" (${currency} ${amount})!`, {
+                        duration: 5000
                     });
 
                     // Instantly update UI without waiting for poll interval

@@ -5,9 +5,9 @@ import EditVendorModal from '../../components/vendors/EditVendorModal';
 import toast, { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
+import Loader from '../../components/common/Loader';
 import { 
     Store, 
-    Sparkles, 
     Crosshair, 
     Layers, 
     Search, 
@@ -243,9 +243,8 @@ export default function Vendors() {
 
             {/* Vendor Cards Grid */}
             {isLoading ? (
-                <div className="p-16 flex flex-col items-center justify-center space-y-4">
-                    <div className="w-8 h-8 border-3 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">Loading vendor models...</p>
+                <div className="p-16 flex flex-col items-center justify-center">
+                    <Loader size="28px" subtitle="Loading vendor models..." />
                 </div>
             ) : filteredVendors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

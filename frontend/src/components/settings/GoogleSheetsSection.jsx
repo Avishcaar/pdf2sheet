@@ -9,10 +9,11 @@ import {
     AlertCircle, 
     ExternalLink, 
     Key, 
-    Sparkles, 
+    FileSpreadsheet, 
     RefreshCw, 
     LogOut,
-    Check
+    Check,
+    CheckSquare
 } from 'lucide-react';
 
 export default function GoogleSheetsSection({ user }) {
@@ -56,7 +57,7 @@ export default function GoogleSheetsSection({ user }) {
 
         try {
             await updateSettings.mutateAsync({ spreadsheetId });
-            toast.success('Spreadsheet ID saved successfully', { icon: '💾' });
+            toast.success('Spreadsheet ID saved successfully');
         } catch (error) {
             toast.error(error.response?.data?.error || 'Failed to save spreadsheet ID');
         }
@@ -137,17 +138,52 @@ export default function GoogleSheetsSection({ user }) {
             </div>
 
             {!user?.hasGoogleConnection && (
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
-                    <span className="font-bold text-amber-600 dark:text-amber-400 shrink-0 text-sm">⚠️ CRITICAL:</span>
-                    <div className="space-y-1">
-                        <p className="font-semibold text-gray-900 dark:text-white">Must Check the Google Sheets Box During Sign-In:</p>
-                        <p className="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/90">
-                            When Google prompts you with <em>"Select what PDF2Sheet can access"</em>, you <strong>MUST check the box</strong> next to:
-                            <br />
-                            <strong className="underline">☑️ "See, edit, create, and delete all your Google Sheets spreadsheets"</strong>.
-                            <br />
-                            If this box is left unchecked, Google will block all spreadsheet write attempts with <em>"insufficient authentication scopes"</em>.
-                        </p>
+                <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.04] via-transparent to-cyan-500/[0.04] p-4 sm:p-5 space-y-3.5">
+                    <div className="flex items-start sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 dark:text-cyan-400 border border-indigo-500/20 shrink-0">
+                                <CheckSquare className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
+                                    Required Permission During Sign-In
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                                    Ensure full write access so extracted invoices can sync directly to your spreadsheet.
+                                </p>
+                            </div>
+                        </div>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                            Required Scope
+                        </span>
+                    </div>
+
+                    {/* Visual Mockup of Google's Consent Prompt */}
+                    <div className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0B0F19]/90 p-3.5 sm:p-4 space-y-2 shadow-xs">
+                        <div className="text-xs font-mono uppercase tracking-wider text-gray-400 dark:text-slate-500 font-bold flex items-center gap-1.5">
+                            <span>Google Consent Screen</span>
+                            <span>·</span>
+                            <span>"Select what PDF2Sheet can access"</span>
+                        </div>
+                        
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/[0.08] border border-emerald-500/30 text-xs">
+                            <div className="mt-0.5 w-4 h-4 rounded bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                            </div>
+                            <div className="space-y-0.5">
+                                <p className="font-semibold text-gray-900 dark:text-white">
+                                    See, edit, create, and delete all your Google Sheets spreadsheets
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-slate-400">
+                                    Check this box to enable automatic row insertion and table formatting.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                        <span>If left unchecked, Google will block spreadsheet writes with an "insufficient scopes" error.</span>
                     </div>
                 </div>
             )}
@@ -164,8 +200,8 @@ export default function GoogleSheetsSection({ user }) {
                             disabled={isCreating}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-500 cursor-pointer disabled:opacity-50"
                         >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            {isCreating ? 'Creating Sheet...' : '✨ 1-Click Auto-Create & Link New Sheet'}
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                            {isCreating ? 'Creating Sheet...' : '1-Click Auto-Create & Link New Sheet'}
                         </button>
                     )}
                 </div>
@@ -205,7 +241,7 @@ export default function GoogleSheetsSection({ user }) {
                             <strong className="text-gray-900 dark:text-gray-200">Connected Google Account:</strong> <code className="text-violet-600 dark:text-violet-400 font-mono">{user.googleEmail || 'jaltaasholaa@gmail.com'}</code>
                         </p>
                         <p className="text-gray-500 dark:text-gray-400">
-                            💡 <em>If using a spreadsheet created by your personal account (e.g. <code>aavishkark@gmail.com</code>), open that spreadsheet $\rightarrow$ click the blue <strong>Share</strong> button $\rightarrow$ add <code>{user.googleEmail || 'jaltaasholaa@gmail.com'}</code> as <strong>Editor</strong> (or set General access to "Anyone with the link" $\rightarrow$ Editor).</em>
+                            <em>If using a spreadsheet created by your personal account (e.g. <code>aavishkark@gmail.com</code>), open that spreadsheet $\rightarrow$ click the blue <strong>Share</strong> button $\rightarrow$ add <code>{user.googleEmail || 'jaltaasholaa@gmail.com'}</code> as <strong>Editor</strong> (or set General access to "Anyone with the link" $\rightarrow$ Editor).</em>
                         </p>
                     </div>
                 )}
@@ -215,7 +251,7 @@ export default function GoogleSheetsSection({ user }) {
             <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/5 border border-emerald-500/20 space-y-3">
                 <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
+                        <Table className="w-3.5 h-3.5" />
                         In-App Live Sync Preview
                     </span>
                     <span className="text-[10px] font-mono text-gray-400">Target Tab: Sheet1</span>
