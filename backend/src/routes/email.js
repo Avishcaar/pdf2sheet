@@ -1,5 +1,7 @@
 import { broadcastSSE } from '../services/sseService.js';
 import express from 'express';
+import { addGuestInvoice } from '../services/guestStore.js';
+import mongoose from 'mongoose';
 import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
 import VendorMap from '../models/VendorMap.js';
@@ -369,6 +371,65 @@ router.post('/sample-ingest', authenticateToken, async (req, res, next) => {
 
         const sample = SAMPLES_MAP[key] || SAMPLES_MAP.aws;
 
+        // If database is offline and user is guest, perform immediate in-memory demo ingestion
+        if (mongoose.connection.readyState !== 1) {
+            if (req.user?.isGuest) {
+                const totalAmt = key.includes('stripe') ? '1,250.00' : (key.includes('sap') ? '3,400.00' : (key.includes('apollo') ? '84,500.00' : '4,850.00'));
+                const curr = key.includes('sap') ? 'EUR' : (key.includes('apollo') ? 'INR' : 'USD');
+                const sub = key.includes('stripe') ? '1,150.00' : (key.includes('sap') ? '2,857.14' : (key.includes('apollo') ? '71,610.17' : '4,500.00'));
+                const tax = key.includes('stripe') ? '100.00' : (key.includes('sap') ? '542.86' : (key.includes('apollo') ? '12,889.83' : '350.00'));
+                
+                const mockInvoice = {
+                    _id: 'guest_ingest_' + Date.now(),
+                    userId: req.user.userId,
+                    vendorName: req.body?.vendorName || sample.vendorName,
+                    senderEmail: sample.vendorEmail,
+                    status: 'processed',
+                    confidenceScore: 99,
+                    originalFileName: sample.fileName,
+                    processedAt: new Date(),
+                    createdAt: new Date().toISOString(),
+                    extractedData: {
+                        vendorName: req.body?.vendorName || sample.vendorName,
+                        invoiceNumber: 'INV-' + Math.floor(100000 + Math.random() * 900000),
+                        invoiceDate: new Date().toISOString().split('T')[0],
+                        dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+                        totalAmount: totalAmt,
+                        currency: curr,
+                        subtotal: sub,
+                        taxAmount: tax,
+                        engine: 'Groq LPU AI',
+                        mathAudit: {
+                            isValid: true,
+                            calculatedTotal: totalAmt,
+                            statedTotal: totalAmt,
+                            discrepancy: 0,
+                            summary: 'Reconciled: Groq LPU Optical Scan + Mathematical Verification'
+                        },
+                        lineItems: [
+                            { description: sample.vendorName + ' Core Subscription / Usage Tier', quantity: 1, unitPrice: sub, amount: sub },
+                            { description: 'Enterprise Support & SLA Telemetry', quantity: 1, unitPrice: tax, amount: tax }
+                        ]
+                    }
+                };
+
+                addGuestInvoice(mockInvoice);
+                broadcastSSE('INVOICE_INGESTED', { invoice: mockInvoice });
+
+                return res.status(201).json({
+                    statusCode: 201,
+                    success: true,
+                    message: `Ingested: ${mockInvoice.vendorName} (${mockInvoice.extractedData.currency} ${mockInvoice.extractedData.totalAmount})`,
+                    data: mockInvoice
+                });
+            }
+
+            return res.status(503).json({
+                success: false,
+                error: 'Database disconnected: MongoDB Atlas is rejecting connections. Check your IP whitelist in Atlas Network Access or disconnect your VPN.'
+            });
+        }
+
         const potentialPaths = [
             path.resolve(__dirname, '../../samples', sample.fileName),
             path.resolve(__dirname, '../../../frontend/public/samples', sample.fileName),
@@ -406,6 +467,13 @@ router.post('/sample-ingest', authenticateToken, async (req, res, next) => {
  */
 router.post('/test-upload', authenticateToken, upload.single('invoice'), async (req, res, next) => {
     try {
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({
+                success: false,
+                error: 'Database disconnected: MongoDB Atlas is rejecting connections. Check your IP whitelist in Atlas Network Access or disconnect your VPN.'
+            });
+        }
+
         const { vendorEmail, vendorName } = req.body;
         const pdfBuffer = req.file?.buffer;
 

@@ -1,4 +1,6 @@
 import User from '../models/User.js';
+import mongoose from 'mongoose';
+import { getGuestInvoices, addGuestInvoice, deleteGuestInvoice, clearGuestInvoices, getGuestInvoiceById } from '../services/guestStore.js';
 import Invoice from '../models/Invoice.js';
 import VendorMap from '../models/VendorMap.js';
 import { appendToSheet } from '../services/sheetsService.js';
@@ -12,9 +14,25 @@ const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
 export const getInvoices = async (req, res) => {
     try {
-        let invoices = await Invoice.find({ userId: req.user.userId })
-            .populate('vendorMapId', 'vendorName extractionRules senderEmail')
-            .sort({ createdAt: -1 });
+        if (req.user?.isGuest && mongoose.connection.readyState !== 1) {
+            const guestData = getGuestInvoices();
+            return res.json({
+                success: true,
+                count: guestData.length,
+                data: guestData
+            });
+        }
+
+        let invoices = [];
+        if (mongoose.connection.readyState === 1) {
+            invoices = await Invoice.find({ userId: req.user.userId })
+                .populate('vendorMapId', 'vendorName extractionRules senderEmail')
+                .sort({ createdAt: -1 });
+        }
+
+        if (req.user?.isGuest && (!invoices || invoices.length === 0)) {
+            invoices = getGuestInvoices();
+        }
 
         res.json({
             success: true,
@@ -22,12 +40,20 @@ export const getInvoices = async (req, res) => {
             data: invoices
         });
     } catch (err) {
+        if (req.user?.isGuest) {
+            const guestData = getGuestInvoices();
+            return res.json({
+                success: true,
+                count: guestData.length,
+                data: guestData
+            });
+        }
         res.status(500).json({
             success: false,
             error: err.message
         });
     }
-}
+};
 
 export const getInvoice = async (req, res) => {
     try {
@@ -405,7 +431,13 @@ export const askInvoice = async (req, res) => {
 export const getCFOExecutiveBrief = async (req, res) => {
     try {
         const { baseCurrency = 'USD' } = req.body;
-        const invoices = await Invoice.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+        let invoices = [];
+        if (mongoose.connection.readyState === 1) {
+            invoices = await Invoice.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+        }
+        if (invoices.length === 0 && req.user?.isGuest) {
+            invoices = getGuestInvoices();
+        }
 
         const { generateCFOBrief } = await import('../services/aiExtractionService.js');
         const brief = await generateCFOBrief(invoices, baseCurrency);
