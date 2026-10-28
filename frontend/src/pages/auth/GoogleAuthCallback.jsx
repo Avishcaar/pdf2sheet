@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
+import Loader from '../../components/common/Loader';
 
 export default function GoogleAuthCallback() {
     const navigate = useNavigate();
@@ -30,8 +31,7 @@ export default function GoogleAuthCallback() {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-950 flex items-center justify-center">
             <Toaster position="top-center" />
             <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500 mb-4"></div>
-                <p className="text-gray-400 font-medium">Completing sign in...</p>
+                <Loader size="32px" subtitle="Completing secure sign in..." />
             </div>
         </div>
     );

@@ -1,201 +1,412 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import styled from 'styled-components';
 import api from '../../services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Sparkles, ArrowRight, ShieldCheck, Play } from 'lucide-react';
+import ThemeSwitch from '../../components/common/ThemeSwitch';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const { darkMode, toggleDarkMode } = useTheme();
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { darkMode } = useTheme();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
 
-    const handleGuestAccess = () => {
-        localStorage.setItem('token', 'guest-demo-token');
-        localStorage.setItem('user', JSON.stringify({
-            _id: '6ae0f1989e78e3eb2b71ff9c',
-            email: 'guest@pdf2sheet.com',
-            firstName: 'Guest',
-            lastName: 'Reviewer',
-            role: 'demo'
-        }));
-        toast.success('Welcome, Reviewer! Launching live workstation environment...', { icon: '🚀' });
-        navigate('/dashboard');
-    };
+  const handleGuestAccess = () => {
+    localStorage.setItem('token', 'guest-demo-token');
+    localStorage.setItem('demo_mode', 'true');
+    localStorage.setItem('user', JSON.stringify({
+      _id: '6ae0f1989e78e3eb2b71ff9c',
+      email: 'guest@pdf2sheet.com',
+      firstName: 'Guest',
+      lastName: 'Reviewer',
+      role: 'demo'
+    }));
+    toast.success('Welcome! Launching dashboard...');
+    navigate('/dashboard');
+  };
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const res = await api.post('/auth/login', formData);
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
-            toast.success('Welcome back!');
-            navigate('/dashboard');
-        } catch (err) {
-            const errorData = err.response?.data;
-            if (errorData?.details && errorData.details.length > 0) {
-                errorData.details.forEach(detail => {
-                    toast.error(detail.message);
-                });
-            } else {
-                toast.error(errorData?.error || 'Login failed');
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/login', formData);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      toast.success('Welcome back!');
+      navigate('/dashboard');
+    } catch (err) {
+      const errorData = err.response?.data;
+      if (errorData?.details && errorData.details.length > 0) {
+        errorData.details.forEach(detail => toast.error(detail.message));
+      } else {
+        toast.error(errorData?.error || 'Login failed');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-        <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#0B0F19]' : 'bg-gradient-to-br from-slate-50 via-violet-50/40 to-slate-100'} flex items-center justify-center p-4 transition-colors duration-300`}>
-            <Toaster position="top-center" />
+  return (
+    <StyledWrapper $darkMode={darkMode}>
+      <Toaster position="top-center" />
 
-            <button
-                onClick={toggleDarkMode}
-                className={`fixed top-6 right-6 p-3 rounded-full ${darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-white text-gray-600'} shadow-lg hover:scale-110 transition-transform duration-200 z-50`}
-                aria-label="Toggle dark mode"
-            >
-                {darkMode ? (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                ) : (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                )}
+      {/* Theme Switch */}
+      <div className="theme-toggle-pos">
+        <ThemeSwitch size="12px" />
+      </div>
+
+      {/* Decluttered Neo-Brutalist Form Card */}
+      <div className="form-card">
+        <div id="circleform" />
+
+        <div id="introform">
+          <h2>Welcome back!</h2>
+          <div id="introformbehind">
+            <p>||||||||||||||||||||||||||||||||||||||||</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="form-body">
+          <div className="input-group">
+            <label>Email</label>
+            <input
+              className="tactile-input"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="name@company.com"
+              required
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Password</label>
+            <div className="password-wrapper">
+              <input
+                className="tactile-input"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="toggle-eye"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="actions-wrapper">
+            <button type="submit" disabled={loading} className="btn-primary">
+              <span>{loading ? 'Signing in...' : 'Sign In'}</span>
             </button>
 
-            <div className={`w-full max-w-5xl ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-2xl overflow-hidden grid md:grid-cols-2 transition-colors duration-300`}>
-                <div className="p-8 sm:p-12 flex flex-col justify-center">
-                    <div className="mb-6">
-                        <div className="text-violet-500 font-bold text-sm mb-1 tracking-wider">PDF2SHEET PIPELINE</div>
-                        <h1 className={`text-3xl sm:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Welcome</h1>
-                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} text-sm mt-1`}>
-                            Automated AI Invoice Ingestion & Google Sheets Sync
-                        </p>
-                    </div>
+            <button type="button" onClick={handleGuestAccess} className="btn-secondary">
+              <span>Try as Guest</span>
+            </button>
+          </div>
 
-                    {/* Recruiter / Guest Demo Access Card - Uiverse Architecture */}
-                    <div className="mb-6 rounded-[25px] overflow-hidden border border-indigo-500/30 bg-[#0F1426] shadow-[0_12px_30px_rgba(15,20,38,0.5)] flex flex-col">
-                        <div className="relative p-4 sm:p-5 overflow-hidden text-white bg-gradient-to-br from-[#1E2548] to-[#141A35]">
-                            {/* Concentric Circles Background */}
-                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                <div className="absolute -top-[70%] -right-[35%] w-[200px] h-[200px] rounded-full bg-indigo-500/25 blur-[0.5px]" />
-                                <div className="absolute -top-[50%] -right-[20%] w-[130px] h-[130px] rounded-full bg-blue-400/25" />
-                                <div className="absolute -top-[25%] -right-[5%] w-[65px] h-[65px] rounded-full bg-emerald-400/70 shadow-[0_0_20px_rgba(52,211,153,0.5)]" />
-                            </div>
-
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-mono font-bold text-indigo-300 flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                                        RECRUITER / PORTFOLIO DEMO
-                                    </span>
-                                    <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30 font-bold">
-                                        ZERO LOGIN
-                                    </span>
-                                </div>
-                                <p className="text-xs text-indigo-200/90 leading-relaxed">
-                                    Evaluating this project for an interview? Jump straight into the full interactive workstation with pre-seeded invoices and Groq LPU OCR.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Recessed Dock Strip */}
-                        <div className="w-full bg-[#0B0E1B] p-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)] border-t border-white/[0.06]">
-                            <button
-                                type="button"
-                                onClick={handleGuestAccess}
-                                className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-95 active:scale-90"
-                            >
-                                <Sparkles className="w-4 h-4 text-amber-300" />
-                                <span>EXPLORE AS GUEST REVIEWER</span>
-                                <ArrowRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="relative flex items-center justify-center my-4">
-                        <div className="w-full border-t border-gray-200 dark:border-gray-700" />
-                        <span className="absolute px-3 bg-white dark:bg-gray-800 text-[11px] font-mono text-gray-400 uppercase">
-                            or log in with credentials
-                        </span>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className={`block text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1.5`}>
-                                Email
-                            </label>
-                            <input
-                                name="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                required
-                                className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent text-sm transition`}
-                                placeholder="name@domain.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label className={`block text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1.5`}>
-                                Password
-                            </label>
-                            <input
-                                name="password"
-                                type="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                                className={`w-full px-4 py-2.5 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-blue-50/50 border-blue-100 text-gray-900 placeholder-gray-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent text-sm transition`}
-                                placeholder="••••••••"
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-3 px-4 bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold text-sm rounded-xl shadow-md transform transition hover:scale-[1.01] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                            {loading ? 'Signing in...' : 'Sign In'}
-                        </button>
-                    </form>
-
-                    <div className="mt-6 text-center">
-                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            Don't have an account yet?{' '}
-                            <Link to="/register" className="text-violet-500 hover:text-violet-600 font-semibold transition">
-                                Sign up
-                            </Link>
-                        </p>
-                    </div>
-                </div>
-
-                <div className={`hidden md:flex ${darkMode ? 'bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#1E293B]' : 'bg-gradient-to-br from-violet-100/50 via-slate-100 to-violet-50'} items-center justify-center p-12 relative overflow-hidden transition-colors duration-300`}>
-                    <div className={`absolute inset-0 ${darkMode ? 'bg-gradient-to-br from-violet-900/20 via-transparent to-cyan-900/10' : 'bg-gradient-to-br from-violet-200/20 via-transparent to-blue-200/20'}`}></div>
-                    <div className="relative z-10 text-center max-w-sm">
-                        <div className={`w-28 h-28 mx-auto mb-6 ${darkMode ? 'bg-indigo-500/20 border border-indigo-500/30' : 'bg-white shadow-xl'} rounded-3xl flex items-center justify-center text-indigo-400`}>
-                            <Sparkles className="w-12 h-12 text-indigo-400 animate-pulse" />
-                        </div>
-                        <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'} mb-2`}>
-                            Dual Groq LPU Engine
-                        </h2>
-                        <p className={`text-xs leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                            Sub-300ms OCR optical extraction, coordinate-level bounding box mapping, and automated real-time dispatch to Google Sheets.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+          <div className="footer-links">
+            <span>Don't have an account?</span>
+            <Link to="/register" className="link-create">
+              Create account
+            </Link>
+          </div>
+        </form>
+      </div>
+    </StyledWrapper>
+  );
 }
+
+const StyledWrapper = styled.div`
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: ${props => props.$darkMode ? '#080b12' : '#f8fafc'};
+  color: ${props => props.$darkMode ? '#f8fafc' : '#0f172a'};
+  position: relative;
+  font-family: inherit;
+
+  .theme-toggle-pos {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 50;
+  }
+
+  /* Neo-Brutalist Form Card */
+  .form-card {
+    --bg-card: ${props => props.$darkMode ? '#101524' : '#ffffff'};
+    --color1: #f97316;
+    --color2: #ea580c;
+    --color3: #f59e0b;
+    --border-base: ${props => props.$darkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)'};
+    --input-bg: ${props => props.$darkMode ? '#0a0d17' : '#f8fafc'};
+    --shadow-color: ${props => props.$darkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(234, 88, 12, 0.2)'};
+
+    width: 100%;
+    max-width: 420px;
+    background-color: var(--bg-card);
+    border: 4px solid var(--color1);
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    box-shadow: -8px 8px 0px var(--color2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: -10px 10px 0px var(--color2);
+  }
+
+  /* Quarter-Circle Cutout in Corner */
+  #circleform {
+    width: 5em;
+    height: 5em;
+    border-bottom-right-radius: 50%;
+    background: linear-gradient(135deg, var(--color3), var(--color2));
+    position: absolute;
+    top: -2.5em;
+    left: -2.5em;
+    z-index: 10;
+    box-shadow:
+      0.25em 0.25em 0em 0.8em var(--bg-card),
+      0.25em 0.25em 0em 1.2em var(--color1);
+  }
+
+  /* Animated Header Banner */
+  #introform {
+    width: 100%;
+    height: 4.8em;
+    background-color: var(--color1);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding-right: 1.5rem;
+    z-index: 1;
+  }
+
+  #introform h2 {
+    color: #ffffff;
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  #introformbehind {
+    position: absolute;
+    width: 120%;
+    top: -0.8em;
+    right: 0;
+    z-index: 0;
+    animation: translateform 4s infinite linear;
+    pointer-events: none;
+  }
+
+  #introformbehind p {
+    color: rgba(255, 255, 255, 0.3);
+    font-family: monospace;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin: 0;
+    user-select: none;
+  }
+
+  @keyframes translateform {
+    0% {
+      transform: translateX(-5%);
+      top: -1em;
+    }
+    50% {
+      top: -0.6em;
+    }
+    100% {
+      transform: translateX(25%);
+      top: -1em;
+    }
+  }
+
+  /* Form Body */
+  .form-body {
+    padding: 1.8rem 1.8rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .input-group label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: ${props => props.$darkMode ? '#e2e8f0' : '#1e293b'};
+  }
+
+  .password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .tactile-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--input-bg);
+    border: 2px solid var(--border-base);
+    border-right: 4px solid var(--color1);
+    border-bottom: 4px solid var(--color1);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    color: ${props => props.$darkMode ? '#ffffff' : '#0f172a'};
+    transition: all 0.2s ease;
+    outline: none;
+  }
+
+  .password-wrapper .tactile-input {
+    padding-right: 2.75rem;
+  }
+
+  .tactile-input:focus {
+    border-color: var(--color1);
+    box-shadow: 3px 3px 0px var(--color2);
+    transform: translateX(2px);
+  }
+
+  .tactile-input::placeholder {
+    color: ${props => props.$darkMode ? '#64748b' : '#94a3b8'};
+  }
+
+  .toggle-eye {
+    position: absolute;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: ${props => props.$darkMode ? '#94a3b8' : '#64748b'};
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+  }
+
+  .toggle-eye:hover {
+    color: var(--color1);
+  }
+
+  /* Buttons */
+  .actions-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.85rem 1.25rem;
+    background: linear-gradient(135deg, var(--color2), var(--color1));
+    border: none;
+    border-right: 4px solid #9a3412;
+    border-bottom: 4px solid #9a3412;
+    border-radius: 12px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: 2px solid var(--color1);
+    border-radius: 12px;
+    color: ${props => props.$darkMode ? '#f8fafc' : '#0f172a'};
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    background-color: ${props => props.$darkMode ? 'rgba(249, 115, 22, 0.12)' : 'rgba(249, 115, 22, 0.08)'};
+    border-color: var(--color2);
+  }
+
+  /* Minimal Footer */
+  .footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    color: ${props => props.$darkMode ? '#94a3b8' : '#64748b'};
+  }
+
+  .link-create {
+    color: var(--color1);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .link-create:hover {
+    color: var(--color2);
+    text-decoration: underline;
+  }
+`;
