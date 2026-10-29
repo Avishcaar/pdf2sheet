@@ -183,7 +183,7 @@ export default function Sidebar() {
         <button
           onClick={handleStartTour}
           className="group relative flex items-center justify-center w-10 h-10 rounded-2xl bg-cyan-500/15 text-cyan-400 hover:text-white hover:bg-gradient-to-tr hover:from-cyan-500 hover:to-blue-600 hover:scale-125 hover:shadow-lg hover:shadow-cyan-500/30 transition-all duration-200 ease-out cursor-pointer"
-          aria-label="Guided Tour"
+          aria-label="Learn About Platform"
         >
           <Compass className="w-5 h-5 transition-transform duration-300 group-hover:rotate-45" />
 
@@ -198,7 +198,7 @@ export default function Sidebar() {
           {/* Tooltip on Hover */}
           <div className="absolute left-full ml-3.5 px-3 py-1.5 rounded-xl bg-[#0B0F19]/95 text-white text-xs font-semibold tracking-wide whitespace-nowrap shadow-[0_10px_25px_rgba(0,0,0,0.6)] border border-orange-500/30 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 pointer-events-none z-[100] flex items-center">
             <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0B0F19] border-l border-b border-orange-500/30 rotate-45" />
-            Guided Tour
+            Learn About Platform
           </div>
         </button>
 
