@@ -1,38 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Terminal, 
-  CheckCircle2, 
-  Mail, 
-  UploadCloud, 
-  ArrowDown, 
-  ChevronDown, 
-  ChevronUp, 
-  Scan, 
-  Cpu, 
-  Database, 
-  ShieldCheck,
-  Zap,
-  ArrowRight,
-  FileText,
-  Lock,
-  Layers
-} from 'lucide-react';
-import { clamp, easeOutCubic, lerp, range } from '../../utils/math';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ArrowDown, ChevronDown, ChevronUp, Database, Layers } from 'lucide-react';
+import { easeOutCubic, lerp, range } from '../../utils/math';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { getHandoffScrollProgress } from '../../utils/handoffScroll';
 
-export default function WorkstationScrollHero({ 
-  onUploadClick, 
-  onSyncEmailClick, 
-  isSyncingEmail, 
-  onIngestSampleClick,
-  isIngestingSample,
-  invoicesCount = 0, 
-  syncRate = 100 
-}) {
+export default function WorkstationScrollHero({ invoicesCount = 0 }) {
   const rootRef = useRef(null);
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
+  const panelRef = useRef(null);
+  const outputRailRef = useRef(null);
+  const journeyProgressRef = useRef(0);
   const svgConduitRef = useRef(null);
   
   // Parallax Layer Refs
@@ -64,13 +42,30 @@ export default function WorkstationScrollHero({
   const terminalBadgeRef = useRef(null);
   const lpuRateRef = useRef(null);
   const ejectGroupRef = useRef(null);
-  const scrollIndicatorRef = useRef(null);
-  const progressPercentRef = useRef(null);
   const latencyRef = useRef(null);
   const downstreamBeamRef = useRef(null);
 
   const [isMinimized, setIsMinimized] = useState(false);
   const reduced = useReducedMotion();
+
+  useLayoutEffect(() => {
+    if (isMinimized) return undefined;
+    const stage = stageRef.current;
+    const rail = outputRailRef.current;
+    if (!stage || !rail) return undefined;
+    const fitOutputRail = () => {
+      if (!stage.clientWidth || !stage.clientHeight || !rail.offsetWidth || !rail.offsetHeight) return;
+      const availableHeight = Math.max(1, stage.clientHeight - rail.offsetTop - 24);
+      const scale = Math.min(1, availableHeight / rail.offsetHeight, stage.clientWidth * 0.46 / rail.offsetWidth);
+      rail.style.setProperty('--output-rail-scale', String(scale));
+    };
+    fitOutputRail();
+    const observer = new ResizeObserver(fitOutputRail);
+    observer.observe(stage);
+    observer.observe(rail);
+    return () => observer.disconnect();
+  }, [isMinimized, reduced]);
+
 
   // Mouse Parallax Ref for physical 3D depth
   const mouse = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
@@ -78,7 +73,7 @@ export default function WorkstationScrollHero({
 
   // 1. Mouse Move Listener for Multi-plane Parallax
   const handleMouseMove = (e) => {
-    if (!rootRef.current) return;
+    if (reduced || !rootRef.current) return;
     const cardEl = rootRef.current.querySelector('.sticky') || rootRef.current;
     const rect = cardEl.getBoundingClientRect();
     mouse.current.targetX = (e.clientX - rect.left) / rect.width - 0.5;
@@ -91,14 +86,15 @@ export default function WorkstationScrollHero({
   };
 
   // Spark burst trigger on verification impact
-  const triggerImpactSparks = (originX, originY, color = '#34d399') => {
+  const triggerImpactSparks = useCallback((originX, originY, color = '#34d399') => {
+    if (reduced) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const cx = originX - rect.left;
     const cy = originY - rect.top;
 
-    const palette = ['#34d399', '#22d3ee', '#818cf8', '#fbbf24', '#ffffff'];
+    const palette = [color, '#22d3ee', '#818cf8', '#fbbf24', '#ffffff'];
     for (let i = 0; i < 55; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 2.0 + Math.random() * 6.5;
@@ -113,11 +109,11 @@ export default function WorkstationScrollHero({
         color: palette[Math.floor(Math.random() * palette.length)]
       });
     }
-  };
+  }, [reduced]);
 
   // 2. Cosmic Ambient Dust Canvas (selene-inspired background depth)
   useEffect(() => {
-    if (isMinimized) return;
+    if (isMinimized || reduced) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -184,8 +180,9 @@ export default function WorkstationScrollHero({
       // Render motes
       for (let i = 0; i < motes.length; i++) {
         const m = motes[i];
-        m.x += m.vx;
-        m.y += m.vy;
+        const flow = journeyProgressRef.current;
+        const x = (m.x + m.vx * flow * 1200 + 1) % 1;
+        const y = (m.y + m.vy * flow * 1200 + 1) % 1;
         if (m.x < 0) m.x = 1;
         if (m.x > 1) m.x = 0;
         if (m.y < 0) m.y = 1;
@@ -193,17 +190,17 @@ export default function WorkstationScrollHero({
 
         ctx.fillStyle = `hsla(${m.hue}, 80%, 75%, ${m.alpha})`;
         ctx.beginPath();
-        ctx.arc(m.x * width, m.y * height, m.r, 0, Math.PI * 2);
+        ctx.arc(x * width, y * height, m.r, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // Render Active Sparks
       for (let i = sparksRef.current.length - 1; i >= 0; i--) {
         const sp = sparksRef.current[i];
-        sp.x += sp.vx;
-        sp.y += sp.vy;
-        sp.vy += 0.12; // gravity
-        sp.alpha -= sp.decay;
+        sp.x += sp.vx * dt * 60;
+        sp.y += sp.vy * dt * 60;
+        sp.vy += 0.12 * dt * 60; // gravity
+        sp.alpha -= sp.decay * dt * 60;
 
         if (sp.alpha <= 0) {
           sparksRef.current.splice(i, 1);
@@ -226,7 +223,7 @@ export default function WorkstationScrollHero({
       cancelAnimationFrame(animId);
       ro.disconnect();
     };
-  }, [isMinimized]);
+  }, [isMinimized, reduced]);
 
   // 3. Multi-Layer Parallax Physics Loop
   useEffect(() => {
@@ -235,7 +232,6 @@ export default function WorkstationScrollHero({
     let animId;
     let targetP = 0;
     let smoothP = 0;
-    let lastSmoothP = -1;
     let sparksTriggered = false;
 
     // SVG Conduit Path Generator with responsive scaling
@@ -259,6 +255,7 @@ export default function WorkstationScrollHero({
       const dx = Math.max(30, (x2 - x1) * 0.5);
       const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
       pathEl.setAttribute('d', d);
+      pathEl.setAttribute('stroke', color);
 
       const len = pathEl.getTotalLength ? pathEl.getTotalLength() : 250;
       pathEl.style.strokeDasharray = `${len}`;
@@ -277,34 +274,37 @@ export default function WorkstationScrollHero({
       }
     };
 
-    const frameLoop = (time) => {
+    const frameLoop = () => {
       const rootEl = rootRef.current;
       if (!rootEl) return;
 
-      const mainEl = rootEl.closest('main') || window;
-      const isWindow = mainEl === window;
+      const mainEl = rootEl.closest('main');
+      const panel = panelRef.current;
       const rect = rootEl.getBoundingClientRect();
-      const containerTop = isWindow ? 0 : mainEl.getBoundingClientRect().top;
-      const containerHeight = isWindow ? window.innerHeight : mainEl.clientHeight;
-
-      const relTop = rect.top - containerTop;
-      const span = Math.max(1, rect.height - containerHeight);
-      targetP = clamp(-relTop / span);
-
+      const usesMainScroll = mainEl && ['auto', 'scroll', 'overlay'].includes(getComputedStyle(mainEl).overflowY);
+      targetP = reduced ? 1 : getHandoffScrollProgress({
+        sceneTop: rect.top,
+        sceneHeight: rect.height,
+        panelHeight: panel?.offsetHeight || 0,
+        viewportTop: usesMainScroll ? mainEl.getBoundingClientRect().top : 0,
+        stickyInset: panel ? Number.parseFloat(getComputedStyle(panel).top) || 0 : 0,
+      });
       // Fluid Momentum Lerp
-      smoothP = lerp(smoothP, targetP, 0.12);
+      smoothP = reduced ? targetP : lerp(smoothP, targetP, 0.12);
       if (Math.abs(smoothP - targetP) < 0.0001) smoothP = targetP;
 
       // Mouse Parallax Physics with smooth damping
-      mouse.current.x = lerp(mouse.current.x, mouse.current.targetX, 0.08);
-      mouse.current.y = lerp(mouse.current.y, mouse.current.targetY, 0.08);
+      mouse.current.x = reduced ? 0 : lerp(mouse.current.x, mouse.current.targetX, 0.08);
+      mouse.current.y = reduced ? 0 : lerp(mouse.current.y, mouse.current.targetY, 0.08);
 
       const p = smoothP;
+      journeyProgressRef.current = p;
+      const motionTime = reduced ? 0 : p * 12000;
 
       // Unpin ease at the very bottom into the table (seamless transition)
       const unpinEase = easeOutCubic(range(p, 0.92, 1.0));
       const exitY = -unpinEase * 36;
-      const globalCardOpacity = 1 - range(p, 0.95, 1.0);
+      const globalCardOpacity = 1;
 
       // 0. Stage 3D Gyroscopic Perspective Tilt
       if (stageRef.current) {
@@ -314,11 +314,6 @@ export default function WorkstationScrollHero({
       }
 
       // Telemetry Counters
-      const roundedP = Math.round(p * 100);
-      if (progressPercentRef.current && progressPercentRef.current._lastVal !== roundedP) {
-        progressPercentRef.current._lastVal = roundedP;
-        progressPercentRef.current.textContent = `${roundedP}%`;
-      }
       const l = p < 0.18 ? 280 : Math.max(110, Math.round(280 - (p - 0.18) * 230));
       if (latencyRef.current && latencyRef.current._lastVal !== l) {
         latencyRef.current._lastVal = l;
@@ -349,7 +344,7 @@ export default function WorkstationScrollHero({
       }
       if (holoBeamRef.current) {
         const beamIn = easeOutCubic(range(p, 0.14, 0.36));
-        const beamShimmer = 0.50 + Math.sin(time * 0.004) * 0.08;
+        const beamShimmer = 0.50 + Math.sin(motionTime * 0.004) * 0.08;
         holoBeamRef.current.style.opacity = String(beamIn * beamShimmer * globalCardOpacity);
       }
 
@@ -358,8 +353,8 @@ export default function WorkstationScrollHero({
       if (cardHandRef.current) {
         const handInflow = easeOutCubic(range(p, 0.0, 0.22));
         const handX = lerp(-20, 0, handInflow) + mouse.current.x * 14;
-        const handY = lerp(-10, 0, handInflow) + Math.sin(time * 0.0018) * 6 + exitY * 0.7;
-        const handRot = lerp(-8, -3, handInflow) + mouse.current.x * 4 + Math.sin(time * 0.0013) * 1.5;
+        const handY = lerp(-10, 0, handInflow) + Math.sin(motionTime * 0.0018) * 6 + exitY * 0.7;
+        const handRot = lerp(-8, -3, handInflow) + mouse.current.x * 4 + Math.sin(motionTime * 0.0013) * 1.5;
         const handScale = lerp(0.96, 1.0, handInflow);
         const handOpacity = globalCardOpacity;
 
@@ -372,8 +367,8 @@ export default function WorkstationScrollHero({
       if (cardScanRef.current) {
         const scanInflow = easeOutCubic(range(p, 0.08, 0.32));
         const scanX = lerp(-50, 0, scanInflow) + mouse.current.x * 16;
-        const scanY = lerp(35, 0, scanInflow) + Math.sin(time * 0.0022 + 1.2) * 5 + exitY * 0.8;
-        const scanRot = lerp(8, 2, scanInflow) - mouse.current.y * 6 + Math.cos(time * 0.0015) * 1.2;
+        const scanY = lerp(35, 0, scanInflow) + Math.sin(motionTime * 0.0022 + 1.2) * 5 + exitY * 0.8;
+        const scanRot = lerp(8, 2, scanInflow) - mouse.current.y * 6 + Math.cos(motionTime * 0.0015) * 1.2;
         const scanScale = lerp(0.92, 1.0, scanInflow);
         const scanOpacity = range(p, 0.05, 0.18) * globalCardOpacity;
 
@@ -416,7 +411,7 @@ export default function WorkstationScrollHero({
       if (hudTerminalRef.current) {
         const hudIn = easeOutCubic(range(p, 0.06, 0.26));
         const hudX = lerp(45, 0, hudIn) - mouse.current.x * 10;
-        const hudY = lerp(20, 0, hudIn) + Math.sin(time * 0.0016 + 3.8) * 3 + exitY * 0.75;
+        const hudY = lerp(20, 0, hudIn) + Math.sin(motionTime * 0.0016 + 3.8) * 3 + exitY * 0.75;
         const hudOpacity = range(p, 0.04, 0.14) * globalCardOpacity;
 
         hudTerminalRef.current.style.transform = `translate3d(${hudX}px, ${hudY}px, 0)`;
@@ -457,8 +452,8 @@ export default function WorkstationScrollHero({
         const verInflow = easeOutCubic(range(p, 0.56, 0.76));
         const verBounce = Math.sin(verInflow * Math.PI) * 7;
         const verX = lerp(55, 0, verInflow) + mouse.current.x * 14;
-        const verY = lerp(-25, 0, verInflow) + verBounce + Math.sin(time * 0.0020 + 2.5) * 5 + exitY * 0.7;
-        const verRot = lerp(12, 3, verInflow) - mouse.current.x * 5 + Math.sin(time * 0.0015) * 1.5;
+        const verY = lerp(-25, 0, verInflow) + verBounce + Math.sin(motionTime * 0.0020 + 2.5) * 5 + exitY * 0.7;
+        const verRot = lerp(12, 3, verInflow) - mouse.current.x * 5 + Math.sin(motionTime * 0.0015) * 1.5;
         const verScale = lerp(0.88, 1.0, verInflow);
         const verOpacity = range(p, 0.52, 0.64) * globalCardOpacity;
 
@@ -479,7 +474,7 @@ export default function WorkstationScrollHero({
       // 7. Ejection Group (Committed Ledger Row ready to drop into table)
       if (ejectGroupRef.current) {
         const ejIn = easeOutCubic(range(p, 0.72, 0.88));
-        const ejOpacity = range(p, 0.70, 0.78) * (1 - range(p, 0.95, 1.0));
+        const ejOpacity = range(p, 0.70, 0.78);
         const ejY = lerp(-15, 0, ejIn);
         ejectGroupRef.current.style.opacity = String(ejOpacity);
         ejectGroupRef.current.style.transform = `translate3d(0, ${ejY}px, 0) scale(${lerp(0.94, 1.0, ejIn)})`;
@@ -491,11 +486,6 @@ export default function WorkstationScrollHero({
         downstreamBeamRef.current.style.opacity = String(beamOp);
       }
 
-      // 9. Scroll indicator button highlight
-      if (scrollIndicatorRef.current) {
-        scrollIndicatorRef.current.style.opacity = String(1 - range(p, 0.88, 0.98));
-      }
-
       animId = requestAnimationFrame(frameLoop);
     };
 
@@ -503,25 +493,25 @@ export default function WorkstationScrollHero({
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [isMinimized]);
+  }, [isMinimized, reduced, triggerImpactSparks]);
 
   const scrollToTable = () => {
     const tableEl = document.getElementById('invoices-table-section');
     if (tableEl) {
-      tableEl.scrollIntoView({ behavior: 'smooth' });
+      tableEl.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth' });
     }
   };
 
   if (isMinimized) {
     return (
-      <div className="w-full mb-4 p-4 rounded-3xl bg-[#0B0F19] border border-white/[0.08] flex items-center justify-between shadow-xl">
+      <div className="w-full mb-4 p-4 rounded-3xl bg-[#0B0F19] border border-white/[0.08] flex items-center justify-between shadow-xl paper-press-minimized">
         <div className="flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
             <Layers className="w-5 h-5" />
           </div>
           <div>
             <p className="text-sm font-bold text-white">Parallax Workstation Minimized</p>
-            <p className="text-xs font-mono text-slate-400">RFC 2177 Push Active · Dual Groq LPU Engine Online</p>
+            <p className="text-xs font-mono text-slate-400">Sample document · intake to Sheets</p>
           </div>
         </div>
 
@@ -541,11 +531,12 @@ export default function WorkstationScrollHero({
       ref={rootRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full mb-8 select-none"
-      style={{ height: '240vh' }}
+      className="relative w-full mb-8 select-none workstation-scroll-track"
+      data-reduced-motion={reduced}
     >
       {/* 3D PARALLAX CONTAINER */}
-      <div className="sticky top-2 sm:top-4 w-full h-[calc(100vh-2.5rem)] min-h-[640px] max-h-[860px] rounded-3xl overflow-hidden bg-[#070A13]/95 border border-indigo-500/20 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.85)] flex flex-col justify-between">
+      <div ref={panelRef}
+        className="sticky top-2 sm:top-4 w-full h-[calc(100vh-2.5rem)] min-h-[640px] max-h-[860px] rounded-3xl overflow-hidden bg-[#070A13]/95 border border-indigo-500/20 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.85)] flex flex-col justify-between paper-press-stage">
         
         {/* Dynamic Starfield Canvas Background (Layer 0) */}
         <canvas
@@ -554,28 +545,25 @@ export default function WorkstationScrollHero({
         />
 
         {/* Ambient Top Glow Orbs */}
-        <div className="absolute -top-32 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute -top-32 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute -top-32 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none paper-press-glow" />
+        <div className="absolute -top-32 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none paper-press-glow" />
 
         {/* Top Control Bar */}
-        <div className="relative z-30 px-6 py-3.5 border-b border-white/[0.08] bg-[#070A13]/80 backdrop-blur-md flex items-center justify-between gap-4">
+        <div className="relative z-30 px-6 py-3.5 border-b border-white/[0.08] bg-[#070A13]/80 backdrop-blur-md flex items-center justify-between gap-4 paper-press-topbar">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             <span className="text-xs sm:text-sm font-semibold text-white tracking-wide">
-              Live Optical Extraction Pipeline
+              Illustrated document handoff
             </span>
             <span className="hidden sm:inline-block text-xs font-mono text-cyan-300/80 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
-              Groq LPU · 240ms
+              Sample data
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden md:inline text-xs text-slate-400 font-mono">
-              Scroll down to inspect stages ↓
-            </span>
             <button
               onClick={() => setIsMinimized(true)}
               className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer"
@@ -830,10 +818,11 @@ export default function WorkstationScrollHero({
               </div>
             </div>
 
+            <div ref={outputRailRef} className="workstation-output-rail">
             {/* LAYER 5 (ILLUSTRATION 3): Top-Right Reconciled Invoice with Green Checkmark (card_doc_3) - Uiverse Architecture */}
             <div
               ref={cardVerifiedRef}
-              className="absolute right-[2%] sm:right-[3%] top-[3%] sm:top-[4%] w-44 sm:w-50 lg:w-54 z-27 pointer-events-auto cursor-pointer will-change-transform group"
+              className="relative w-44 sm:w-50 lg:w-54 pointer-events-auto will-change-transform group workstation-reconciled-card"
               style={{ opacity: 0 }}
             >
               <div className="relative rounded-[25px] overflow-hidden border border-emerald-400/40 bg-[#081F17] shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col transition-all duration-300 group-hover:scale-105 group-hover:border-emerald-400/70">
@@ -881,7 +870,7 @@ export default function WorkstationScrollHero({
             {/* LAYER 6: Lower-Right Holographic Extraction HUD Terminal - Uiverse Architecture */}
             <div
               ref={hudTerminalRef}
-              className="absolute right-[2%] sm:right-[3%] bottom-[5%] sm:bottom-[7%] w-56 sm:w-64 lg:w-72 z-29 pointer-events-auto will-change-transform"
+              className="relative w-56 sm:w-64 lg:w-72 pointer-events-auto will-change-transform workstation-dispatch-card"
               style={{ opacity: 0 }}
             >
               <div className="rounded-[25px] overflow-hidden border border-indigo-400/30 bg-[#0B0F20] shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col font-mono text-xs">
@@ -961,41 +950,25 @@ export default function WorkstationScrollHero({
                     onClick={scrollToTable}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-extrabold transition-all cursor-pointer shadow-md active:scale-95"
                   >
-                    <span>Commit</span>
+                    <span>View register</span>
                     <ArrowDown className="w-3 h-3 animate-bounce" />
                   </button>
                 </div>
               </div>
             </div>
 
+            </div>
           </div>
         </div>
 
-        {/* Bottom Status Ribbon & Interactive Scroll Prompt */}
-        <div className="relative z-30 px-6 py-3.5 border-t border-white/[0.08] bg-[#070A13]/80 backdrop-blur-md flex items-center justify-between text-xs font-mono text-slate-400">
+        <div className="relative z-30 px-6 py-3.5 border-t border-white/[0.08] bg-[#070A13]/80 backdrop-blur-md flex items-center justify-between text-xs font-mono text-slate-400 paper-press-footer">
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-white font-semibold">Dual Groq LPU Workstation Synchronized</span>
+            <span className="text-white font-semibold">Sample document path</span>
             <span className="hidden sm:inline text-slate-500">|</span>
-            <span className="hidden sm:inline text-slate-400">Real-Time Optical Reconciliation</span>
+            <span className="hidden sm:inline text-slate-400">Read · reconcile · prepare for Sheets</span>
           </div>
 
-          <div
-            ref={scrollIndicatorRef}
-            className="flex items-center gap-3"
-          >
-            <span className="hidden sm:inline text-slate-400 text-xs">Scroll to reconcile:</span>
-            <button
-              onClick={scrollToTable}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold shadow-md transition-all cursor-pointer text-xs"
-            >
-              <span>Scan Progress</span>
-              <span ref={progressPercentRef} className="font-mono text-indigo-200 tabular-nums font-extrabold">
-                0%
-              </span>
-              <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
-            </button>
-          </div>
         </div>
 
       </div>

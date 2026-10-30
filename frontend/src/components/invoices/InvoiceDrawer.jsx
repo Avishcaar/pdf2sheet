@@ -85,9 +85,11 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
     const extracted = invoice.extractedData || {};
     const lineItems = extracted.lineItems || [];
     const mathAudit = extracted.mathAudit;
-    const confidence = invoice.confidenceScore ?? (invoice.status === 'processed' ? 95 : 65);
+    const confidence = invoice.confidenceScore !== null && invoice.confidenceScore !== undefined && Number.isFinite(Number(invoice.confidenceScore))
+        ? Number(invoice.confidenceScore)
+        : null;
     const isProcessed = invoice.status === 'processed';
-    const engineName = extracted.engine || (invoice.vendorMapId ? 'Spatial Mapping (Learned)' : 'Groq LPU (Llama 3.3 70B)');
+    const engineName = extracted.engine || (invoice.vendorMapId ? 'Spatial mapping' : null);
 
     const getConfidenceColor = (score) => {
         if (score >= 80) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
@@ -106,7 +108,7 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 invoice-sheet-backdrop"
                     />
 
                     {/* Drawer Panel */}
@@ -115,10 +117,10 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                        className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-white dark:bg-[#0B0F19] border-l border-gray-200 dark:border-white/[0.08] shadow-2xl z-50 flex flex-col overflow-hidden"
+                        className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-white dark:bg-[#0B0F19] border-l border-gray-200 dark:border-white/[0.08] shadow-2xl z-50 flex flex-col overflow-hidden invoice-sheet-drawer"
                     >
                         {/* Header */}
-                        <div className="p-6 border-b border-gray-200 dark:border-white/[0.08] flex items-center justify-between">
+                        <div className="p-6 border-b border-gray-200 dark:border-white/[0.08] flex items-center justify-between invoice-sheet-header">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center font-bold">
                                     {invoice.vendorName?.charAt(0) || 'U'}
@@ -137,6 +139,8 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                             </div>
                             <button
                                 onClick={onClose}
+                                type="button"
+                                aria-label="Close invoice details"
                                 className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition cursor-pointer"
                             >
                                 <X className="w-5 h-5" />
@@ -144,16 +148,16 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                         </div>
 
                         {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 invoice-sheet-content">
                             {/* Hero Amount & Confidence Card */}
-                            <div className="p-5 rounded-2xl bg-gray-50/75 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.08]">
+                            <div className="p-5 rounded-2xl bg-gray-50/75 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.08] invoice-sheet-total">
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Total Extracted
                                     </span>
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-medium border ${getConfidenceColor(confidence)}`}>
-                                        {confidence}% Confidence
-                                    </span>
+                                    {confidence !== null && <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-medium border ${getConfidenceColor(confidence)}`}>
+                                        {confidence}% confidence
+                                    </span>}
                                 </div>
 
                                 <div className="flex items-baseline gap-2 mb-3">
@@ -168,19 +172,19 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                                 </div>
 
                                 {/* Confidence Progress Bar */}
-                                <div className="w-full bg-gray-200 dark:bg-white/[0.08] rounded-full h-1.5 overflow-hidden">
+                                {confidence !== null && <div className="w-full bg-gray-200 dark:bg-white/[0.08] rounded-full h-1.5 overflow-hidden" aria-label={`Confidence ${confidence}%`}>
                                     <div
                                         className={`h-full transition-all duration-500 ${
                                             confidence >= 80 ? 'bg-emerald-500' : confidence >= 60 ? 'bg-amber-500' : 'bg-rose-500'
                                         }`}
-                                        style={{ width: `${Math.min(confidence, 100)}%` }}
+                                        style={{ width: `${Math.min(Math.max(confidence, 0), 100)}%` }}
                                     />
-                                </div>
+                                </div>}
 
                                 <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
-                                    <span>Engine: <strong>{engineName}</strong></span>
+                                    {engineName && <span>Extraction: <strong>{engineName}</strong></span>}
                                     <span className="capitalize font-medium text-gray-700 dark:text-gray-300">
-                                        {isProcessed ? 'Synced to Sheet' : 'Pending Verification'}
+                                        {isProcessed ? 'Processed' : 'Pending verification'}
                                     </span>
                                 </div>
                             </div>
@@ -376,7 +380,7 @@ export default function InvoiceDrawer({ invoice, isOpen, onClose, onDelete, onAp
                         </div>
 
                         {/* Footer Action Buttons */}
-                        <div className="p-6 border-t border-gray-200 dark:border-white/[0.08] bg-gray-50/50 dark:bg-[#0B0F19] space-y-2.5">
+                        <div className="p-6 border-t border-gray-200 dark:border-white/[0.08] bg-gray-50/50 dark:bg-[#0B0F19] space-y-2.5 invoice-sheet-footer">
                             <button
                                 onClick={() => navigate(`/review/${invoice._id}`)}
                                 className="w-full py-2.5 px-4 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl shadow-md shadow-violet-500/20 transition-all flex items-center justify-center gap-2 text-sm"

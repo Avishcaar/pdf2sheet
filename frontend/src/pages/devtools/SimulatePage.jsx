@@ -180,7 +180,7 @@ export default function SimulatePage() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 pb-16">
+        <div className="max-w-7xl mx-auto space-y-8 pb-16 sample-lab">
             <Toaster position="top-center" />
 
             {/* Header */}

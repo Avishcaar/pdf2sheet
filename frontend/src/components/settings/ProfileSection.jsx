@@ -4,7 +4,7 @@ export default function ProfileSection({ user }) {
     const { darkMode } = useTheme();
 
     return (
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 transition-colors duration-300`}>
+        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 transition-colors duration-300 profile-paper-card`}>
             <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-6`}>
                 Profile
             </h2>

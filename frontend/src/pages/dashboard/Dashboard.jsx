@@ -8,6 +8,8 @@ import ConfirmationModal from '../../components/common/ConfirmationModal';
 import InvoiceDrawer from '../../components/invoices/InvoiceDrawer';
 import SpendAnalytics from '../../components/dashboard/SpendAnalytics';
 import WorkstationScrollHero from '../../components/dashboard/WorkstationScrollHero';
+import InvoiceWelcome from '../../components/dashboard/InvoiceWelcome';
+import OverviewMetrics from '../../components/dashboard/OverviewMetrics';
 import RecruiterGuideBanner from '../../components/dashboard/RecruiterGuideBanner';
 import CfoBriefModal from '../../components/dashboard/CfoBriefModal';
 import SmartOmnibar from '../../components/dashboard/SmartOmnibar';
@@ -15,7 +17,7 @@ import GuidedTourWizard from '../../components/dashboard/GuidedTourWizard';
 import Loader from '../../components/common/Loader';
 import { exportToCsv, exportToJson } from '../../utils/exportUtils';
 import { convertCurrency, formatCurrency } from '../../utils/currencyUtils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { 
     FileText, 
     CheckCircle, 
@@ -42,13 +44,13 @@ import {
     Globe,
     Compass
 } from 'lucide-react';
-import { useTheme } from '../../contexts/ThemeContext';
+
 
 export default function Dashboard() {
     const { data: invoices, isLoading, error, refetch } = useInvoices();
     const { data: userProfile } = useUserProfile();
     const navigate = useNavigate();
-    const { darkMode } = useTheme();
+
 
     // Multi-Currency Normalizer State
     const [baseCurrency, setBaseCurrency] = useState('USD'); // 'USD' | 'INR' | 'EUR' | 'GBP'
@@ -368,7 +370,7 @@ export default function Dashboard() {
         const displayVendor = vendor || (scenarioId === 'stripe' ? 'Stripe SaaS' : 'AWS Cloud');
 
         setIsIngestingSample(true);
-        const toastId = toast.loading(`Loading sample "${displayVendor}" and analyzing with Groq LPU AI...`);
+        const toastId = toast.loading(`Reading sample ${sampleName}…`);
         try {
             const uploadRes = await api.post('/email/sample-ingest', {
                 scenarioId,
@@ -430,30 +432,13 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-10 sm:space-y-14 relative pb-24">
+        <div className="w-full max-w-7xl mx-auto space-y-10 sm:space-y-14 relative pb-24 pdf2sheet-dashboard">
             <Toaster position="top-center" />
-
             {/* ═════════════════════════════════════════════════════════════════
                 SECTION 1: EXTRACTION PIPELINE (3D Diorama & Live Presets)
                ═════════════════════════════════════════════════════════════════ */}
-            <section id="section-pipeline" className="rounded-3xl border border-gray-200/80 dark:border-white/[0.07] bg-white/60 dark:bg-[#0B0F1F]/60 backdrop-blur-xl p-5 sm:p-7 shadow-xs space-y-6">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-white/[0.06]">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                                01 · PIPELINE
-                            </span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-xs font-mono text-emerald-400 font-bold hidden sm:inline">AI Engine Online</span>
-                        </div>
-                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                            Autonomous Ingestion & Optical Scanning
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
-                            Watch incoming document attachments pass through fast AI character recognition to verified spreadsheet dispatch.
-                        </p>
-                    </div>
-                </div>
+            <section id="section-pipeline" className="handoff-hero" aria-labelledby="handoff-hero-title">
+                <InvoiceWelcome onUpload={() => document.getElementById('direct-upload-input')?.click()} onSync={() => handleSyncEmail(false)} isUploading={isUploadingRandom} isSyncing={isSyncingEmail} />
 
                 {/* Recruiter & Interviewer Welcome / Quick Action Guide */}
                 <div id="recruiter-guide-section">
@@ -467,189 +452,12 @@ export default function Dashboard() {
                 {/* Interactive Multi-Layer Scroll-Driven Workstation */}
                 <div id="workstation-hero-section">
                     <WorkstationScrollHero
-                        onUploadClick={() => document.getElementById('direct-upload-input')?.click()}
-                        onSyncEmailClick={() => handleSyncEmail(false)}
-                        isSyncingEmail={isSyncingEmail}
-                        onIngestSampleClick={handleIngestSample}
-                        isIngestingSample={isIngestingSample}
                         invoicesCount={invoices?.length || 0}
-                        syncRate={stats.syncRate}
                     />
                 </div>
             </section>
 
-            {/* ═════════════════════════════════════════════════════════════════
-                SECTION 2: SYSTEM TELEMETRY (Operational Health & SLAs)
-               ═════════════════════════════════════════════════════════════════ */}
-            <section id="section-telemetry" className="rounded-3xl border border-gray-200/80 dark:border-white/[0.07] bg-white/60 dark:bg-[#0B0F1F]/60 backdrop-blur-xl p-5 sm:p-7 shadow-xs space-y-6">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-white/[0.06]">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                02 · OVERVIEW
-                            </span>
-                        </div>
-                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                            Operational Health & Overview
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
-                            Key metrics across ledger volume, automated sync accuracy, and items requiring review.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 font-mono text-xs">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            All Engines Operational
-                        </span>
-                    </div>
-                </div>
-
-                {/* 4-KPI Metric Cards (Clean, Decluttered Uiverse Solar Circles Aesthetic) */}
-                <div id="kpi-metrics-section" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* 1. Total Invoices */}
-                    <div 
-                        onClick={() => setStatusFilter('all')}
-                        className="rounded-2xl overflow-hidden border border-indigo-500/30 bg-[#0F1426] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-indigo-500/50 hover:shadow-indigo-500/20 cursor-pointer group"
-                    >
-                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#1E2548] to-[#141A35]">
-                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                <div className="absolute -top-[75%] -right-[40%] w-[260px] h-[260px] rounded-full bg-indigo-500/20 blur-[0.5px]" />
-                                <div className="absolute -top-[60%] -right-[25%] w-[180px] h-[180px] rounded-full bg-blue-400/20" />
-                                <div className="absolute -top-[30%] -right-[5%] w-[90px] h-[90px] rounded-full bg-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.5)]" />
-                            </div>
-
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
-                                        <FileText className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">
-                                        Total Invoices
-                                    </span>
-                                </div>
-                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
-                                    {stats.total} Total
-                                </span>
-                            </div>
-
-                            <div className="relative z-10 mt-4">
-                                <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
-                                    {stats.total}
-                                </div>
-                                <div className="text-xs text-indigo-200/80 font-mono mt-1">
-                                    {stats.processed} Synced · {stats.review} In Review
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 2. Total Normalized Volume */}
-                    <div className="rounded-2xl overflow-hidden border border-emerald-500/30 bg-[#0B1E19] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-emerald-500/20 group">
-                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#123E33] to-[#0A261F]">
-                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                <div className="absolute -top-[75%] -right-[40%] w-[260px] h-[260px] rounded-full bg-emerald-500/20 blur-[0.5px]" />
-                                <div className="absolute -top-[60%] -right-[25%] w-[180px] h-[180px] rounded-full bg-teal-400/20" />
-                                <div className="absolute -top-[30%] -right-[5%] w-[90px] h-[90px] rounded-full bg-amber-400/70 shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
-                            </div>
-
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-emerald-300 border border-white/10">
-                                        <DollarSign className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">
-                                        Total Volume
-                                    </span>
-                                </div>
-                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 font-bold">
-                                    {baseCurrency}
-                                </span>
-                            </div>
-
-                            <div className="relative z-10 mt-4">
-                                <div className="text-2xl sm:text-3xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm truncate">
-                                    {formatCurrency(stats.totalAmount, baseCurrency)}
-                                </div>
-                                <div className="text-xs text-emerald-200/80 font-mono mt-1 truncate">
-                                    Consolidated Supplier Spend
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 3. Automation Rate */}
-                    <div className="rounded-2xl overflow-hidden border border-cyan-500/30 bg-[#0A1A2A] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-cyan-500/50 hover:shadow-cyan-500/20 group">
-                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#0F3554] to-[#0A2238]">
-                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                <div className="absolute -top-[75%] -right-[40%] w-[260px] h-[260px] rounded-full bg-cyan-500/20 blur-[0.5px]" />
-                                <div className="absolute -top-[60%] -right-[25%] w-[180px] h-[180px] rounded-full bg-sky-400/20" />
-                                <div className="absolute -top-[30%] -right-[5%] w-[90px] h-[90px] rounded-full bg-indigo-400/70 shadow-[0_0_20px_rgba(129,140,248,0.5)]" />
-                            </div>
-
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-cyan-300 border border-white/10">
-                                        <Zap className="w-4 h-4 text-cyan-300 fill-cyan-300" />
-                                    </div>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-200">
-                                        Automation Rate
-                                    </span>
-                                </div>
-                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-bold">
-                                    AI Verified
-                                </span>
-                            </div>
-
-                            <div className="relative z-10 mt-4">
-                                <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
-                                    {stats.syncRate}%
-                                </div>
-                                <div className="text-xs text-cyan-200/80 font-mono mt-1">
-                                    Automated Spreadsheet Sync
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 4. Review Queue */}
-                    <div 
-                        onClick={() => setStatusFilter('review_needed')}
-                        className="rounded-2xl overflow-hidden border border-amber-500/30 bg-[#281318] shadow-md flex flex-col transition-all duration-200 hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-amber-500/20 cursor-pointer group"
-                    >
-                        <div className="relative p-5 overflow-hidden text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br from-[#EC7263] via-[#CA5861] to-[#974859]">
-                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                <div className="absolute -top-[80%] -right-[50%] w-[280px] h-[280px] rounded-full bg-[#EFC745] opacity-30 blur-[0.5px]" />
-                                <div className="absolute -top-[70%] -right-[30%] w-[200px] h-[200px] rounded-full bg-[#EFC745] opacity-30" />
-                                <div className="absolute -top-[35%] -right-[8%] w-[90px] h-[90px] rounded-full bg-[#EFC745] opacity-90 shadow-[0_0_20px_rgba(239,199,69,0.7)]" />
-                            </div>
-
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 rounded-xl bg-black/20 backdrop-blur-md text-amber-200 border border-white/20">
-                                        <Clock className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-white">
-                                        Review Queue
-                                    </span>
-                                </div>
-                                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-black/25 text-white border border-white/25 font-bold">
-                                    {stats.review === 0 ? 'Clear' : `${stats.review} Pending`}
-                                </span>
-                            </div>
-
-                            <div className="relative z-10 mt-4">
-                                <div className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-white drop-shadow-sm">
-                                    {stats.review}
-                                </div>
-                                <div className="text-xs text-white/90 font-mono mt-1">
-                                    {stats.review === 0 ? 'All Invoices Verified' : 'Requires Verification'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <OverviewMetrics stats={stats} baseCurrency={baseCurrency} onFilter={setStatusFilter} />
 
             {/* ═════════════════════════════════════════════════════════════════
                 SECTION 3: FINANCIAL INTELLIGENCE (Spend & Supplier Analytics)
@@ -659,14 +467,14 @@ export default function Dashboard() {
                     <div>
                         <div className="flex items-center gap-2 mb-1.5">
                             <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                                03 · FINANCIALS
+                                02 / THE BIGGER PICTURE
                             </span>
                         </div>
                         <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                             Spend Analytics & Supplier Breakdown
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
-                            Supplier expense distribution normalized across global currencies with arithmetic verification.
+                            Compare vendor totals in your selected currency and inspect recorded math checks.
                         </p>
                     </div>
 
@@ -714,7 +522,7 @@ export default function Dashboard() {
                     <div>
                         <div className="flex items-center gap-2 mb-1.5">
                             <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                                04 · INVOICES
+                                03 / YOUR REGISTER
                             </span>
                             {userProfile?.hasGoogleConnection ? (
                                 <span className="text-xs font-mono text-emerald-500 dark:text-emerald-400 font-bold hidden sm:inline">Sheets Sync Active</span>
@@ -948,7 +756,7 @@ export default function Dashboard() {
 
                 {/* Batch Action Toolbar */}
                 {selectedIds.size > 0 && (
-                    <motion.div
+                    <Motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
@@ -983,7 +791,7 @@ export default function Dashboard() {
                                 Delete Selected
                             </button>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
             </div>
 
@@ -993,6 +801,8 @@ export default function Dashboard() {
                     <div className="py-16 px-4 text-center flex flex-col items-center justify-center">
                         <Loader size="28px" subtitle="Syncing invoices ledger..." />
                     </div>
+                ) : error ? (
+                    <div className="register-error-state" role="alert"><AlertCircle size={25} aria-hidden="true" /><h3>The register couldn’t load.</h3><p>Try loading your invoices again.</p><button type="button" className="switch-button switch-button-outline" onClick={() => refetch()}>Try again</button></div>
                 ) : processedInvoices.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -1018,8 +828,7 @@ export default function Dashboard() {
                             <tbody className="divide-y divide-gray-100 dark:divide-white/[0.04]">
                                 {processedInvoices.map((invoice) => {
                                     const isSelected = selectedIds.has(invoice._id);
-                                    const isProcessed = invoice.status === 'processed';
-                                    const confScore = invoice.confidenceScore ?? (isProcessed ? 95 : 45);
+                                    const confScore = invoice.confidenceScore ?? null;
                                     const isHighConf = confScore >= 80;
                                     const invCurrency = invoice.extractedData?.currency || 'USD';
                                     const rawTotal = invoice.extractedData?.totalAmount || '0.00';
@@ -1138,7 +947,7 @@ export default function Dashboard() {
                                                         ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                                                         : 'bg-rose-500/10 text-rose-500'
                                                 }`}>
-                                                    {confScore}%
+                                                    {confScore === null ? '—' : confScore + '%'}
                                                 </span>
                                             </td>
 

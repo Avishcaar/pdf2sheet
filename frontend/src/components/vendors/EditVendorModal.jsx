@@ -39,8 +39,8 @@ export default function EditVendorModal({ isOpen, onClose, vendor }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden transition-colors duration-300 max-h-[90vh]`}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm studio-modal-backdrop">
+            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden transition-colors duration-300 max-h-[90vh] studio-modal-card`}>
 
                 <div className={`p-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex items-center justify-between`}>
                     <div>

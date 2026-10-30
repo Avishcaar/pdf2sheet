@@ -80,7 +80,7 @@ export default function GoogleSheetsSection({ user }) {
     };
 
     return (
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm space-y-6">
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/[0.06] shadow-sm space-y-6 sheet-connection-card">
             <div className="flex items-start justify-between">
                 <div>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -88,7 +88,7 @@ export default function GoogleSheetsSection({ user }) {
                         Google Sheets Cloud Integration
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Two-way live synchronization of extracted financial invoice rows to your Google Drive.
+                        Send extracted invoice rows to a spreadsheet in your Google account.
                     </p>
                 </div>
 
@@ -252,9 +252,9 @@ export default function GoogleSheetsSection({ user }) {
                 <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                         <Table className="w-3.5 h-3.5" />
-                        In-App Live Sync Preview
+                        Example spreadsheet layout
                     </span>
-                    <span className="text-[10px] font-mono text-gray-400">Target Tab: Sheet1</span>
+                    <span className="text-[10px] font-mono text-gray-400">Illustrative sample data</span>
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border border-emerald-500/30 bg-white dark:bg-[#0B0F19] shadow-inner">

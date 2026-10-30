@@ -235,11 +235,11 @@ export default function VisualMapper() {
     }
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-[#0B0F19]">
+        <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-[#0B0F19] pdf2sheet-mapper">
             <Toaster position="top-center" />
 
             {/* Top Workspace Bar */}
-            <header className="h-14 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-white/[0.08] px-4 flex items-center justify-between z-30 shrink-0">
+            <header className="h-14 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-white/[0.08] px-4 flex items-center justify-between z-30 shrink-0 pdf2sheet-mapper-header">
                 {/* Back & Breadcrumb */}
                 <div className="flex items-center gap-3">
                     <button

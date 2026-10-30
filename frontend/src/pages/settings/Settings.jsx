@@ -43,7 +43,7 @@ export default function Settings() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 pb-16">
+        <div className="max-w-4xl mx-auto space-y-8 pb-16 settings-workbench">
             <Toaster position="top-center" />
 
             <div className="mb-8">

@@ -57,8 +57,9 @@ export default function Login() {
   };
 
   return (
-    <StyledWrapper $darkMode={darkMode}>
+    <StyledWrapper $darkMode={darkMode} className="pdf2sheet-auth">
       <Toaster position="top-center" />
+      <Link className="auth-play-brand" to="/dashboard">pdf2sheet.</Link>
 
       {/* Theme Switch */}
       <div className="theme-toggle-pos">

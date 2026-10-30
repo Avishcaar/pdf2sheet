@@ -20,41 +20,41 @@
     --color-dark-3: #334155;
 
     /* ── Executive Accent Palette: Orange & Amber Spectrum ──── */
-    --color-violet-50: #fff7ed;
-    --color-violet-100: #ffedd5;
-    --color-violet-200: #fed7aa;
-    --color-violet-300: #fdba74;
-    --color-violet-400: #fb923c;
-    --color-violet-500: #f97316;
-    --color-violet-600: #ea580c;
-    --color-violet-700: #c2410c;
-    --color-violet-800: #9a3412;
-    --color-violet-900: #7c2d12;
-    --color-violet-950: #431407;
+    --color-violet-50: #eef2ff;
+    --color-violet-100: #e0e7ff;
+    --color-violet-200: #c7d2fe;
+    --color-violet-300: #a5b4fc;
+    --color-violet-400: #8197ff;
+    --color-violet-500: #536ff8;
+    --color-violet-600: #3655f2;
+    --color-violet-700: #2944d7;
+    --color-violet-800: #263cad;
+    --color-violet-900: #243582;
+    --color-violet-950: #161f4f;
 
-    --color-purple-50: #fff7ed;
-    --color-purple-100: #ffedd5;
-    --color-purple-200: #fed7aa;
-    --color-purple-300: #fdba74;
-    --color-purple-400: #fb923c;
-    --color-purple-500: #f97316;
-    --color-purple-600: #ea580c;
-    --color-purple-700: #c2410c;
-    --color-purple-800: #9a3412;
-    --color-purple-900: #7c2d12;
-    --color-purple-950: #431407;
+    --color-purple-50: #f7f3ff;
+    --color-purple-100: #eee7ff;
+    --color-purple-200: #ddd0ff;
+    --color-purple-300: #cbb5ff;
+    --color-purple-400: #b391f7;
+    --color-purple-500: #976de0;
+    --color-purple-600: #8056c3;
+    --color-purple-700: #6844a2;
+    --color-purple-800: #523781;
+    --color-purple-900: #402d62;
+    --color-purple-950: #291d40;
 
-    --color-indigo-50: #fffbeb;
-    --color-indigo-100: #fef3c7;
-    --color-indigo-200: #fde68a;
-    --color-indigo-300: #fcd34d;
-    --color-indigo-400: #fbbf24;
-    --color-indigo-500: #f59e0b;
-    --color-indigo-600: #d97706;
-    --color-indigo-700: #b45309;
-    --color-indigo-800: #92400e;
-    --color-indigo-900: #78350f;
-    --color-indigo-950: #451a03;
+    --color-indigo-50: #eef2ff;
+    --color-indigo-100: #e0e7ff;
+    --color-indigo-200: #c7d2fe;
+    --color-indigo-300: #a5b4fc;
+    --color-indigo-400: #818cf8;
+    --color-indigo-500: #6574de;
+    --color-indigo-600: #5261c8;
+    --color-indigo-700: #434fa7;
+    --color-indigo-800: #383f7f;
+    --color-indigo-900: #2f315e;
+    --color-indigo-950: #1c1d3d;
 }
 
 /* ── Base ──────────────────────────────────────────────────── */

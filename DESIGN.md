@@ -1,33 +1,26 @@
-# PDF2Sheet — Design Direction & System Specifications
+# PDF2Sheet visual direction
 
-> Dial: ENERGY 2 / RHYTHM 2 / MOTION 1
+ENERGY 4 / RHYTHM 4 / MOTION 2
 
-## 1. Product Identity & Character
-PDF2Sheet is an autonomous financial document intelligence system. It captures invoices from email inboxes (IMAP IDLE push) and file uploads, extracts structured accounting data using high-speed language models (Groq LPU), performs mathematical audit reconciliation, and syncs verified transactions to Google Sheets in real-time.
+## Character
 
-The interface must feel like an **executive-grade financial terminal**: calm, precise, dense, legible, and trustworthy.
+An expressive digital workspace for moving invoice PDFs into structured spreadsheets. The interface should feel friendly, inventive, and useful. The latest user direction replaces the earlier financial terminal and warm paper themes.
 
-## 2. Color Palette Discipline (R-01, R-29)
-- **Surfaces**:
-  - Dark: Deep Obsidian (`#0B0F19`), Panel Charcoal (`#111827`), Card Slate (`#1E293B`)
-  - Light: Clean Canvas (`#F8FAFC`), Surface White (`#FFFFFF`), Card Neutral (`#F1F5F9`)
-  - Borders: Hairline definition (`rgba(255, 255, 255, 0.08)` in dark mode, `rgba(15, 23, 42, 0.08)` in light mode)
-- **Primary Brand Accent**: Slate Indigo (`#6366F1`) & Electric Violet (`#8B5CF6`)
-- **Semantic Accents (Strictly Functional)**:
-  - Emerald (`#10B981`): Reconciled / Processed / 100% Math Match
-  - Amber (`#F59E0B`): Review Needed / Human Verification Required
-  - Rose (`#EF4444`): Discrepancy / Math Error / Destructive Action
+## Visual language
 
-No multi-color rainbow gradients. All progress bars, charts, and metrics adhere to single-hue progressive density or functional semantic coloring.
+- Cobalt (#3655F2) identifies navigation and the conversion illustration. Lime (#D9F783) singles out the primary upload action and completed handoffs.
+- Cool light surfaces and deep blue dark surfaces keep accounting data legible. Green, amber, and red communicate real document states.
+- Outfit headings give the workspace a rounded, approachable voice. Plus Jakarta Sans carries controls and descriptions. Tabular figures keep amounts easy to compare.
+- The document-to-grid motif represents the actual PDF-to-spreadsheet transformation. The illustration uses field labels and placeholders, never invented financial results.
+- The dashboard opens with the animated handoff as its hero, with upload and inbox actions in the hero heading. Compact counters, analysis, and the invoice register follow it.
+- The hero uses the layered isometric workstation scene. Scrolling through the pinned hero advances intake, optical scanning, reconciliation, and Sheets dispatch; scrolling back reverses the journey. The output cards keep separate space. Reduced-motion mode shows a static completed scene. Animation progress has no play, replay, or scrubbing controls.
 
-## 3. Typography & Numerical Precision (R-06, R-17)
-- **Primary UI**: `Inter` (sans-serif) for labels, headings, metadata, and buttons.
-- **Financial & Telemetry Data**: `JetBrains Mono` / Tabular monospace for currency amounts, invoice numbers, tax IDs, confidence percentages, and timestamps.
-- **Hierarchy**: Restrained scale with strong contrast. Avoid unnecessary decorative uppercase tracking.
+## Navigation and behavior
 
-## 4. Anti-Slop Discipline & Clutter Removal
-- **No Decorative Gimmicks**: No artificial custom cursor trails, no film grain noise overlays, no vignette filters, no animated background blobs.
-- **No Redundant Controls**: Single consolidated search and filtering surface. No duplicate stacked search inputs.
-- **Restrained Badges (R-09)**: Maximum 1 status badge per card/row. No decorative badges stacked on top of metadata.
-- **Honest Terminology (R-02, R-16)**: Eliminate marketing buzzwords ("Auto-Pilot Magic", "Supercharged Multimodal OCR", "Revolutionary"). Use exact accounting and engineering terms ("Processed", "Review Needed", "Spreadsheet Sync", "Groq LPU").
-- **Theme Integrity (R-34)**: Both Light and Dark modes provide high contrast (WCAG AA compliant) with zero washed-out text or invisible borders.
+Keep all main routes visible in a labeled rail, with a compact navigation bar on phones. The guided tour is available from every route: it navigates to the dashboard, starts after mount, and consumes the launch request. The theme control remains available on phones.
+
+The navigation takes the form of a document index: an inset cobalt cover, a narrow binding spine, and folder-shaped route tabs. Larger Outfit labels make destinations the focus; lime identifies only the open tab. The folded tour note uses a pale surface so it stays secondary. The spine and folds echo handling invoice documents, with no new decorative images. On phones the index becomes a compact floating bar with all four route labels visible. Hover movement confirms a target without any idle motion. Keep the existing cobalt and lime values.
+
+## Product integrity
+
+Keep invoice uploads, inbox sync, vendor rules, analysis, exports, review, and Sheets integration connected to their existing services. Label sample scenes. Show actual counts and recorded confidence scores. Support empty, loading, and error states in both themes.
